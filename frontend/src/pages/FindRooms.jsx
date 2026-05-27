@@ -14,7 +14,9 @@ const FindRooms = () => {
         const { data } = await api.get(`/rooms/vacant/${user.id}`);
         setRooms(data);
       } catch (err) {
-        setError('Failed to load rooms. Please make sure you have filled your profile.');
+        console.error('FindRooms fetch error:', err);
+        const msg = err.response?.data?.message || err.message || 'Failed to load rooms. Please make sure you have filled your profile.';
+        setError(String(msg));
       } finally {
         setLoading(false);
       }

@@ -1,0 +1,101 @@
+# Test Plan for RoomSync Web Application
+
+## 1. Introduction
+This document outlines the detailed test plan for performing functional and non-functional testing of the RoomSync application. The objective is to ensure that the application functions as expected, provides a seamless real-time user experience, and meets all performance, security, and usability requirements.
+
+## 2. Test Scope
+The scope of testing includes both Frontend (React.js, Vite, Tailwind CSS) and Backend (Node.js, Express, Socket.io, MySQL) components.
+- In-Scope: Functional testing of core features (Matching, Applications, Chat, Notifications), Non-Functional testing (Performance, Security, Usability, Reliability).
+- Out-of-Scope: Third-party service downtime (e.g., MySQL server issues unrelated to the application), hardware-specific issues.
+
+## 3. Test Environment
+- Operating System: Windows/macOS/Linux
+- Browsers: Google Chrome (Primary), Mozilla Firefox, Safari, Microsoft Edge.
+- Database: MySQL Server (Local/Remote)
+- Testing Tools:
+  - API Testing: Postman / Insomnia
+  - Frontend Testing: Jest, React Testing Library (if automated), Manual Testing.
+  - WebSocket Testing: Socket.io-client / Postman WebSocket tool.
+  - Performance Testing: Apache JMeter / Artillery (for Socket.io load testing).
+
+---
+
+## 4. Functional Testing
+
+Functional testing ensures that each feature behaves according to its specifications.
+
+### 4.1. User Authentication & Authorization
+- **Test Case 1:** Verify user registration with valid and invalid inputs.
+- **Test Case 2:** Verify user login with valid credentials (JWT token generation).
+- **Test Case 3:** Verify login fails with incorrect password or unregistered email.
+- **Test Case 4:** Verify unauthorized users cannot access protected routes (e.g., dashboard, chat).
+- **Test Case 5:** Verify simulated password reset functionality.
+
+### 4.2. Smart Compatibility Matching
+- **Test Case 1:** Verify compatibility scores are correctly calculated based on preferences (sleep schedule, cleanliness, study habits, diet).
+- **Test Case 2:** Verify user can filter and sort vacant rooms by compatibility score.
+- **Test Case 3:** Verify that rooms belonging to the user themselves are not shown in their discovery feed.
+
+### 4.3. Application Workflow & History
+- **Test Case 1:** Verify a user can successfully submit an application to a vacant room.
+- **Test Case 2:** Verify the room owner receives the application in their dashboard.
+- **Test Case 3:** Verify the room owner can Accept an application. Status should change to "Accepted".
+- **Test Case 4:** Verify the room owner can Reject an application. Status should change to "Rejected".
+- **Test Case 5:** Verify the applicant's "Application History" reflects real-time status changes with correct color codes (Pending, Accepted, Rejected).
+
+### 4.4. Real-Time Group Chat (Socket.io)
+- **Test Case 1:** Verify that once an application is accepted, the applicant and owner are added to a specific chat room.
+- **Test Case 2:** Verify real-time message delivery (message sent by User A appears instantly for User B).
+- **Test Case 3:** Verify chat history is successfully retrieved from the database upon entering the chat dashboard.
+- **Test Case 4:** Verify users cannot access chat rooms they do not belong to.
+
+### 4.5. Live Notifications
+- **Test Case 1:** Verify applicant receives a live toast notification instantly when the room owner accepts their application.
+- **Test Case 2:** Verify applicant receives a live toast notification instantly when the room owner rejects their application.
+- **Test Case 3:** Verify notifications do not disappear prematurely and allow the user to read them.
+
+### 4.6. UI/UX & Dynamic Theme
+- **Test Case 1:** Verify the UI is fully responsive across mobile, tablet, and desktop viewports.
+- **Test Case 2:** Verify users can toggle between Dark Mode and Light Mode manually.
+- **Test Case 3:** Verify the chosen theme persists across page reloads.
+
+---
+
+## 5. Non-Functional Testing
+
+Non-functional testing ensures the system performs reliably, securely, and efficiently.
+
+### 5.1. Performance Testing
+- **Test Case 1 (Load Testing):** Verify the application can handle a large number of concurrent connections to the Socket.io server without severe latency (e.g., 500+ active users).
+- **Test Case 2 (Stress Testing):** Identify the breaking point of the MySQL database when executing simultaneous, complex matching queries.
+- **Test Case 3 (Response Time):** Ensure REST API response times for standard queries (fetching dashboard, room details) are under 300ms.
+- **Test Case 4 (Chat Latency):** Ensure WebSocket message delivery latency is under 100ms across normal network conditions.
+
+### 5.2. Security Testing
+- **Test Case 1 (Authentication Security):** Verify JWT tokens have an expiration time and are stored securely on the frontend (e.g., HttpOnly cookies or secure local storage).
+- **Test Case 2 (Password Security):** Verify all passwords are encrypted in the database using Bcrypt hashes.
+- **Test Case 3 (SQL Injection):** Verify that all database queries use parameterized statements (via MySQL2 driver) to prevent SQL injection attacks.
+- **Test Case 4 (Cross-Site Scripting - XSS):** Verify that chat messages and profile descriptions are sanitized before being rendered to prevent malicious scripts from executing.
+- **Test Case 5 (Access Control):** Verify APIs enforce proper authorization (e.g., only the room owner can accept/reject applications for their room).
+
+### 5.3. Usability Testing
+- **Test Case 1:** Ensure navigation (React Router) is smooth without full page reloads.
+- **Test Case 2:** Ensure clear error messages are displayed to users on failures (e.g., "Invalid Credentials", "Network Error").
+- **Test Case 3:** Validate color contrast ratios in both light and dark modes to meet accessibility standards.
+
+### 5.4. Reliability & Availability Testing
+- **Test Case 1 (WebSocket Reconnection):** Disconnect the client's network temporarily and ensure Socket.io automatically reconnects once the network is restored.
+- **Test Case 2 (Database Failure):** Test how the API handles database connection drops gracefully (returns 500 status code with a user-friendly error message, rather than crashing the node process).
+
+## 6. Defect Management
+- Any identified bugs will be logged with:
+  - **Issue Description**
+  - **Steps to Reproduce**
+  - **Expected Result** vs **Actual Result**
+  - **Severity (Low/Medium/High/Critical)**
+  - **Screenshot / Video log** (if applicable)
+
+## 7. Sign-Off Criteria
+- 100% of Critical and High severity bugs in Functional and Security tests are resolved.
+- Real-time features (Chat & Notifications) function reliably under normal load.
+- UI passes primary responsiveness and theme-switching tests.

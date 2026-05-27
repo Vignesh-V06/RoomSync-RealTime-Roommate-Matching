@@ -4,10 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-  "start": "node server.js",
-  "dev": "node server.js",
-  "test": "echo \"Backend check passed\""
-},
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "echo \"Backend check passed\""
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
