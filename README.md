@@ -9,7 +9,7 @@ RoomSync is a modern, real-time web application designed to help university stud
 - **Application History:** Keep track of all the rooms you applied to with a live, color-coded status board (Pending, Accepted, Rejected) directly on your profile.
 - **Real-Time Group Chat:** Once accepted, applicants are automatically dropped into a WhatsApp-style real-time chat dashboard alongside the room owner to plan their move-in. 
 - **Live Notifications:** Never miss an update! Instant toast notifications pop up on your screen the exact second your room application is accepted or rejected.
-- **Dynamic Dark Mode:** A stunning, fully responsive UI that seamlessly toggles between visually rich light and dark themes.
+- **Dynamic Dark Mode:** A stunning, fully responsive UI that seamlessly toggles between visually rich light and dark themes...
 
 ## 🛠️ Tech Stack
 
