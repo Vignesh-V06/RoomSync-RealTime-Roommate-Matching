@@ -1,6 +1,6 @@
 # RoomSync 🏠
 
-RoomSync is a modern, real-time web application designed to help university students find the perfect roommates and manage room applications. By leveraging a custom compatibility scoring system and real-time communication tools, it eliminates the hassle of finding compatible peers to share a dorm or apartment with.
+RoomSync is a modern, real-time web application designed to help university students find the perfect roommates and manage room applications. By leveraging a custom compatibility scoring system and real-time communication tools, it eliminates the hassle of finding compatible peers to share a dorm or apartment with...
 
 ## ✨ Features
 
