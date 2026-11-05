@@ -28,7 +28,7 @@ exports.applyRoom = async (req, res) => {
 
 exports.getOwnerRequests = async (req, res) => {
   try {
-    const { ownerId } = req.params;
+    const ownerId = req.user.id;
 
     // We only want requests for rooms owned by this user
     const [requests] = await pool.query(`
