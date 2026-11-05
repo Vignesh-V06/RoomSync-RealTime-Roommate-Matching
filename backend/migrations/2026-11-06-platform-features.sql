@@ -6,6 +6,7 @@ USE roomsync;
 -- Resolve any returned rows deliberately before running this migration.
 
 ALTER TABLE users
+  DROP INDEX name,
   ADD COLUMN username VARCHAR(40) NULL AFTER name,
   ADD COLUMN phone VARCHAR(30) NULL AFTER email,
   ADD COLUMN created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

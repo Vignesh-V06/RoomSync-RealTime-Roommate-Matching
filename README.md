@@ -102,10 +102,10 @@ Do not run the migration after importing the updated schema; choose the path tha
 The admin role is granted only by the database-backed seed script. Configure these values in the backend's private .env file or the hosting provider's secret settings. Use a unique password of at least 14 characters; do not commit .env files or share the value.
 
 \`\`\`env
-ADMIN_EMAIL=your-admin-email@example.com
+ADMIN_EMAIL=admin.v@gmail.com
 ADMIN_PASSWORD=use-a-unique-long-password
 ADMIN_NAME=RoomSync Administrator
-ADMIN_USERNAME=roomsync.admin
+ADMIN_USERNAME=admin.v
 \`\`\`
 
 Then run:
