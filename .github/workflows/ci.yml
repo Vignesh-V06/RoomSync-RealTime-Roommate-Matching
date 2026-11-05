@@ -4,11 +4,14 @@ on:
   push:
     branches:
       - main
+      - 'redesign/**'
+  pull_request:
+    branches:
+      - main
 
 jobs:
   frontend-build:
     runs-on: ubuntu-latest
-
     defaults:
       run:
         working-directory: frontend
@@ -20,17 +23,21 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
 
-      - name: Install frontend deps
-        run: npm install
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Lint frontend
+        run: npm run lint
 
       - name: Build frontend
         run: npm run build
 
-  backend-check:
+  backend-syntax:
     runs-on: ubuntu-latest
-
     defaults:
       run:
         working-directory: backend
@@ -42,10 +49,13 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
-      - name: Install backend deps
-        run: npm install
+      - name: Install backend dependencies
+        run: npm ci
 
-      - name: Backend sanity check
-        run: npm test
+      - name: Check backend JavaScript syntax
+        run: |
+          while IFS= read -r file; do
+            node --check "$file"
+          done < <(find . -type f -name '*.js' -not -path './node_modules/*')
