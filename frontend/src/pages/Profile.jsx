@@ -32,6 +32,10 @@ const Profile = () => {
         ]);
         setProfile(profileRes.data);
         setFormData(prev => ({ ...prev, ...profileRes.data }));
+        if (!profileRes.data.user_id) {
+          setIsEditing(true);
+          toast('Complete your matching profile to get more accurate room scores.');
+        }
         const customPrefs = profileRes.data.custom_preferences || {};
         setCustomPrefRows([...Object.entries(customPrefs).map(([key, value]) => ({ key, value })), { key: '', value: '' }]);
         setApplications(appsRes.data);
