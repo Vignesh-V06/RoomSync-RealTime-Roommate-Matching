@@ -29,7 +29,7 @@ const ChatDashboard = () => {
   const [mobileChatOpen, setMobileChatOpen] = useState(false);
   const messagesEndRef = useRef(null);
   const activeRoomRef = useRef(null);
-  const socketRef = useRef(null);
+  const [socket, setSocket] = useState(null);
   const sendLockRef = useRef(false);
 
   useEffect(() => {
@@ -46,7 +46,7 @@ const ChatDashboard = () => {
 
         if (user?.id) {
           const socket = initSocket(user.id);
-          socketRef.current = socket;
+          setSocket(socket);
           safeRooms.forEach((room) => socket.emit('join_room', room.room_id));
         }
       } catch (err) {
@@ -90,16 +90,26 @@ const ChatDashboard = () => {
   }, [activeRoom]);
 
   useEffect(() => {
-    const socket = socketRef.current;
     if (!socket) return undefined;
 
     const handleReceiveMessage = (message) => {
       if (activeRoomRef.current && String(message.room_id) === String(activeRoomRef.current.room_id)) {
-        setMessages((previous) => (
-          previous.some((item) => String(item.id) === String(message.id))
-            ? previous
-            : [...previous, message]
-        ));
+        setMessages((previous) => {
+          if (previous.some((item) => String(item.id) === String(message.id))) return previous;
+
+          if (String(message.sender_id) === String(user?.id)) {
+            const pendingIndex = previous.findIndex((item) =>
+              item.pending
+              && String(item.room_id) === String(message.room_id)
+              && item.message === message.message
+            );
+            if (pendingIndex >= 0) {
+              return previous.map((item, index) => index === pendingIndex ? { ...message, pending: false } : item);
+            }
+          }
+
+          return [...previous, message];
+        });
       }
 
       setRooms((previous) => {
@@ -113,7 +123,7 @@ const ChatDashboard = () => {
 
     socket.on('receive_message', handleReceiveMessage);
     return () => socket.off('receive_message', handleReceiveMessage);
-  }, []);
+  }, [socket, user?.id]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
