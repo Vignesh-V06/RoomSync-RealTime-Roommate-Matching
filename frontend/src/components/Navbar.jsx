@@ -4,7 +4,7 @@ import {
   FiBell, FiHome, FiLogOut, FiMenu, FiMessageCircle,
   FiMoon, FiPlus, FiSearch, FiSun, FiUser, FiX
 } from 'react-icons/fi';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../context/useTheme';
 import api from '../api';
 import toast from 'react-hot-toast';
 import { disconnectSocket, initSocket } from '../socket';
