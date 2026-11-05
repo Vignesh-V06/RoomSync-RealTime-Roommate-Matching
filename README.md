@@ -75,3 +75,49 @@ Visit the local URL provided by Vite (usually `http://localhost:5173`) in your b
 
 ## 🤝 Current Status
 This project is currently actively tailored for local testing (simulated password resets, mocked email flows) and operates specifically under VIT Vellore campus logic, but is highly extensible for production deployment.
+
+
+## RoomSync platform features and local setup
+
+The current Harbor Blue feature branch includes weighted compatibility matching, optional owner-defined room criteria, one room listing per owner, one active application or membership per student, room-specific chat access, room detail views, owner analytics and administrator overview metrics.
+
+### Updating an existing database
+
+Back up the database first. The migration adds account contact fields, custom compatibility preferences, room status and photo/view tables, and unique constraints. Review and resolve any duplicate room owners or users with multiple active requests (status applied or accepted) first; the migration contains example queries in its comments.
+
+\`\`\`bash
+mysql -u YOUR_DB_USER -p roomsync < backend/migrations/2026-11-06-platform-features.sql
+\`\`\`
+
+For a new local database, create the latest schema instead:
+
+\`\`\`bash
+mysql -u YOUR_DB_USER -p < backend/schema.sql
+\`\`\`
+
+Do not run the migration after importing the updated schema; choose the path that matches your database.
+
+### Bootstrap the administrator account
+
+The admin role is granted only by the database-backed seed script. Configure these values in the backend's private .env file or the hosting provider's secret settings. Use a unique password of at least 14 characters; do not commit .env files or share the value.
+
+\`\`\`env
+ADMIN_EMAIL=your-admin-email@example.com
+ADMIN_PASSWORD=use-a-unique-long-password
+ADMIN_NAME=RoomSync Administrator
+ADMIN_USERNAME=roomsync.admin
+\`\`\`
+
+Then run:
+
+\`\`\`bash
+cd backend
+npm install
+npm run seed:admin
+\`\`\`
+
+The administrator analytics screen is served at /admin. Both the frontend route and the /api/admin/analytics endpoint check the account role; changing browser local storage is not sufficient to grant access.
+
+### Photo storage note
+
+Room photos are currently stored in MySQL with a five-photo limit and a 4 MB per-image limit. This keeps local setup simple. Before a high-traffic production launch, move image binaries to S3 or another object store and keep only their metadata and storage keys in MySQL.

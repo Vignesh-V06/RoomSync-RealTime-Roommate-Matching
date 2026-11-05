@@ -1281,3 +1281,10 @@ select option { background: var(--bg-surface); color: var(--text-page); }
   .chat-detail-backdrop { z-index: 50; }
   .admin-container, .discover-container { width: calc(100% - 30px); }
 }
+
+/* Keep dashboard overlays anchored to the chat frame; callouts now flow below the preview card. */
+.chat-shell { position: relative; }
+.home-preview-column { min-height: 590px; padding: 18px 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
+.preview-insights { position: relative; inset: auto; left: auto; bottom: auto; transform: none; margin: 0; }
+@media (max-width: 760px) { .home-preview-column { min-height: 565px; padding: 10px 0; } }
+@media (max-width: 430px) { .home-preview-column { min-height: 625px; } }
