@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  FiArrowLeft, FiArrowRight, FiCamera, FiMail, FiMapPin, FiMessageCircle, FiMessageSquare,
+  FiArrowLeft, FiArrowRight, FiCamera, FiMail, FiMessageCircle, FiMessageSquare,
   FiPhone, FiSend, FiUser, FiX
 } from 'react-icons/fi';
 import api from '../api';
