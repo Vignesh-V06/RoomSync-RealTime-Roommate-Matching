@@ -42,8 +42,22 @@ const FindRooms = () => {
         if (!userId) {
           throw new Error('Your session could not be read. Please sign in again.');
         }
-        const { data } = await api.get('/rooms/vacant/' + userId);
-        if (active) setRooms(Array.isArray(data) ? data : []);
+        const [roomsResult, applicationsResult] = await Promise.allSettled([
+          api.get('/rooms/vacant/' + userId),
+          api.get('/rooms/my-applications')
+        ]);
+
+        if (roomsResult.status === 'rejected') throw roomsResult.reason;
+
+        const roomData = roomsResult.value.data;
+        if (active) setRooms(Array.isArray(roomData) ? roomData : []);
+
+        if (active && applicationsResult.status === 'fulfilled') {
+          const existingApplications = Array.isArray(applicationsResult.value.data)
+            ? applicationsResult.value.data
+            : [];
+          setAppliedRoomIds(new Set(existingApplications.map((application) => application.room_id)));
+        }
       } catch (err) {
         if (active) {
           const message = err.response?.data?.message
