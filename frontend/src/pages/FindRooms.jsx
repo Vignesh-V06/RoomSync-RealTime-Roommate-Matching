@@ -137,11 +137,15 @@ const FindRooms = () => {
     try {
       await api.post('/rooms/apply', { room_id: roomId });
       setAppliedRoomIds((previous) => new Set(previous).add(roomId));
+      setActiveApplication(true);
       setFeedback({ roomId, message: 'Application sent. You can track its status in your profile.', type: 'success' });
     } catch (err) {
       const message = err.response?.data?.message || 'Your application could not be sent. Please try again.';
       if (message.toLowerCase().includes('already applied')) {
         setAppliedRoomIds((previous) => new Set(previous).add(roomId));
+      }
+      if (message.toLowerCase().includes('active application') || message.toLowerCase().includes('room relationship')) {
+        setActiveApplication(true);
       }
       setFeedback({ roomId, message, type: 'error' });
     } finally {
