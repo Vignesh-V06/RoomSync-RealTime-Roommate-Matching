@@ -35,7 +35,7 @@ exports.createRoom = async (req, res) => {
 
 exports.getVacantRooms = async (req, res) => {
   try {
-    const { userId } = req.params;
+    const userId = req.user.id;
     
     // Get current user's profile
     const [userProfiles] = await pool.query('SELECT * FROM profiles WHERE user_id = ?', [userId]);
