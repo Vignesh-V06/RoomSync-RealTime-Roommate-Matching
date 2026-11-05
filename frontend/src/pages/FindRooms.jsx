@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   FiArrowRight, FiCheck, FiHome, FiRefreshCw, FiSearch,
   FiSliders, FiUsers, FiX
@@ -197,9 +198,12 @@ const FindRooms = () => {
             <h1>Find your next room.</h1>
             <p>Compare available spaces and see how well the living preferences align.</p>
           </div>
-          <div className="discover-result-count" aria-live="polite">
-            <strong>{visibleRooms.length}</strong>
-            <span>{visibleRooms.length === 1 ? 'room to explore' : 'rooms to explore'}</span>
+          <div className="discover-heading-actions">
+            <Link to="/profile" className="discover-profile-link">Edit matching profile <FiArrowRight /></Link>
+            <div className="discover-result-count" aria-live="polite">
+              <strong>{visibleRooms.length}</strong>
+              <span>{visibleRooms.length === 1 ? 'room to explore' : 'rooms to explore'}</span>
+            </div>
           </div>
         </section>
 
