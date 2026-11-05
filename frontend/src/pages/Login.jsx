@@ -20,7 +20,7 @@ const Login = () => {
       const { data } = await api.post('/auth/login', { email: email.trim(), password });
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
-      navigate('/profile', { replace: true });
+      navigate(data.user.role === 'admin' ? '/admin' : '/find-rooms', { replace: true });
     } catch (err) {
       setError(err.response?.data?.message || 'We could not sign you in. Check your details and try again.');
     } finally {

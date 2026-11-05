@@ -9,6 +9,7 @@ router.get('/vacant/:userId', authMiddleware, roomController.getVacantRooms);
 router.get('/my-groups', authMiddleware, roomController.getMyGroups);
 router.get('/my-applications', authMiddleware, roomController.getMyApplications);
 router.get('/owner/analytics', authMiddleware, roomController.getOwnerAnalytics);
+router.get('/:roomId/preview', authMiddleware, roomController.getRoomPreview);
 router.get('/requests/:ownerId', authMiddleware, requestController.getOwnerRequests);
 router.post('/apply', authMiddleware, requestController.applyRoom);
 router.post('/requests/accept', authMiddleware, requestController.acceptRequest);

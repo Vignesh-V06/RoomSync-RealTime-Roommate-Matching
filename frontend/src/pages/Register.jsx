@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FiArrowRight, FiEye, FiEyeOff, FiLock, FiMail, FiUser } from 'react-icons/fi';
+import { FiArrowRight, FiEye, FiEyeOff, FiLock, FiMail, FiPhone, FiUser } from 'react-icons/fi';
 import api from '../api';
 import AuthLayout from '../components/AuthLayout';
 
 const Register = () => {
-  const [formData, setFormData] = useState({ name: '', email: '', password: '', confirmPassword: '' });
+  const [formData, setFormData] = useState({ name: '', email: '', phone: '', password: '', confirmPassword: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -36,7 +36,8 @@ const Register = () => {
       const { data } = await api.post('/auth/register', {
         name: formData.name.trim(),
         email: formData.email.trim(),
-        password: formData.password
+        password: formData.password,
+        phone: formData.phone.trim()
       });
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
@@ -71,6 +72,14 @@ const Register = () => {
               onChange={(event) => updateField('name', event.target.value)}
               placeholder="Your name"
             />
+          </div>
+        </div>
+
+        <div className="auth-field">
+          <label htmlFor="register-phone">Phone number <span className="auth-optional">OPTIONAL</span></label>
+          <div className="auth-input-wrap">
+            <FiPhone aria-hidden="true" />
+            <input id="register-phone" type="tel" autoComplete="tel" inputMode="tel" maxLength={30} value={formData.phone} onChange={(event) => updateField('phone', event.target.value)} placeholder="+91 98765 43210" />
           </div>
         </div>
 
