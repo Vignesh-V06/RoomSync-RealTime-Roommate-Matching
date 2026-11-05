@@ -59,11 +59,6 @@ const Navbar = () => {
     return () => socket.off('new_notification', handleNewNotification);
   }, [userId, token]);
 
-  useEffect(() => {
-    setMobileOpen(false);
-    setShowNotifications(false);
-  }, [location.pathname]);
-
   const unreadCount = notifications.filter((item) => !item.is_read).length;
   const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/');
 
@@ -80,9 +75,14 @@ const Navbar = () => {
     try {
       await api.put('/notifications/read-all');
       setNotifications((previous) => previous.map((item) => ({ ...item, is_read: 1 })));
-    } catch (error) {
+    } catch {
       toast.error('Could not update notifications');
     }
+  };
+
+  const closeTransientMenus = () => {
+    setMobileOpen(false);
+    setShowNotifications(false);
   };
 
   const handleLogout = () => {
@@ -97,7 +97,7 @@ const Navbar = () => {
   return (
     <header className="app-header sticky top-0 z-50">
       <div className="app-header-inner">
-        <Link to="/" className="brand-link" aria-label="RoomSync home">
+        <Link to="/" className="brand-link" aria-label="RoomSync home" onClick={closeTransientMenus}>
           {logoFailed ? (
             <span className="brand-wordmark">RoomSync</span>
           ) : (
@@ -117,6 +117,7 @@ const Navbar = () => {
               <Link
                 key={item.to}
                 to={item.to}
+                onClick={closeTransientMenus}
                 className={'nav-link' + (isActive(item.to) ? ' nav-link-active' : '')}
                 aria-current={isActive(item.to) ? 'page' : undefined}
               >
@@ -206,6 +207,7 @@ const Navbar = () => {
               <Link
                 key={item.to}
                 to={item.to}
+                onClick={closeTransientMenus}
                 className={'mobile-nav-link' + (isActive(item.to) ? ' mobile-nav-link-active' : '')}
                 aria-current={isActive(item.to) ? 'page' : undefined}
               >
