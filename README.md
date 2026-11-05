@@ -85,15 +85,15 @@ The current Harbor Blue feature branch includes weighted compatibility matching,
 
 Back up the database first. The migration adds account contact fields, custom compatibility preferences, room status and photo/view tables, and unique constraints. Review and resolve any duplicate room owners or users with multiple active requests (status applied or accepted) first; the migration contains example queries in its comments.
 
-\`\`\`bash
+```bash
 mysql -u YOUR_DB_USER -p roomsync < backend/migrations/2026-11-06-platform-features.sql
-\`\`\`
+```
 
 For a new local database, create the latest schema instead:
 
-\`\`\`bash
+```bash
 mysql -u YOUR_DB_USER -p < backend/schema.sql
-\`\`\`
+```
 
 Do not run the migration after importing the updated schema; choose the path that matches your database.
 
@@ -101,20 +101,20 @@ Do not run the migration after importing the updated schema; choose the path tha
 
 The admin role is granted only by the database-backed seed script. Configure these values in the backend's private .env file or the hosting provider's secret settings. Use a unique password of at least 14 characters; do not commit .env files or share the value.
 
-\`\`\`env
+```env
 ADMIN_EMAIL=admin.v@gmail.com
 ADMIN_PASSWORD=use-a-unique-long-password
 ADMIN_NAME=RoomSync Administrator
 ADMIN_USERNAME=admin.v
-\`\`\`
+```
 
 Then run:
 
-\`\`\`bash
+```bash
 cd backend
 npm install
 npm run seed:admin
-\`\`\`
+```
 
 The administrator analytics screen is served at /admin. Both the frontend route and the /api/admin/analytics endpoint check the account role; changing browser local storage is not sufficient to grant access.
 

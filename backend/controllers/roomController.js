@@ -47,9 +47,9 @@ const calculateCompatibility = (userProfile, ownerProfile, customOptions) => {
   criteria.forEach(([key, label, weight]) => {
     const mine = String(userProfile[key] || '').trim();
     const theirs = String(ownerProfile[key] || '').trim();
-    if (!mine || !theirs) return;
+    if (!theirs) return;
     possible += weight;
-    if (mine.toLowerCase() === theirs.toLowerCase()) {
+    if (mine && mine.toLowerCase() === theirs.toLowerCase()) {
       earned += weight;
       matches.push(label);
     }
@@ -61,9 +61,8 @@ const calculateCompatibility = (userProfile, ownerProfile, customOptions) => {
     const perOptionWeight = 15 / options.length;
     options.forEach((option) => {
       const mine = preferences[option.key] || preferences[option.label] || '';
-      if (!String(mine).trim()) return;
       possible += perOptionWeight;
-      if (String(mine).trim().toLowerCase() === option.value.toLowerCase()) {
+      if (String(mine).trim() && String(mine).trim().toLowerCase() === option.value.toLowerCase()) {
         earned += perOptionWeight;
         matches.push(option.label);
       }
