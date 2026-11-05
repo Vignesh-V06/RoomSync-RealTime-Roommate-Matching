@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiArrowLeft, FiArrowRight, FiCheck, FiHome, FiInfo } from 'react-icons/fi';
+import { FiArrowLeft, FiArrowRight, FiCheck, FiHome, FiInfo, FiPlus, FiTrash2 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import api from '../api';
 
@@ -15,6 +15,7 @@ const initialForm = {
 const CreateRoom = () => {
   const [formData, setFormData] = useState(initialForm);
   const [submitting, setSubmitting] = useState(false);
+  const [customOptions, setCustomOptions] = useState([]);
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
@@ -53,10 +54,8 @@ const CreateRoom = () => {
         ...formData,
         block,
         total_capacity: Number(formData.total_capacity),
-        additional_requirements: [
-          'Bed Type: ' + formData.bed_type + '.',
-          formData.additional_requirements.trim()
-        ].filter(Boolean).join(' ')
+        additional_requirements: formData.additional_requirements.trim(),
+        custom_options: customOptions.filter((option) => option.label.trim() && option.value.trim())
       };
       await api.post('/rooms', payload);
       toast.success('Your room has been listed.');
@@ -172,6 +171,24 @@ const CreateRoom = () => {
                 />
                 <small className="create-character-count">{formData.additional_requirements.length}/1000</small>
               </div>
+            </section>
+
+            <section className="create-form-section create-custom-options-section">
+              <div className="create-section-heading">
+                <span className="create-section-icon"><FiPlus /></span>
+                <div><h2>Your room's match preferences</h2><p>Add optional criteria that should influence compatibility.</p></div>
+              </div>
+              <p className="create-custom-help">Examples: noise after 10 PM, guests, gaming, temperature or shared cooking. Students can add their own answers in their profile.</p>
+              <div className="create-custom-option-list">
+                {customOptions.map((option, index) => (
+                  <div className="create-custom-option-row" key={index}>
+                    <label><span>What matters?</span><input className="input-field" maxLength={40} value={option.label} placeholder="e.g. Quiet hours" onChange={(event) => setCustomOptions((items) => items.map((item, i) => i === index ? { ...item, label: event.target.value } : item))} /></label>
+                    <label><span>Your preference</span><input className="input-field" maxLength={100} value={option.value} placeholder="e.g. Quiet after 10 PM" onChange={(event) => setCustomOptions((items) => items.map((item, i) => i === index ? { ...item, value: event.target.value } : item))} /></label>
+                    <button type="button" className="create-remove-option" aria-label="Remove custom preference" onClick={() => setCustomOptions((items) => items.filter((_, i) => i !== index))}><FiTrash2 /></button>
+                  </div>
+                ))}
+              </div>
+              {customOptions.length < 8 && <button type="button" className="create-add-option" onClick={() => setCustomOptions((items) => [...items, { label: '', value: '' }])}><FiPlus /> Add a custom preference</button>}
             </section>
 
             <div className="create-form-actions">
