@@ -1,151 +1,226 @@
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useTheme } from '../context/ThemeContext';
-import { useState, useEffect } from 'react';
-import { FiBell } from 'react-icons/fi';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import {
+  FiBell, FiHome, FiLogOut, FiMenu, FiMessageCircle,
+  FiMoon, FiPlus, FiSearch, FiShield, FiSun, FiX
+} from 'react-icons/fi';
+import { useTheme } from '../context/useTheme';
 import api from '../api';
 import toast from 'react-hot-toast';
-import { initSocket, getSocket } from '../socket';
+import { disconnectSocket, initSocket } from '../socket';
+
+const readUser = () => {
+  try {
+    return JSON.parse(localStorage.getItem('user') || '{}');
+  } catch {
+    return {};
+  }
+};
+
+const navItems = [
+  { label: 'Find rooms', to: '/find-rooms', icon: FiSearch },
+  { label: 'Create room', to: '/create-room', icon: FiPlus },
+  { label: 'Owner dashboard', to: '/dashboard', icon: FiHome },
+  { label: 'Messages', to: '/chat', icon: FiMessageCircle }
+];
 
 const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const token = localStorage.getItem('token');
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const user = readUser();
+  const userId = user?.id;
+  const visibleNavItems = user?.role === 'admin' ? [...navItems, { label: 'Admin analytics', to: '/admin', icon: FiShield }] : navItems;
   const { theme, toggleTheme } = useTheme();
   const [notifications, setNotifications] = useState([]);
-  const [showDropdown, setShowDropdown] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [logoFailed, setLogoFailed] = useState(false);
 
   useEffect(() => {
-    if (user?.id) {
-      const socket = initSocket(user.id);
-      
-      const fetchNotifications = async () => {
-        try {
-          const { data } = await api.get('/notifications');
-          setNotifications(data);
-        } catch (err) {
-          console.error("Failed to load notifications", err);
-        }
-      };
-      fetchNotifications();
+    if (!userId || !token) return undefined;
 
-      socket.on('new_notification', (data) => {
-        setNotifications((prev) => [data, ...prev]);
-        toast.success(data.message, { icon: '🔔' });
-      });
+    const socket = initSocket(userId);
+    const fetchNotifications = async () => {
+      try {
+        const { data } = await api.get('/notifications');
+        setNotifications(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error('Failed to load notifications', error);
+      }
+    };
+    const handleNewNotification = (data) => {
+      setNotifications((previous) => [data, ...previous]);
+      toast.success(data.message, { icon: '🔔' });
+    };
 
-      return () => {
-        socket.off('new_notification');
-      };
-    }
-  }, [user?.id]);
+    fetchNotifications();
+    socket.on('new_notification', handleNewNotification);
+    return () => socket.off('new_notification', handleNewNotification);
+  }, [userId, token]);
 
-  const unreadCount = notifications.filter(n => !n.is_read).length;
+  const unreadCount = notifications.filter((item) => !item.is_read).length;
+  const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/');
 
   const markAsRead = async (id) => {
     try {
-      await api.put(`/notifications/${id}/read`);
-      setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: 1 } : n));
-    } catch (err) {
-      console.error(err);
+      await api.put('/notifications/' + id + '/read');
+      setNotifications((previous) => previous.map((item) => item.id === id ? { ...item, is_read: 1 } : item));
+    } catch (error) {
+      console.error('Could not mark notification as read', error);
     }
   };
 
   const markAllAsRead = async () => {
     try {
       await api.put('/notifications/read-all');
-      setNotifications(prev => prev.map(n => ({ ...n, is_read: 1 })));
-    } catch (err) {
-      console.error(err);
+      setNotifications((previous) => previous.map((item) => ({ ...item, is_read: 1 })));
+    } catch {
+      toast.error('Could not update notifications');
     }
+  };
+
+  const closeTransientMenus = () => {
+    setMobileOpen(false);
+    setShowNotifications(false);
   };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    navigate('/login');
+    disconnectSocket();
+    navigate('/login', { replace: true });
   };
 
   if (!token) return null;
 
   return (
-    <nav className="bg-white/90 dark:bg-slate-900/90 backdrop-blur border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50 transition-colors duration-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16 items-center">
-          <div className="flex-shrink-0 flex items-center">
-            <Link to="/find-rooms" className="text-2xl font-bold bg-gradient-to-r from-primary to-indigo-500 bg-clip-text text-transparent">
-              RoomSync
-            </Link>
-          </div>
-          <div className="flex items-center space-x-6">
-            <Link to="/find-rooms" className="text-slate-600 dark:text-slate-300 hover:text-primary transition-colors font-medium">Find Rooms</Link>
-            <Link to="/profile" className="text-slate-600 dark:text-slate-300 hover:text-primary transition-colors font-medium">Profile</Link>
-            <Link to="/create-room" className="text-slate-600 dark:text-slate-300 hover:text-primary transition-colors font-medium">Create Room</Link>
-            <Link to="/dashboard" className="text-slate-600 dark:text-slate-300 hover:text-primary transition-colors font-medium">Owner Dashboard</Link>
-            <Link to="/chat" className="text-slate-600 dark:text-slate-300 hover:text-primary transition-colors font-medium">Chat</Link>
-            
-            <div className="relative">
-              <button 
-                onClick={() => setShowDropdown(!showDropdown)}
-                className="p-2 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors relative"
+    <header className="app-header sticky top-0 z-50">
+      <div className="app-header-inner">
+        <Link to="/" className="brand-link" aria-label="RoomSync home" onClick={closeTransientMenus}>
+          {logoFailed ? (
+            <span className="brand-wordmark">RoomSync</span>
+          ) : (
+            <img
+              src="/roomsync-logo.webp"
+              alt="RoomSync — Find, Match, Share"
+              className="brand-logo"
+              onError={() => setLogoFailed(true)}
+            />
+          )}
+        </Link>
+
+        <nav className="desktop-navigation" aria-label="Main navigation">
+          {visibleNavItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                onClick={closeTransientMenus}
+                className={'nav-link' + (isActive(item.to) ? ' nav-link-active' : '')}
+                aria-current={isActive(item.to) ? 'page' : undefined}
               >
-                <FiBell className="w-5 h-5" />
-                {unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 flex h-3 w-3">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                  </span>
-                )}
-              </button>
+                <Icon aria-hidden="true" />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
 
-              {showDropdown && (
-                <div className="absolute right-0 mt-2 w-80 glass-panel shadow-2xl overflow-hidden animate-in slide-in-from-top-2 duration-200">
-                  <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
-                    <h3 className="font-bold text-slate-800 dark:text-white">Notifications</h3>
-                    <button onClick={markAllAsRead} className="text-xs text-primary dark:text-indigo-400 hover:underline">Mark all read</button>
-                  </div>
-                  <div className="max-h-80 overflow-y-auto">
-                    {notifications.length === 0 ? (
-                      <p className="p-6 text-center text-slate-500 text-sm">No notifications yet</p>
-                    ) : (
-                      notifications.map(n => (
-                        <div 
-                          key={n.id} 
-                          onClick={() => markAsRead(n.id)}
-                          className={`p-4 border-b border-slate-50 dark:border-slate-800 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${!n.is_read ? 'bg-indigo-50/30 dark:bg-indigo-900/10' : ''}`}
-                        >
-                          <p className={`text-sm ${!n.is_read ? 'font-semibold text-slate-800 dark:text-slate-200' : 'text-slate-600 dark:text-slate-400'}`}>
-                            {n.message}
-                          </p>
-                          <span className="text-xs text-slate-400 mt-1 block">
-                            {new Date(n.created_at).toLocaleDateString()}
-                          </span>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <button 
-              onClick={toggleTheme}
-              className="p-2 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-              title="Toggle Dark Mode"
-            >
-              {theme === 'light' ? '🌙' : '☀️'}
-            </button>
-
+        <div className="header-actions">
+          <div className="notification-wrap">
             <button
-              onClick={handleLogout}
-              className="ml-2 px-4 py-2 rounded-lg text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 transition-colors"
+              type="button"
+              className="icon-button notification-button"
+              onClick={() => setShowNotifications((shown) => !shown)}
+              aria-label={unreadCount ? 'Notifications, ' + unreadCount + ' unread' : 'Notifications'}
+              aria-expanded={showNotifications}
             >
-              Logout
+              <FiBell aria-hidden="true" />
+              {unreadCount > 0 && <span className="notification-dot" />}
+            </button>
+            {showNotifications && (
+              <section className="notification-popover" aria-label="Notifications">
+                <div className="notification-heading">
+                  <div>
+                    <strong>Notifications</strong>
+                    <span>{unreadCount ? unreadCount + ' unread' : 'You are all caught up'}</span>
+                  </div>
+                  <button type="button" className="text-action" onClick={markAllAsRead}>Mark all read</button>
+                </div>
+                <div className="notification-list">
+                  {notifications.length === 0 ? (
+                    <p className="notification-empty">Nothing new yet. Application updates will appear here.</p>
+                  ) : notifications.map((item) => (
+                    <button
+                      type="button"
+                      key={item.id}
+                      className={'notification-item' + (!item.is_read ? ' notification-unread' : '')}
+                      onClick={() => markAsRead(item.id)}
+                    >
+                      <span>{item.message}</span>
+                      <small>{item.created_at ? new Date(item.created_at).toLocaleDateString() : ''}</small>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
+
+          <button
+            type="button"
+            className="icon-button theme-button"
+            onClick={toggleTheme}
+            aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+            title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+          >
+            {theme === 'light' ? <FiMoon /> : <FiSun />}
+          </button>
+
+          <div className="user-menu">
+            <span className="user-name">{user?.name || 'Account'}</span>
+            <button type="button" className="logout-button" onClick={handleLogout}>
+              <FiLogOut aria-hidden="true" />
+              <span>Sign out</span>
             </button>
           </div>
+
+          <button
+            type="button"
+            className="icon-button mobile-menu-button"
+            onClick={() => setMobileOpen((open) => !open)}
+            aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            aria-expanded={mobileOpen}
+          >
+            {mobileOpen ? <FiX /> : <FiMenu />}
+          </button>
         </div>
       </div>
-    </nav>
+
+      {mobileOpen && (
+        <nav className="mobile-navigation" aria-label="Mobile navigation">
+          {visibleNavItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                onClick={closeTransientMenus}
+                className={'mobile-nav-link' + (isActive(item.to) ? ' mobile-nav-link-active' : '')}
+                aria-current={isActive(item.to) ? 'page' : undefined}
+              >
+                <Icon aria-hidden="true" />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+          <button type="button" className="mobile-signout" onClick={handleLogout}>
+            <FiLogOut aria-hidden="true" /> Sign out
+          </button>
+        </nav>
+      )}
+    </header>
   );
 };
 

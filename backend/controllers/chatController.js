@@ -1,62 +1,65 @@
 const pool = require('../db/config');
 const socket = require('../socket');
 
+const getRoomAccess = async (roomId, userId) => {
+  const [rooms] = await pool.query('SELECT room_id, owner_id FROM rooms WHERE room_id = ? LIMIT 1', [roomId]);
+  if (!rooms.length) return { error: 404, message: 'Room not found.' };
+  if (String(rooms[0].owner_id) === String(userId)) return { room: rooms[0] };
+  const [members] = await pool.query(
+    "SELECT request_id FROM room_requests WHERE room_id = ? AND user_id = ? AND status = 'accepted' LIMIT 1",
+    [roomId, userId]
+  );
+  if (!members.length) return { error: 403, message: 'You are not a member of this room.' };
+  return { room: rooms[0] };
+};
+
 exports.getRoomMessages = async (req, res) => {
   try {
-    const { roomId } = req.params;
-    const [messages] = await pool.query(`
-      SELECT m.*, u.name as sender_name 
-      FROM chat_messages m
-      JOIN users u ON m.sender_id = u.id
-      WHERE m.room_id = ?
-      ORDER BY m.created_at ASC
-    `, [roomId]);
-    
+    const access = await getRoomAccess(req.params.roomId, req.user.id);
+    if (access.error) return res.status(access.error).json({ message: access.message });
+
+    const [messages] = await pool.query(
+      'SELECT m.id, m.room_id, m.sender_id, m.message, m.created_at, u.name AS sender_name, COALESCE(u.username, SUBSTRING_INDEX(u.email, \"@\", 1)) AS sender_username FROM chat_messages m JOIN users u ON u.id = m.sender_id WHERE m.room_id = ? ORDER BY m.created_at ASC, m.id ASC',
+      [req.params.roomId]
+    );
     res.json(messages);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error fetching messages' });
+    console.error('Chat history failed:', error);
+    res.status(500).json({ message: 'Server error fetching messages.' });
   }
 };
 
 exports.sendMessage = async (req, res) => {
   try {
-    const { roomId } = req.params;
-    const senderId = req.user.id;
-    const { message } = req.body;
+    const message = typeof req.body.message === 'string' ? req.body.message.trim() : '';
+    if (!message || message.length > 2000) return res.status(400).json({ message: 'Message must contain 1 to 2000 characters.' });
 
-    // Check if user is authorized (owner or accepted member)
-    const [room] = await pool.query("SELECT * FROM rooms WHERE room_id = ?", [roomId]);
-    if (room.length === 0) return res.status(404).json({ message: 'Room not found' });
-    
-    const [members] = await pool.query("SELECT * FROM room_requests WHERE room_id = ? AND user_id = ? AND status = 'accepted'", [roomId, senderId]);
-    
-    if (room[0].owner_id !== senderId && members.length === 0) {
-      return res.status(403).json({ message: 'You are not a member of this room' });
-    }
+    const access = await getRoomAccess(req.params.roomId, req.user.id);
+    if (access.error) return res.status(access.error).json({ message: access.message });
 
     const [result] = await pool.query(
       'INSERT INTO chat_messages (room_id, sender_id, message) VALUES (?, ?, ?)',
-      [roomId, senderId, message]
+      [req.params.roomId, req.user.id, message]
     );
-
-    const [sender] = await pool.query("SELECT name FROM users WHERE id = ?", [senderId]);
-
+    const [senders] = await pool.query(
+      'SELECT name, COALESCE(username, SUBSTRING_INDEX(email, \"@\", 1)) AS username FROM users WHERE id = ? LIMIT 1',
+      [req.user.id]
+    );
     const newMessage = {
       id: result.insertId,
-      room_id: roomId,
-      sender_id: senderId,
-      sender_name: sender[0].name,
+      room_id: Number(req.params.roomId),
+      sender_id: req.user.id,
+      sender_name: senders[0]?.name || 'Room member',
+      sender_username: senders[0]?.username || '',
       message,
       created_at: new Date()
     };
 
     const io = socket.getIo();
-    io.to(`room_${roomId}`).emit('receive_message', newMessage);
-
+    if (io) io.to('room_' + req.params.roomId).emit('receive_message', newMessage);
     res.status(201).json(newMessage);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error sending message' });
+    console.error('Message send failed:', error);
+    res.status(500).json({ message: 'Server error sending your message.' });
   }
 };

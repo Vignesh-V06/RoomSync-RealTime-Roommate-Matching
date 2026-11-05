@@ -22,6 +22,7 @@ const Profile = () => {
   };
 
   const [formData, setFormData] = useState(defaultFormData);
+  const [customPrefRows, setCustomPrefRows] = useState([{ key: '', value: '' }]);
   useEffect(() => {
     const fetchProfileData = async () => {
       try {
@@ -31,6 +32,12 @@ const Profile = () => {
         ]);
         setProfile(profileRes.data);
         setFormData(prev => ({ ...prev, ...profileRes.data }));
+        if (!profileRes.data.user_id) {
+          setIsEditing(true);
+          toast('Complete your matching profile to get more accurate room scores.');
+        }
+        const customPrefs = profileRes.data.custom_preferences || {};
+        setCustomPrefRows([...Object.entries(customPrefs).map(([key, value]) => ({ key, value })), { key: '', value: '' }]);
         setApplications(appsRes.data);
       } catch (err) {
         if (err?.response?.status === 404) {
@@ -47,11 +54,15 @@ const Profile = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await api.post('/profiles', formData);
+      const customPreferences = Object.fromEntries(customPrefRows
+        .filter((item) => item.key.trim() && item.value.trim())
+        .slice(0, 12)
+        .map((item) => [item.key.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, ''), item.value.trim()]));
+      await api.post('/profiles', { ...formData, custom_preferences: customPreferences });
       toast.success('Profile updated successfully!');
-      setProfile({...profile, ...formData, user_name: user?.name || profile?.user_name});
+      setProfile({...profile, ...formData, custom_preferences: customPreferences, user_name: user?.name || profile?.user_name});
       setIsEditing(false);
-    } catch (err) {
+    } catch {
       toast.error('Failed to update profile');
     }
   };
@@ -62,7 +73,7 @@ const Profile = () => {
   const name = profile?.user_name || user?.name || 'New User';
 
   return (
-    <div className="max-w-6xl mx-auto p-4 md:p-6 mt-4">
+    <div className="profile-page max-w-6xl mx-auto p-4 md:p-6 mt-4">
       <div className="flex flex-col md:flex-row gap-8">
         
         {/* LEFT SIDEBAR (GitHub Style) */}
@@ -74,7 +85,8 @@ const Profile = () => {
             </div>
             
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white mt-6 text-center md:text-left">{name}</h1>
-            <p className="text-slate-500 dark:text-slate-400 text-sm text-center md:text-left mb-4">@{name.toLowerCase().replace(/\s/g, '')}</p>
+            <p className="text-slate-500 dark:text-slate-400 text-sm text-center md:text-left mb-2">@{profile?.username || user?.username || name.toLowerCase().replace(/\s/g, '')}</p>
+            <div className="profile-contact-summary"><span>{profile?.user_email || user?.email || 'Email not added'}</span><span>{profile?.phone || user?.phone || 'Phone not added'}</span></div>
             
             {profile?.bio && <p className="text-slate-700 dark:text-slate-300 mb-6 text-sm">{profile.bio}</p>}
 
@@ -229,6 +241,18 @@ const Profile = () => {
                     </div>
                   </div>
                 </div>
+
+                <section className="space-y-4 pt-6">
+                  <div><h3 className="text-lg font-semibold border-b border-slate-100 dark:border-slate-700 pb-2">My custom living preferences</h3><p className="text-sm text-slate-500 mt-2">Add answers to room-specific questions. Matching answers can improve your compatibility score.</p></div>
+                  {customPrefRows.map((item, index) => (
+                    <div className="profile-custom-pref-row" key={index}>
+                      <label><span>Preference name</span><input className="input-field" maxLength={40} value={item.key} placeholder="e.g. Quiet hours" onChange={(event) => setCustomPrefRows((rows) => rows.map((row, i) => i === index ? { ...row, key: event.target.value } : row))} /></label>
+                      <label><span>My answer</span><input className="input-field" maxLength={100} value={item.value} placeholder="e.g. Quiet after 11 PM" onChange={(event) => setCustomPrefRows((rows) => rows.map((row, i) => i === index ? { ...row, value: event.target.value } : row))} /></label>
+                      {customPrefRows.length > 1 && <button type="button" className="profile-remove-pref" onClick={() => setCustomPrefRows((rows) => rows.filter((_, i) => i !== index))} aria-label="Remove preference">×</button>}
+                    </div>
+                  ))}
+                  {customPrefRows.length < 12 && <button type="button" className="profile-add-pref" onClick={() => setCustomPrefRows((rows) => [...rows, { key: '', value: '' }])}>+ Add another preference</button>}
+                </section>
 
                 <div className="flex gap-4 pt-4">
                   <button type="submit" className="btn-primary flex-1">Save Changes</button>

@@ -1,94 +1,218 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FiArrowLeft, FiArrowRight, FiCheck, FiHome, FiInfo, FiPlus, FiTrash2 } from 'react-icons/fi';
+import toast from 'react-hot-toast';
 import api from '../api';
 
+const initialForm = {
+  block: '',
+  room_type: '2-sharing',
+  bed_type: 'Normal Bed',
+  total_capacity: 2,
+  additional_requirements: ''
+};
+
 const CreateRoom = () => {
-  const [formData, setFormData] = useState({
-    room_type: '2-sharing',
-    bed_type: 'Normal Bed',
-    total_capacity: 2,
-    additional_requirements: ''
-  });
-  const [message, setMessage] = useState('');
+  const [formData, setFormData] = useState(initialForm);
+  const [submitting, setSubmitting] = useState(false);
+  const [customOptions, setCustomOptions] = useState([]);
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const updateField = (field, value) => {
+    setFormData((current) => ({ ...current, [field]: value }));
+    setError('');
+  };
+
+  const handleRoomTypeChange = (value) => {
+    const inferredCapacity = Number(value.split('-')[0]) || 2;
+    setFormData((current) => ({
+      ...current,
+      room_type: value,
+      total_capacity: inferredCapacity
+    }));
+    setError('');
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setError('');
+
+    const block = formData.block.trim();
+    if (!block) {
+      setError('Enter the hostel block so students can identify the room.');
+      return;
+    }
+    if (!Number.isInteger(Number(formData.total_capacity)) || Number(formData.total_capacity) < 1 || Number(formData.total_capacity) > 4) {
+      setError('Room capacity must be between 1 and 4.');
+      return;
+    }
+
+    setSubmitting(true);
     try {
       const payload = {
         ...formData,
-        additional_requirements: `Bed Type: ${formData.bed_type}. ${formData.additional_requirements}`
+        block,
+        total_capacity: Number(formData.total_capacity),
+        additional_requirements: formData.additional_requirements.trim(),
+        custom_options: customOptions.filter((option) => option.label.trim() && option.value.trim())
       };
       await api.post('/rooms', payload);
-      setMessage('Room created successfully! Redirecting...');
-      setTimeout(() => navigate('/dashboard'), 1500);
+      toast.success('Your room has been listed.');
+      navigate('/dashboard', { replace: true });
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to create room');
+      const message = err.response?.data?.message || 'We could not list your room. Please try again.';
+      setError(message);
+      toast.error(message);
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-6 mt-8">
-      <div className="glass-panel p-8">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-indigo-500 bg-clip-text text-transparent mb-6">Create a Room</h1>
-        <p className="text-slate-600 mb-8">List your room so other compatible students can apply to be your roommate.</p>
-        
-        {message && <div className="bg-green-50 text-green-700 p-3 rounded-lg mb-6 text-sm">{message}</div>}
-        {error && <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-6 text-sm">{error}</div>}
+    <div className="create-room-page">
+      <div className="create-room-container">
+        <button type="button" className="create-back-link" onClick={() => navigate('/dashboard')}>
+          <FiArrowLeft /> Back to owner dashboard
+        </button>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Hostel Block</label>
-            <input 
-              type="text" 
-              required
-              className="input-field" 
-              value={formData.block} 
-              onChange={e => setFormData({...formData, block: e.target.value})}
-              placeholder="e.g. Block A, Block B"
-            />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Room Type</label>
-              <select className="input-field" value={formData.room_type} onChange={e => setFormData({...formData, room_type: e.target.value})}>
-                <option value="1-sharing">1-sharing</option>
-                <option value="2-sharing">2-sharing</option>
-                <option value="3-sharing">3-sharing</option>
-                <option value="4-sharing">4-sharing</option>
-              </select>
+        <div className="create-room-heading">
+          <span className="discover-eyebrow"><span /> ROOM LISTING</span>
+          <h1>Make room for a good match.</h1>
+          <p>Share the basic details of your room. Compatible students can discover it and send an application.</p>
+        </div>
+
+        <div className="create-room-layout">
+          <form className="create-room-form surface-card" onSubmit={handleSubmit}>
+            {error && <div className="create-form-error" role="alert">{error}</div>}
+
+            <section className="create-form-section">
+              <div className="create-section-heading">
+                <span className="create-section-icon"><FiHome /></span>
+                <div>
+                  <h2>Room details</h2>
+                  <p>Help students find the right space.</p>
+                </div>
+              </div>
+
+              <div className="create-form-field">
+                <label htmlFor="room-block">Hostel block <span>Required</span></label>
+                <input
+                  id="room-block"
+                  className="input-field"
+                  type="text"
+                  maxLength={50}
+                  required
+                  autoComplete="off"
+                  value={formData.block}
+                  onChange={(event) => updateField('block', event.target.value)}
+                  placeholder="e.g. Men's Hostel · Block A"
+                />
+                <small>Use the block name students will recognize.</small>
+              </div>
+
+              <div className="create-form-grid">
+                <div className="create-form-field">
+                  <label htmlFor="room-type">Sharing type</label>
+                  <select id="room-type" className="input-field" value={formData.room_type} onChange={(event) => handleRoomTypeChange(event.target.value)}>
+                    <option value="1-sharing">1-sharing</option>
+                    <option value="2-sharing">2-sharing</option>
+                    <option value="3-sharing">3-sharing</option>
+                    <option value="4-sharing">4-sharing</option>
+                  </select>
+                </div>
+
+                <div className="create-form-field">
+                  <label htmlFor="bed-type">Bed type</label>
+                  <select id="bed-type" className="input-field" value={formData.bed_type} onChange={(event) => updateField('bed_type', event.target.value)}>
+                    <option value="Normal Bed">Normal bed</option>
+                    <option value="Bunk Bed">Bunk bed</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="create-form-field capacity-field">
+                <label htmlFor="room-capacity">Total room capacity</label>
+                <div className="capacity-input-wrap">
+                  <input
+                    id="room-capacity"
+                    className="input-field"
+                    type="number"
+                    min="1"
+                    max="4"
+                    step="1"
+                    required
+                    value={formData.total_capacity}
+                    onChange={(event) => updateField('total_capacity', event.target.value)}
+                  />
+                  <span>people total</span>
+                </div>
+                <small>Set the total number of people the room can accommodate, including you.</small>
+              </div>
+            </section>
+
+            <section className="create-form-section create-form-section-last">
+              <div className="create-section-heading">
+                <span className="create-section-icon"><FiInfo /></span>
+                <div>
+                  <h2>Roommate notes</h2>
+                  <p>Anything else students should know?</p>
+                </div>
+              </div>
+              <div className="create-form-field">
+                <label htmlFor="room-notes">Additional requirements <span>Optional</span></label>
+                <textarea
+                  id="room-notes"
+                  className="input-field create-room-textarea"
+                  maxLength={1000}
+                  value={formData.additional_requirements}
+                  onChange={(event) => updateField('additional_requirements', event.target.value)}
+                  placeholder="Share relevant preferences or details about the room…"
+                />
+                <small className="create-character-count">{formData.additional_requirements.length}/1000</small>
+              </div>
+            </section>
+
+            <section className="create-form-section create-custom-options-section">
+              <div className="create-section-heading">
+                <span className="create-section-icon"><FiPlus /></span>
+                <div><h2>Your room's match preferences</h2><p>Add optional criteria that should influence compatibility.</p></div>
+              </div>
+              <p className="create-custom-help">Examples: noise after 10 PM, guests, gaming, temperature or shared cooking. Students can add their own answers in their profile.</p>
+              <div className="create-custom-option-list">
+                {customOptions.map((option, index) => (
+                  <div className="create-custom-option-row" key={index}>
+                    <label><span>What matters?</span><input className="input-field" maxLength={40} value={option.label} placeholder="e.g. Quiet hours" onChange={(event) => setCustomOptions((items) => items.map((item, i) => i === index ? { ...item, label: event.target.value } : item))} /></label>
+                    <label><span>Your preference</span><input className="input-field" maxLength={100} value={option.value} placeholder="e.g. Quiet after 10 PM" onChange={(event) => setCustomOptions((items) => items.map((item, i) => i === index ? { ...item, value: event.target.value } : item))} /></label>
+                    <button type="button" className="create-remove-option" aria-label="Remove custom preference" onClick={() => setCustomOptions((items) => items.filter((_, i) => i !== index))}><FiTrash2 /></button>
+                  </div>
+                ))}
+              </div>
+              {customOptions.length < 8 && <button type="button" className="create-add-option" onClick={() => setCustomOptions((items) => [...items, { label: '', value: '' }])}><FiPlus /> Add a custom preference</button>}
+            </section>
+
+            <div className="create-form-actions">
+              <button type="button" className="btn-secondary" onClick={() => navigate('/dashboard')} disabled={submitting}>Cancel</button>
+              <button type="submit" className="btn-primary" disabled={submitting || !formData.block.trim()}>
+                {submitting ? 'Listing room…' : 'List your room'}
+                {!submitting && <FiArrowRight />}
+              </button>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Bed Type</label>
-              <select className="input-field" value={formData.bed_type} onChange={e => setFormData({...formData, bed_type: e.target.value})}>
-                <option value="Normal Bed">Normal Bed</option>
-                <option value="Bunk Bed">Bunk Bed</option>
-              </select>
+          </form>
+
+          <aside className="create-room-aside">
+            <div className="create-aside-card">
+              <span className="create-aside-number">01</span>
+              <h3>Good details make better matches.</h3>
+              <p>Students compare the room information alongside lifestyle compatibility from their profiles.</p>
+              <div className="create-aside-divider" />
+              <div className="create-aside-check"><FiCheck /><span>Clear room information</span></div>
+              <div className="create-aside-check"><FiCheck /><span>Sharing and bed details</span></div>
+              <div className="create-aside-check"><FiCheck /><span>Roommate expectations</span></div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Total Capacity</label>
-              <input 
-                type="number" 
-                min="1" max="4" 
-                required
-                className="input-field" 
-                value={formData.total_capacity} 
-                onChange={e => setFormData({...formData, total_capacity: parseInt(e.target.value)})}
-              />
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Additional Requirements (Optional)</label>
-            <textarea 
-              className="input-field min-h-[100px]" 
-              value={formData.additional_requirements} 
-              onChange={e => setFormData({...formData, additional_requirements: e.target.value})}
-              placeholder="Any specific preferences you have for a roommate..."
-            ></textarea>
-          </div>
-          <button type="submit" className="btn-primary w-full">List Your Room</button>
-        </form>
+            <p className="create-aside-note">You can review incoming applications from your owner dashboard.</p>
+          </aside>
+        </div>
       </div>
     </div>
   );

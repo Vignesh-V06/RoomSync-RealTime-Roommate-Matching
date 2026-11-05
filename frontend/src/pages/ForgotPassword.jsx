@@ -1,91 +1,94 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { FiArrowRight, FiAlertTriangle, FiLock, FiMail } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import api from '../api';
+import AuthLayout from '../components/AuthLayout';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!email || !newPassword) {
-      return toast.error("Please fill in all fields");
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setError('');
+    if (newPassword.length < 8) {
+      setError('Use a password with at least 8 characters.');
+      return;
     }
 
+    setLoading(true);
     try {
-      setLoading(true);
-      await api.post('/auth/reset-password-direct', { email, newPassword });
-      toast.success('Password updated successfully! You can now log in.');
-      navigate('/login');
+      await api.post('/auth/reset-password-direct', { email: email.trim(), newPassword });
+      toast.success('Password updated. You can now sign in.');
+      navigate('/login', { replace: true });
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to update password');
+      setError(err.response?.data?.message || 'We could not update the password. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
-      <div className="glass-panel w-full max-w-md p-8 shadow-2xl">
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-extrabold bg-gradient-to-r from-primary to-indigo-500 bg-clip-text text-transparent mb-2">
-            Reset Password
-          </h2>
-          <p className="text-slate-500 dark:text-slate-400">
-            Set a new password for your account instantly.
-          </p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Registered Email</label>
-            <input 
-              type="email" 
-              className="input-field shadow-sm"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">New Password</label>
-            <input 
-              type="password" 
-              className="input-field shadow-sm"
-              placeholder="Enter robust new password..."
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              required
-            />
-          </div>
-
-          <button 
-            type="submit" 
-            disabled={loading}
-            className="w-full py-3 px-4 bg-gradient-to-r from-primary to-indigo-600 hover:from-indigo-600 hover:to-primary text-white font-bold rounded-xl shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:-translate-y-0.5 transition-all disabled:opacity-70 flex justify-center items-center"
-          >
-            {loading ? (
-              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-            ) : "Update Password"}
-          </button>
-        </form>
-
-        <p className="mt-8 text-center text-sm text-slate-500">
-          Remembered your password?{' '}
-          <Link to="/login" className="font-semibold text-primary hover:text-indigo-500 hover:underline">
-            Back to Login
-          </Link>
+    <AuthLayout
+      title="Reset your password."
+      description="Update the password associated with your RoomSync account."
+      footer={<>Back to your account? <Link to="/login">Sign in</Link></>}
+    >
+      <div className="auth-security-notice" id="reset-security-note">
+        <FiAlertTriangle aria-hidden="true" />
+        <p>
+          <strong>Development reset flow</strong>
+          <span>A verified email or OTP reset flow is not configured yet. The legacy email-only password-reset endpoint is disabled by default to protect accounts.</span>
         </p>
       </div>
-    </div>
+
+      <form onSubmit={handleSubmit} className="auth-form" noValidate aria-describedby="reset-security-note">
+        {error && <div className="auth-error" role="alert">{error}</div>}
+
+        <div className="auth-field">
+          <label htmlFor="reset-email">Registered email address</label>
+          <div className="auth-input-wrap">
+            <FiMail aria-hidden="true" />
+            <input
+              id="reset-email"
+              type="email"
+              autoComplete="email"
+              inputMode="email"
+              required
+              value={email}
+              onChange={(event) => { setEmail(event.target.value); setError(''); }}
+              placeholder="you@example.com"
+            />
+          </div>
+        </div>
+
+        <div className="auth-field">
+          <label htmlFor="reset-new-password">New password</label>
+          <div className="auth-input-wrap">
+            <FiLock aria-hidden="true" />
+            <input
+              id="reset-new-password"
+              type="password"
+              autoComplete="new-password"
+              minLength={8}
+              required
+              value={newPassword}
+              onChange={(event) => { setNewPassword(event.target.value); setError(''); }}
+              placeholder="At least 8 characters"
+            />
+          </div>
+        </div>
+
+        <button type="submit" className="auth-submit" disabled={loading || !email.trim() || !newPassword}>
+          <span>{loading ? 'Updating password…' : 'Update password'}</span>
+          {!loading && <FiArrowRight aria-hidden="true" />}
+        </button>
+      </form>
+    </AuthLayout>
   );
 };
 
