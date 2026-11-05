@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   FiArrowLeft, FiArrowRight, FiMessageCircle, FiMessageSquare,
-  FiSend, FiUsers
+  FiSend
 } from 'react-icons/fi';
 import api from '../api';
 import { initSocket } from '../socket';
