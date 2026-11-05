@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  FiArrowLeft, FiArrowRight, FiMessageCircle, FiMessageSquare,
-  FiSend
+  FiArrowLeft, FiArrowRight, FiCamera, FiMail, FiMapPin, FiMessageCircle, FiMessageSquare,
+  FiPhone, FiSend, FiUser, FiX
 } from 'react-icons/fi';
 import api from '../api';
 import { initSocket } from '../socket';
@@ -30,6 +30,11 @@ const ChatDashboard = () => {
   const messagesEndRef = useRef(null);
   const activeRoomRef = useRef(null);
   const [socket, setSocket] = useState(null);
+  const [roomDetails, setRoomDetails] = useState(null);
+  const [roomPanelOpen, setRoomPanelOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photoError, setPhotoError] = useState('');
   const sendLockRef = useRef(false);
 
   useEffect(() => {
@@ -75,6 +80,18 @@ const ChatDashboard = () => {
     let active = true;
     setMessages([]);
     setMessagesError('');
+    setRoomDetails(null);
+    setRoomPanelOpen(false);
+    setSelectedMember(null);
+
+    const fetchRoomDetails = async () => {
+      try {
+        const { data } = await api.get('/rooms/' + activeRoom.room_id + '/details');
+        if (active) setRoomDetails(data);
+      } catch (err) {
+        if (active) setMessagesError(err.response?.data?.message || 'Room details could not be loaded.');
+      }
+    };
 
     const fetchMessages = async () => {
       try {
@@ -86,6 +103,7 @@ const ChatDashboard = () => {
     };
 
     fetchMessages();
+    fetchRoomDetails();
     return () => { active = false; };
   }, [activeRoom]);
 
@@ -132,6 +150,49 @@ const ChatDashboard = () => {
   const selectRoom = (room) => {
     setActiveRoom(room);
     setMobileChatOpen(true);
+  };
+
+  const openMember = (memberId) => {
+    const member = (roomDetails?.members || []).find((item) => String(item.id) === String(memberId));
+    if (member) {
+      setSelectedMember(member);
+      setRoomPanelOpen(true);
+    }
+  };
+
+  const handlePhotoUpload = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file || !activeRoom) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      setPhotoError('Choose a JPG, PNG or WebP image.');
+      return;
+    }
+    if (file.size > 4 * 1024 * 1024) {
+      setPhotoError('Each photo must be smaller than 4 MB.');
+      return;
+    }
+    setUploadingPhoto(true);
+    setPhotoError('');
+    try {
+      const dataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.onerror = () => reject(new Error('The selected photo could not be read.'));
+        reader.readAsDataURL(file);
+      });
+      await api.post('/rooms/' + activeRoom.room_id + '/images', {
+        original_name: file.name,
+        mime_type: file.type,
+        data_base64: dataUrl
+      });
+      const { data } = await api.get('/rooms/' + activeRoom.room_id + '/details');
+      setRoomDetails(data);
+    } catch (err) {
+      setPhotoError(err.response?.data?.message || err.message || 'Photo upload failed.');
+    } finally {
+      setUploadingPhoto(false);
+    }
   };
 
   const handleSend = async (event) => {
@@ -240,7 +301,9 @@ const ChatDashboard = () => {
               <header className="chat-conversation-header">
                 <button type="button" className="chat-mobile-back" onClick={() => setMobileChatOpen(false)} aria-label="Back to conversations"><FiArrowLeft /></button>
                 <span className="chat-room-avatar">{(activeRoom.block || 'R').charAt(0).toUpperCase()}</span>
-                <div><h2>{activeRoom.block || 'Room conversation'}</h2><p>{activeRoom.room_type} · Room members</p></div>
+                <button type="button" className="chat-room-title-button" onClick={() => { setSelectedMember(null); setRoomPanelOpen(true); }}>
+                  <h2>{activeRoom.block || 'Room conversation'}</h2><p>{activeRoom.room_type} · Room details</p>
+                </button>
               </header>
 
               <div className="chat-message-list">
@@ -252,7 +315,7 @@ const ChatDashboard = () => {
                     const mine = String(message.sender_id) === String(user.id);
                     return (
                       <div className={'chat-message-row' + (mine ? ' chat-message-mine' : '')} key={message.id}>
-                        {!mine && <span className="chat-message-sender">{message.sender_name || 'Room member'}</span>}
+                        {!mine && <button type="button" className="chat-message-sender chat-member-trigger" onClick={() => openMember(message.sender_id)}>{message.sender_name || 'Room member'}</button>}
                         <div className={'chat-message-bubble' + (mine ? ' chat-message-bubble-mine' : '')}>
                           <p>{message.message}</p>
                         </div>
@@ -284,6 +347,73 @@ const ChatDashboard = () => {
             </>
           )}
         </section>
+
+        {roomPanelOpen && activeRoom && (
+          <div className="chat-detail-backdrop" role="presentation" onClick={() => { setRoomPanelOpen(false); setSelectedMember(null); }}>
+            <aside className="chat-detail-panel" role="dialog" aria-modal="true" aria-label={selectedMember ? 'Room member details' : 'Room details'} onClick={(event) => event.stopPropagation()}>
+              <header className="chat-detail-header">
+                <div><span className="section-kicker">{selectedMember ? 'ROOM MEMBER' : 'ROOM INFORMATION'}</span><h2>{selectedMember ? selectedMember.name : (roomDetails?.room?.block || activeRoom.block)}</h2></div>
+                <button type="button" className="chat-detail-close" aria-label="Close details" onClick={() => { setRoomPanelOpen(false); setSelectedMember(null); }}><FiX /></button>
+              </header>
+              {selectedMember ? (
+                <div className="chat-member-card">
+                  <div className="chat-member-avatar"><FiUser /></div>
+                  <h3>{selectedMember.name}</h3>
+                  <p className="chat-member-username">@{selectedMember.username || 'username unavailable'}</p>
+                  <div className="chat-member-detail"><FiMail /><span>{selectedMember.email || 'Email not available'}</span></div>
+                  <div className="chat-member-detail"><FiPhone /><span>{selectedMember.phone || 'Phone number not added'}</span></div>
+                  <button type="button" className="chat-detail-back-button" onClick={() => setSelectedMember(null)}>Back to room details</button>
+                </div>
+              ) : (
+                <div className="chat-room-details-body">
+                  {roomDetails?.room ? (
+                    <>
+                      <div className="chat-room-detail-grid">
+                        <div><span>Hostel block</span><strong>{roomDetails.room.block}</strong></div>
+                        <div><span>Sharing type</span><strong>{roomDetails.room.room_type}</strong></div>
+                        <div><span>Bed type</span><strong>{roomDetails.room.bed_type || 'Not specified'}</strong></div>
+                        <div><span>Occupancy</span><strong>{roomDetails.room.current_occupancy} / {roomDetails.room.total_capacity}</strong></div>
+                        <div><span>Listing status</span><strong>{roomDetails.room.status}</strong></div>
+                        <div><span>Room owner</span><strong>{roomDetails.room.owner_name}</strong></div>
+                      </div>
+                      {roomDetails.room.additional_requirements && <div className="chat-room-notes"><span>Room notes</span><p>{roomDetails.room.additional_requirements}</p></div>}
+                      {(roomDetails.room.custom_options || []).length > 0 && (
+                        <div className="chat-room-custom-list"><span>Room preferences</span>
+                          {roomDetails.room.custom_options.map((item) => <div key={item.key}><strong>{item.label}</strong><small>{item.value}</small></div>)}
+                        </div>
+                      )}
+                      <section className="chat-room-gallery-section">
+                        <div className="chat-detail-section-heading"><h3>Room photos</h3><span>{(roomDetails.images || []).length}/5</span></div>
+                        {(roomDetails.images || []).length > 0 ? (
+                          <div className="chat-room-gallery">
+                            {roomDetails.images.map((photo) => <img key={photo.id} src={(api.defaults.baseURL || '/api') + '/rooms/' + activeRoom.room_id + '/images/' + photo.id} alt={photo.original_name || 'Room interior'} loading="lazy" />)}
+                          </div>
+                        ) : <p className="chat-room-gallery-empty">The owner has not added room photos yet.</p>}
+                        {String(roomDetails.room.owner_id) === String(user.id) && (roomDetails.images || []).length < 5 && (
+                          <label className="chat-upload-photo-button">
+                            <FiCamera /> {uploadingPhoto ? 'Uploading photo…' : 'Upload room photo'}
+                            <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handlePhotoUpload} disabled={uploadingPhoto} />
+                          </label>
+                        )}
+                        {photoError && <p className="chat-inline-error" role="alert">{photoError}</p>}
+                      </section>
+                      <section className="chat-room-members-section">
+                        <div className="chat-detail-section-heading"><h3>Room members</h3><span>{(roomDetails.members || []).length}</span></div>
+                        {(roomDetails.members || []).map((member) => (
+                          <button type="button" className="chat-detail-member-row" key={member.id} onClick={() => setSelectedMember(member)}>
+                            <span className="chat-detail-member-avatar">{(member.name || 'U').charAt(0).toUpperCase()}</span>
+                            <span><strong>{member.name}</strong><small>@{member.username || 'member'}{Number(member.is_owner) === 1 ? ' · Owner' : ''}</small></span>
+                            <FiArrowRight />
+                          </button>
+                        ))}
+                      </section>
+                    </>
+                  ) : <p className="chat-sidebar-state">Loading room details…</p>}
+                </div>
+              )}
+            </aside>
+          </div>
+        )}
       </div>
     </div>
   );
