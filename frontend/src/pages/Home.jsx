@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  FiArrowUpRight, FiCheck, FiCompass, FiMessageCircle,
-  FiMoon, FiSun, FiUsers
+  FiArrowUpRight, FiCheck, FiCompass, FiMessageCircle, FiUsers
 } from 'react-icons/fi';
 
 const factors = [
