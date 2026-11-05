@@ -135,14 +135,6 @@ exports.getVacantRooms = async (req, res) => {
       [userId]
     );
 
-    const roomIds = rooms.map((room) => room.room_id);
-    if (roomIds.length) {
-      const values = roomIds.map((roomId) => [roomId, userId]);
-      await pool.query(
-        'INSERT INTO room_views (room_id, viewer_id) VALUES ? ON DUPLICATE KEY UPDATE view_count = view_count + 1, last_viewed_at = CURRENT_TIMESTAMP',
-        [values]
-      );
-    }
 
     const result = rooms.map((room) => {
       const ownerProfile = {
@@ -177,6 +169,36 @@ exports.getVacantRooms = async (req, res) => {
   } catch (error) {
     console.error('Room discovery failed:', error);
     res.status(500).json({ message: 'Server error fetching vacant rooms.' });
+  }
+};
+
+
+exports.getRoomPreview = async (req, res) => {
+  try {
+    const roomId = Number(req.params.roomId);
+    if (!Number.isInteger(roomId) || roomId < 1) return res.status(400).json({ message: 'Invalid room.' });
+    const [rooms] = await pool.query(
+      "SELECT r.*, u.name AS owner_name, COALESCE(u.username, SUBSTRING_INDEX(u.email, '@', 1)) AS owner_username FROM rooms r JOIN users u ON u.id = r.owner_id WHERE r.room_id = ? AND r.status = 'open' LIMIT 1",
+      [roomId]
+    );
+    if (!rooms.length) return res.status(404).json({ message: 'This room is no longer available.' });
+
+    const room = rooms[0];
+    if (String(room.owner_id) !== String(req.user.id)) {
+      await pool.query(
+        'INSERT INTO room_views (room_id, viewer_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE view_count = view_count + 1, last_viewed_at = CURRENT_TIMESTAMP',
+        [roomId, req.user.id]
+      );
+    }
+    const [images] = await pool.query(
+      'SELECT id, original_name, mime_type FROM room_images WHERE room_id = ? ORDER BY id ASC',
+      [roomId]
+    );
+    room.custom_options = normalizeOptions(room.custom_options);
+    res.json({ room, images });
+  } catch (error) {
+    console.error('Room preview failed:', error);
+    res.status(500).json({ message: 'Server error loading room details.' });
   }
 };
 
