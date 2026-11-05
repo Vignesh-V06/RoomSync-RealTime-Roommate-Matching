@@ -31,8 +31,20 @@ exports.register = async (req, res) => {
     const [existing] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);
     if (existing.length) return res.status(409).json({ message: 'An account with this email already exists.' });
 
-    const [taken] = await pool.query('SELECT id FROM users WHERE username = ?', [username]);
-    if (taken.length) return res.status(409).json({ message: 'That username is already taken.' });
+    if (req.body.username) {
+      const [taken] = await pool.query('SELECT id FROM users WHERE username = ?', [username]);
+      if (taken.length) return res.status(409).json({ message: 'That username is already taken.' });
+    } else {
+      const baseUsername = username.slice(0, 24);
+      let suffix = 1;
+      while (true) {
+        const candidate = suffix === 1 ? baseUsername : baseUsername + '.' + suffix;
+        const [taken] = await pool.query('SELECT id FROM users WHERE username = ? LIMIT 1', [candidate]);
+        if (!taken.length) { username = candidate; break; }
+        suffix += 1;
+        if (suffix > 9999) throw new Error('Could not create a unique username.');
+      }
+    }
 
     const hashedPassword = await bcrypt.hash(password, 12);
     const [result] = await pool.query(

@@ -178,12 +178,23 @@ exports.getRoomPreview = async (req, res) => {
     const roomId = Number(req.params.roomId);
     if (!Number.isInteger(roomId) || roomId < 1) return res.status(400).json({ message: 'Invalid room.' });
     const [rooms] = await pool.query(
-      "SELECT r.*, u.name AS owner_name, COALESCE(u.username, SUBSTRING_INDEX(u.email, '@', 1)) AS owner_username FROM rooms r JOIN users u ON u.id = r.owner_id WHERE r.room_id = ? AND r.status = 'open' LIMIT 1",
+      "SELECT r.*, u.name AS owner_name, COALESCE(u.username, SUBSTRING_INDEX(u.email, '@', 1)) AS owner_username, p.language, p.branch, p.cgpa_range, p.bed_pref, p.sleep_pref, p.study_pref, p.food_pref, p.cleanliness FROM rooms r JOIN users u ON u.id = r.owner_id LEFT JOIN profiles p ON p.user_id = r.owner_id WHERE r.room_id = ? AND r.status = 'open' LIMIT 1",
       [roomId]
     );
     if (!rooms.length) return res.status(404).json({ message: 'This room is no longer available.' });
 
     const room = rooms[0];
+    const [viewerProfiles] = await pool.query('SELECT * FROM profiles WHERE user_id = ? LIMIT 1', [req.user.id]);
+    const ownerProfile = {
+      language: room.language, branch: room.branch, cgpa_range: room.cgpa_range,
+      bed_pref: room.bed_pref, sleep_pref: room.sleep_pref, study_pref: room.study_pref,
+      food_pref: room.food_pref, cleanliness: room.cleanliness
+    };
+    const compatibility = calculateCompatibility(viewerProfiles[0] || null, ownerProfile, room.custom_options);
+    delete room.language; delete room.branch; delete room.cgpa_range; delete room.bed_pref;
+    delete room.sleep_pref; delete room.study_pref; delete room.food_pref; delete room.cleanliness;
+    room.compatibility_score = compatibility.score;
+    room.compatibility_matches = compatibility.matches;
     if (String(room.owner_id) !== String(req.user.id)) {
       await pool.query(
         'INSERT INTO room_views (room_id, viewer_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE view_count = view_count + 1, last_viewed_at = CURRENT_TIMESTAMP',
@@ -233,7 +244,7 @@ exports.getOwnerAnalytics = async (req, res) => {
   try {
     const ownerId = req.user.id;
     const [rooms] = await pool.query(
-      "SELECT r.*, (SELECT COUNT(*) FROM room_views v WHERE v.room_id = r.room_id) AS total_views, (SELECT COUNT(DISTINCT v.viewer_id) FROM room_views v WHERE v.room_id = r.room_id) AS unique_visitors, (SELECT COUNT(*) FROM room_requests q WHERE q.room_id = r.room_id) AS application_count, (SELECT COUNT(*) FROM room_requests q WHERE q.room_id = r.room_id AND q.status = 'accepted') AS accepted_count, (SELECT COUNT(*) FROM room_requests q WHERE q.room_id = r.room_id AND q.status = 'applied') AS pending_count FROM rooms r WHERE r.owner_id = ? LIMIT 1",
+      "SELECT r.*, (SELECT COALESCE(SUM(v.view_count), 0) FROM room_views v WHERE v.room_id = r.room_id) AS total_views, (SELECT COUNT(DISTINCT v.viewer_id) FROM room_views v WHERE v.room_id = r.room_id) AS unique_visitors, (SELECT COUNT(*) FROM room_requests q WHERE q.room_id = r.room_id) AS application_count, (SELECT COUNT(*) FROM room_requests q WHERE q.room_id = r.room_id AND q.status = 'accepted') AS accepted_count, (SELECT COUNT(*) FROM room_requests q WHERE q.room_id = r.room_id AND q.status = 'applied') AS pending_count FROM rooms r WHERE r.owner_id = ? LIMIT 1",
       [ownerId]
     );
     if (!rooms.length) return res.json({ room: null, rank: null, total_open_rooms: 0 });
