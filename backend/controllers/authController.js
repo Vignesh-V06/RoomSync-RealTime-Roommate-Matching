@@ -3,15 +3,16 @@ const jwt = require('jsonwebtoken');
 const pool = require('../db/config');
 
 exports.register = async (req, res) => {
-  const { name, email, password, role } = req.body;
+  const { name, email, password } = req.body;
   try {
     const [existing] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
     if (existing.length > 0) return res.status(400).json({ message: 'User already exists' });
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
-    
-    const userRole = role === 'admin' ? 'admin' : 'student';
+
+    // Public registration must never allow a caller to grant themselves elevated privileges.
+    const userRole = 'student';
 
     const [result] = await pool.query(
       'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)',
@@ -45,18 +46,23 @@ exports.login = async (req, res) => {
 };
 
 exports.directResetPassword = async (req, res) => {
+  // This legacy endpoint has no proof of email ownership. Keep it disabled unless
+  // an operator explicitly enables it for a trusted local-development environment.
+  if (process.env.ALLOW_UNVERIFIED_PASSWORD_RESET !== 'true') {
+    return res.status(501).json({
+      message: 'Password reset is unavailable until a verified email or OTP reset flow is configured.'
+    });
+  }
+
   try {
     const { email, newPassword } = req.body;
-    
-    // Find user
     const [users] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
     if (users.length === 0) return res.status(404).json({ message: 'User with this email not found' });
-    
-    // Hash new password and update
+
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
     await pool.query('UPDATE users SET password = ? WHERE email = ?', [hashedPassword, email]);
-    
+
     res.json({ message: 'Password updated successfully' });
   } catch (error) {
     console.error(error);
