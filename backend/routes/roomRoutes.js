@@ -4,17 +4,19 @@ const roomController = require('../controllers/roomController');
 const requestController = require('../controllers/requestController');
 const authMiddleware = require('../middleware/authMiddleware');
 
-// Rooms
-// Rooms
 router.post('/', authMiddleware, roomController.createRoom);
 router.get('/vacant/:userId', authMiddleware, roomController.getVacantRooms);
 router.get('/my-groups', authMiddleware, roomController.getMyGroups);
 router.get('/my-applications', authMiddleware, roomController.getMyApplications);
-
-// Requests
-router.post('/apply', authMiddleware, requestController.applyRoom);
+router.get('/owner/analytics', authMiddleware, roomController.getOwnerAnalytics);
 router.get('/requests/:ownerId', authMiddleware, requestController.getOwnerRequests);
+router.post('/apply', authMiddleware, requestController.applyRoom);
 router.post('/requests/accept', authMiddleware, requestController.acceptRequest);
 router.post('/requests/reject', authMiddleware, requestController.rejectRequest);
+
+router.get('/:roomId/details', authMiddleware, roomController.getRoomDetails);
+router.post('/:roomId/images', authMiddleware, roomController.uploadRoomImage);
+router.get('/:roomId/images/:imageId', roomController.getRoomImage);
+router.patch('/:roomId/status', authMiddleware, roomController.setRoomStatus);
 
 module.exports = router;

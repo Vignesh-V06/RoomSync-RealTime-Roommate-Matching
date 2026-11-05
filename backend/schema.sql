@@ -3,10 +3,14 @@ USE roomsync;
 
 CREATE TABLE IF NOT EXISTS users (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(100) UNIQUE NOT NULL,
-  email VARCHAR(100) UNIQUE NOT NULL,
+  name VARCHAR(100) NOT NULL,
+  username VARCHAR(40) NULL UNIQUE,
+  email VARCHAR(100) NOT NULL UNIQUE,
+  phone VARCHAR(30) NULL,
   password VARCHAR(255) NOT NULL,
-  role ENUM('student','admin') DEFAULT 'student'
+  role ENUM('student','admin') DEFAULT 'student',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  last_login_at DATETIME NULL
 );
 
 CREATE TABLE IF NOT EXISTS profiles (
@@ -24,27 +28,35 @@ CREATE TABLE IF NOT EXISTS profiles (
   study_pref VARCHAR(50),
   food_pref VARCHAR(50),
   cleanliness VARCHAR(50),
+  custom_preferences JSON NULL,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS rooms (
   room_id INT AUTO_INCREMENT PRIMARY KEY,
-  owner_id INT,
-  block VARCHAR(50),
-  room_type VARCHAR(50),
-  total_capacity INT,
+  owner_id INT NOT NULL UNIQUE,
+  block VARCHAR(50) NOT NULL,
+  room_type VARCHAR(50) NOT NULL,
+  bed_type VARCHAR(50) NOT NULL DEFAULT 'Normal Bed',
+  total_capacity INT NOT NULL,
   current_occupancy INT DEFAULT 1,
   use_custom_logic BOOLEAN DEFAULT FALSE,
   additional_requirements TEXT,
+  custom_options JSON NULL,
+  status ENUM('open','closed') NOT NULL DEFAULT 'open',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (owner_id) REFERENCES users(id)
 );
 
 CREATE TABLE IF NOT EXISTS room_requests (
   request_id INT AUTO_INCREMENT PRIMARY KEY,
-  room_id INT,
-  user_id INT,
+  room_id INT NOT NULL,
+  user_id INT NOT NULL,
   status ENUM('applied','accepted','rejected') DEFAULT 'applied',
-  UNIQUE(room_id, user_id),
+  active_user_id INT GENERATED ALWAYS AS (CASE WHEN status IN ('applied','accepted') THEN user_id ELSE NULL END) STORED,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_room_requests_room_user (room_id, user_id),
+  UNIQUE KEY uq_room_requests_one_active_per_user (active_user_id),
   FOREIGN KEY (room_id) REFERENCES rooms(room_id),
   FOREIGN KEY (user_id) REFERENCES users(id)
 );
@@ -66,4 +78,30 @@ CREATE TABLE IF NOT EXISTS chat_messages (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (room_id) REFERENCES rooms(room_id) ON DELETE CASCADE,
   FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS room_views (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  room_id INT NOT NULL,
+  viewer_id INT NOT NULL,
+  view_count INT UNSIGNED NOT NULL DEFAULT 1,
+  first_viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  last_viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_room_views_room_viewer (room_id, viewer_id),
+  INDEX idx_room_views_viewer (viewer_id),
+  FOREIGN KEY (room_id) REFERENCES rooms(room_id) ON DELETE CASCADE,
+  FOREIGN KEY (viewer_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS room_images (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  room_id INT NOT NULL,
+  uploaded_by INT NOT NULL,
+  original_name VARCHAR(120) NOT NULL,
+  mime_type VARCHAR(40) NOT NULL,
+  image_data LONGBLOB NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_room_images_room (room_id),
+  FOREIGN KEY (room_id) REFERENCES rooms(room_id) ON DELETE CASCADE,
+  FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE CASCADE
 );

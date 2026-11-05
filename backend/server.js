@@ -9,7 +9,6 @@ const configuredOrigins = (process.env.FRONTEND_ORIGINS || process.env.CLIENT_UR
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
-
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
 const corsOptions = {
@@ -25,18 +24,14 @@ const corsOptions = {
 
 const app = express();
 app.use(cors(corsOptions));
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({ limit: '8mb' }));
+app.use(express.urlencoded({ extended: false, limit: '1mb' }));
 
 const routes = require('./routes');
 app.use('/api', routes);
 
-app.get('/', (req, res) => {
-  res.json({ service: 'RoomSync API', status: 'running' });
-});
-
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok' });
-});
+app.get('/', (req, res) => res.json({ service: 'RoomSync API', status: 'running' }));
+app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
 
 const PORT = process.env.PORT || 5000;
 const server = http.createServer(app);
@@ -44,5 +39,5 @@ const socket = require('./socket');
 socket.init(server, configuredOrigins, isDevelopment);
 
 server.listen(PORT, () => {
-  console.log(`RoomSync API and Socket.IO listening on port ${PORT}`);
+  console.log('RoomSync API and Socket.IO listening on port ' + PORT);
 });
