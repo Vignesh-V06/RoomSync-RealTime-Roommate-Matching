@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { FiMoon, FiSun } from 'react-icons/fi';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../context/useTheme';
 
 const AuthLayout = ({ eyebrow = 'RoomSync · Student living', title, description, children, footer }) => {
   const { theme, toggleTheme } = useTheme();
