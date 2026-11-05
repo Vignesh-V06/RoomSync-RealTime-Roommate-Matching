@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import { FiActivity, FiCheckCircle, FiEye, FiHome, FiMessageCircle, FiRefreshCw, FiUsers } from 'react-icons/fi';
 import api from '../api';
 
-const Metric = ({ label, value, caption, icon: Icon }) => (
+const Metric = ({ label, value, caption, icon }) => (
   <article className="admin-metric-card">
-    <span className="admin-metric-icon"><Icon /></span>
+    <span className="admin-metric-icon">{icon}</span>
     <span className="admin-metric-label">{label}</span>
     <strong>{Number(value || 0).toLocaleString()}</strong>
     <small>{caption}</small>
@@ -50,17 +50,17 @@ const AdminDashboard = () => {
         <section className="admin-section">
           <h2>Accounts & engagement</h2>
           <div className="admin-metric-grid">
-            <Metric label="Total student accounts" value={users.total_users} caption={users.new_users_30d + ' new in 30 days'} icon={FiUsers} />
-            <Metric label="Active accounts" value={users.active_users_30d} caption="Logged in during last 30 days" icon={FiActivity} />
-            <Metric label="Unique room visitors" value={engagement.unique_room_visitors} caption={engagement.room_impressions + ' detail impressions'} icon={FiEye} />
-            <Metric label="Chat messages" value={engagement.total_messages} caption="Messages sent across rooms" icon={FiMessageCircle} />
+            <Metric label="Total student accounts" value={users.total_users} caption={users.new_users_30d + ' new in 30 days'} icon={<FiUsers />} />
+            <Metric label="Active accounts" value={users.active_users_30d} caption="Logged in during last 30 days" icon={<FiActivity />} />
+            <Metric label="Unique room visitors" value={engagement.unique_room_visitors} caption={engagement.room_impressions + ' detail impressions'} icon={<FiEye />} />
+            <Metric label="Chat messages" value={engagement.total_messages} caption="Messages sent across rooms" icon={<FiMessageCircle />} />
           </div>
         </section>
         <section className="admin-section">
           <h2>Marketplace health</h2>
           <div className="admin-metric-grid">
-            <Metric label="Total rooms" value={rooms.total_rooms} caption={rooms.open_rooms + ' open · ' + rooms.closed_rooms + ' closed'} icon={FiHome} />
-            <Metric label="Full rooms" value={rooms.full_rooms} caption="Listings at capacity" icon={FiCheckCircle} />
+            <Metric label="Total rooms" value={rooms.total_rooms} caption={rooms.open_rooms + ' open · ' + rooms.closed_rooms + ' closed'} icon={<FiHome />} />
+            <Metric label="Full rooms" value={rooms.full_rooms} caption="Listings at capacity" icon={<FiCheckCircle />} />
             <Metric label="Applications" value={apps.total_applications} caption={apps.pending_applications + ' waiting for review'} icon={FiUsers} />
             <Metric label="Room photos" value={engagement.room_photos} caption="Photos added by owners" icon={FiEye} />
           </div>

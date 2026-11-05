@@ -10,9 +10,9 @@ const detailItems = [
   ['Food preference', 'food_pref'], ['Cleanliness', 'cleanliness'], ['Bed preference', 'bed_pref']
 ];
 
-const Stat = ({ label, value, detail, icon: Icon }) => (
+const Stat = ({ label, value, detail, icon }) => (
   <article className="analytics-stat">
-    <span className="analytics-stat-icon"><Icon /></span>
+    <span className="analytics-stat-icon">{icon}</span>
     <span className="analytics-stat-label">{label}</span>
     <strong>{value ?? '—'}</strong>
     <small>{detail}</small>
@@ -114,10 +114,10 @@ const OwnerDashboard = () => {
             </section>
 
             <section className="owner-analytics-grid" aria-label="Room performance">
-              <Stat label="Unique visitors" value={Number(room.unique_visitors || 0).toLocaleString()} detail="Accounts that opened your listing" icon={FiUsers} />
-              <Stat label="Room impressions" value={Number(room.total_views || 0).toLocaleString()} detail="Total detail views, including returns" icon={FiEye} />
-              <Stat label="Applications" value={Number(room.application_count || 0)} detail="All applications received" icon={FiMail} />
-              <Stat label="Accepted members" value={Number(room.accepted_count || 0)} detail="Approved applications" icon={FiCheck} />
+              <Stat label="Unique visitors" value={Number(room.unique_visitors || 0).toLocaleString()} detail="Accounts that opened your listing" icon={<FiUsers />} />
+              <Stat label="Room impressions" value={Number(room.total_views || 0).toLocaleString()} detail="Total detail views, including returns" icon={<FiEye />} />
+              <Stat label="Applications" value={Number(room.application_count || 0)} detail="All applications received" icon={<FiMail />} />
+              <Stat label="Accepted members" value={Number(room.accepted_count || 0)} detail="Approved applications" icon={<FiCheck />} />
             </section>
 
             <section className="owner-ranking-panel surface-card">
