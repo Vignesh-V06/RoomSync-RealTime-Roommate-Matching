@@ -10,11 +10,8 @@ on:
       - main
 
 jobs:
-  frontend-build:
+  quality-checks:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
 
     steps:
       - name: Checkout code
@@ -28,33 +25,23 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install frontend dependencies
+        working-directory: frontend
         run: npm ci
 
       - name: Lint frontend
+        working-directory: frontend
         run: npm run lint
 
       - name: Build frontend
+        working-directory: frontend
         run: npm run build
 
-  backend-syntax:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
       - name: Install backend dependencies
+        working-directory: backend
         run: npm ci
 
       - name: Check backend JavaScript syntax
+        working-directory: backend
         run: |
           while IFS= read -r file; do
             node --check "$file"
