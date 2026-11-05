@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  FiArrowRight, FiBookOpen, FiCheck, FiMail, FiRefreshCw,
+  FiArrowRight, FiCheck, FiMail, FiRefreshCw,
   FiUsers, FiX
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
@@ -69,7 +69,7 @@ const OwnerDashboard = () => {
     }
   };
 
-  const applicantCount = useMemo(() => requests.length, [requests.length]);
+  const applicantCount = requests.length;
 
   if (loading) {
     return (
