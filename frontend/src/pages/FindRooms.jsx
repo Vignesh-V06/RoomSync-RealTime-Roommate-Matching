@@ -30,6 +30,10 @@ const FindRooms = () => {
   const [applyingRoomId, setApplyingRoomId] = useState(null);
   const [appliedRoomIds, setAppliedRoomIds] = useState(() => new Set());
   const [feedback, setFeedback] = useState({ roomId: null, message: '', type: '' });
+  const [previewRoom, setPreviewRoom] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [activeApplication, setActiveApplication] = useState(false);
+  const [ownsRoom, setOwnsRoom] = useState(false);
   const userId = readUserId();
 
   useEffect(() => {
@@ -42,12 +46,14 @@ const FindRooms = () => {
         if (!userId) {
           throw new Error('Your session could not be read. Please sign in again.');
         }
-        const [roomsResult, applicationsResult] = await Promise.allSettled([
+        const [roomsResult, applicationsResult, ownerAnalyticsResult] = await Promise.allSettled([
           api.get('/rooms/vacant/' + userId),
-          api.get('/rooms/my-applications')
+          api.get('/rooms/my-applications'),
+          api.get('/rooms/owner/analytics')
         ]);
 
         if (roomsResult.status === 'rejected') throw roomsResult.reason;
+        if (ownerAnalyticsResult.status === 'fulfilled' && active) setOwnsRoom(Boolean(ownerAnalyticsResult.value.data?.room));
 
         const roomData = roomsResult.value.data;
         if (active) setRooms(Array.isArray(roomData) ? roomData : []);
@@ -57,6 +63,7 @@ const FindRooms = () => {
             ? applicationsResult.value.data
             : [];
           setAppliedRoomIds(new Set(existingApplications.map((application) => application.room_id)));
+          setActiveApplication(existingApplications.some((application) => ['applied', 'accepted'].includes(application.status)));
         }
       } catch (err) {
         if (active) {
@@ -112,6 +119,17 @@ const FindRooms = () => {
   };
 
   const hasActiveFilters = Boolean(query.trim()) || blockFilter !== 'all' || typeFilter !== 'all' || sortOrder !== 'match';
+
+  const handlePreview = async (roomId) => {
+    setPreviewLoading(true);
+    setPreviewRoom(null);
+    try {
+      const { data } = await api.get('/rooms/' + roomId + '/preview');
+      setPreviewRoom(data);
+    } catch (err) {
+      setFeedback({ roomId, message: err.response?.data?.message || 'Room details could not be loaded.', type: 'error' });
+    } finally { setPreviewLoading(false); }
+  };
 
   const handleApply = async (roomId) => {
     setApplyingRoomId(roomId);
@@ -280,7 +298,7 @@ const FindRooms = () => {
                     <div className="room-card-title-row">
                       <div>
                         <span className="room-card-kicker">AVAILABLE ROOM</span>
-                        <h3>{room.block || 'Room listing'}</h3>
+                        <button type="button" className="room-card-title-button" onClick={() => handlePreview(room.room_id)}>{room.block || 'Room listing'}</button>
                       </div>
                       <span className="room-type-chip">{room.room_type || 'Room'}</span>
                     </div>
@@ -327,6 +345,7 @@ const FindRooms = () => {
                   </div>
 
                   <div className="room-card-actions">
+                    <button type="button" className="room-view-details-button" onClick={() => handlePreview(room.room_id)}>View room details <FiArrowRight /></button>
                     {roomFeedback && (
                       <p className={'room-apply-feedback ' + (roomFeedback.type === 'success' ? 'feedback-success' : 'feedback-error')} role="status">
                         {roomFeedback.message}
@@ -336,9 +355,9 @@ const FindRooms = () => {
                       type="button"
                       className={'room-apply-button' + (isApplied ? ' room-apply-button-done' : '')}
                       onClick={() => handleApply(room.room_id)}
-                      disabled={isApplying || isApplied || available <= 0}
+                      disabled={isApplying || isApplied || available <= 0 || activeApplication || ownsRoom}
                     >
-                      {isApplying ? 'Sending application…' : isApplied ? 'Application sent' : available <= 0 ? 'Room is full' : 'Apply for room'}
+                      {isApplying ? 'Sending application…' : isApplied ? 'Application sent' : available <= 0 ? 'Room is full' : ownsRoom ? 'Already a room owner' : activeApplication ? 'One active application allowed' : 'Apply for room'}
                       {!isApplying && !isApplied && available > 0 && <FiArrowRight />}
                       {isApplied && <FiCheck />}
                     </button>
@@ -349,6 +368,32 @@ const FindRooms = () => {
           </div>
         )}
 
+        {previewLoading && <div className="room-preview-loading" role="status">Loading room details…</div>}
+        {previewRoom && (
+          <div className="room-preview-backdrop" role="presentation" onClick={() => setPreviewRoom(null)}>
+            <section className="room-preview-modal" role="dialog" aria-modal="true" aria-label="Room details" onClick={(event) => event.stopPropagation()}>
+              <header className="room-preview-modal-header">
+                <div><span className="section-kicker">ROOM DETAILS</span><h2>{previewRoom.room.block} · {previewRoom.room.room_type}</h2><p>Hosted by {previewRoom.room.owner_name}</p></div>
+                <button type="button" aria-label="Close room details" onClick={() => setPreviewRoom(null)}><FiX /></button>
+              </header>
+              <div className="room-preview-modal-body">
+                {(previewRoom.images || []).length > 0 ? <div className="room-preview-gallery">{previewRoom.images.map((photo) => <img key={photo.id} src={(api.defaults.baseURL || '/api') + '/rooms/' + previewRoom.room.room_id + '/images/' + photo.id} alt={photo.original_name || 'Room photo'} />)}</div> : <div className="room-preview-no-image"><FiHome /><span>No room photos uploaded yet</span></div>}
+                <div className="room-preview-detail-grid">
+                  <div><span>Bed type</span><strong>{previewRoom.room.bed_type || 'Not specified'}</strong></div>
+                  <div><span>Occupancy</span><strong>{previewRoom.room.current_occupancy} / {previewRoom.room.total_capacity}</strong></div>
+                  <div><span>Availability</span><strong>{Math.max(0, Number(previewRoom.room.total_capacity) - Number(previewRoom.room.current_occupancy))} spaces</strong></div>
+                  <div><span>Owner username</span><strong>@{previewRoom.room.owner_username || 'room owner'}</strong></div>
+                </div>
+                {previewRoom.room.additional_requirements && <div className="room-preview-notes"><h3>Room notes</h3><p>{previewRoom.room.additional_requirements}</p></div>}
+                {(previewRoom.room.custom_options || []).length > 0 && <div className="room-preview-notes"><h3>Owner-defined match preferences</h3>{previewRoom.room.custom_options.map((option) => <div className="room-preview-custom-option" key={option.key}><strong>{option.label}</strong><span>{option.value}</span></div>)}</div>}
+              </div>
+              <footer className="room-preview-modal-footer">
+                <span>Compatibility: <strong>{Number(previewRoom.room.compatibility_score || 0)}%</strong></span>
+                <button type="button" className="btn-primary" onClick={() => { const id = previewRoom.room.room_id; setPreviewRoom(null); handleApply(id); }} disabled={activeApplication || ownsRoom}>Apply for this room <FiArrowRight /></button>
+              </footer>
+            </section>
+          </div>
+        )}
         <div className="discover-footnote">
           <FiUsers aria-hidden="true" />
           <p>Compatibility helps you compare preferences. Take time to talk with a potential roommate and decide what works for you.</p>
