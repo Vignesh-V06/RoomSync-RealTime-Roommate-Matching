@@ -1,27 +1,25 @@
 import { io } from 'socket.io-client';
 
-// Change URL if backend is hosted elsewhere
-const SOCKET_URL = 'http://localhost:5000';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
 
 let socket = null;
 
-export const initSocket = (userId) => {
+export const initSocket = () => {
   if (!socket) {
-    socket = io(SOCKET_URL);
-    socket.on('connect', () => {
-      if (userId) socket.emit('join_user', userId);
+    const token = localStorage.getItem('token');
+    socket = io(SOCKET_URL, {
+      auth: { token },
+      reconnection: true,
+      reconnectionAttempts: 8,
+      timeout: 10000
     });
-    // Fallback if it connects synchronously
-    if (socket.connected && userId) {
-      socket.emit('join_user', userId);
-    }
   }
   return socket;
 };
 
 export const getSocket = () => {
   if (!socket) {
-    socket = io(SOCKET_URL);
+    socket = initSocket();
   }
   return socket;
 };
