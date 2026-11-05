@@ -79,8 +79,10 @@ const Home = () => {
                 <span>Better habits. Better shared living.</span>
               </div>
             </div>
-            <div className="floating-note note-top"><FiCompass /><span>Find a space<br /><b>that fits you</b></span></div>
-            <div className="floating-note note-bottom"><FiMessageCircle /><span>Talk before<br /><b>you move in</b></span></div>
+            <div className="preview-insights">
+              <span><FiCompass /> Find a space that fits you</span>
+              <span><FiMessageCircle /> Talk before you move in</span>
+            </div>
           </div>
         </section>
 

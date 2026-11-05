@@ -31,19 +31,23 @@ const AuthLayout = ({ eyebrow = 'RoomSync · Student living', title, description
             <span className="auth-eyebrow"><i /> {eyebrow}</span>
             <h1>Shared space.<br /><span>Better fit.</span></h1>
             <p className="auth-story-copy">
-              The right roommate match is built on the little things you live with every day.
-              RoomSync helps you compare those habits before you apply.
+              A better shared space starts with the details that matter to you.
+              Compare routines, expectations and everyday preferences before you decide.
             </p>
-
+            <div className="auth-story-stat-row">
+              <div><strong>01</strong><span>Set your rhythm</span></div>
+              <div><strong>02</strong><span>Compare the fit</span></div>
+              <div><strong>03</strong><span>Meet your match</span></div>
+            </div>
             <div className="auth-factor-list">
               <div className="auth-factor-row">
-                <span>01</span><div><strong>Sleep routines</strong><small>Early starts or late nights</small></div>
+                <span>01</span><div><strong>Daily rhythm</strong><small>Early starts or late nights</small></div>
               </div>
               <div className="auth-factor-row">
-                <span>02</span><div><strong>Study preferences</strong><small>Quiet focus or shared energy</small></div>
+                <span>02</span><div><strong>Study atmosphere</strong><small>Quiet focus or shared energy</small></div>
               </div>
               <div className="auth-factor-row">
-                <span>03</span><div><strong>Everyday habits</strong><small>Food, language and more</small></div>
+                <span>03</span><div><strong>Shared expectations</strong><small>Food, language and more</small></div>
               </div>
             </div>
 

@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import {
   FiBell, FiHome, FiLogOut, FiMenu, FiMessageCircle,
-  FiMoon, FiPlus, FiSearch, FiSun, FiUser, FiX
+  FiMoon, FiPlus, FiSearch, FiShield, FiSun, FiX
 } from 'react-icons/fi';
 import { useTheme } from '../context/useTheme';
 import api from '../api';
@@ -19,7 +19,6 @@ const readUser = () => {
 
 const navItems = [
   { label: 'Find rooms', to: '/find-rooms', icon: FiSearch },
-  { label: 'My profile', to: '/profile', icon: FiUser },
   { label: 'Create room', to: '/create-room', icon: FiPlus },
   { label: 'Owner dashboard', to: '/dashboard', icon: FiHome },
   { label: 'Messages', to: '/chat', icon: FiMessageCircle }
@@ -31,6 +30,7 @@ const Navbar = () => {
   const token = localStorage.getItem('token');
   const user = readUser();
   const userId = user?.id;
+  const visibleNavItems = user?.role === 'admin' ? [...navItems, { label: 'Admin analytics', to: '/admin', icon: FiShield }] : navItems;
   const { theme, toggleTheme } = useTheme();
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -111,7 +111,7 @@ const Navbar = () => {
         </Link>
 
         <nav className="desktop-navigation" aria-label="Main navigation">
-          {navItems.map((item) => {
+          {visibleNavItems.map((item) => {
             const Icon = item.icon;
             return (
               <Link
@@ -179,7 +179,6 @@ const Navbar = () => {
           </button>
 
           <div className="user-menu">
-            <span className="user-initial" aria-hidden="true">{(user?.name || 'U').charAt(0).toUpperCase()}</span>
             <span className="user-name">{user?.name || 'Account'}</span>
             <button type="button" className="logout-button" onClick={handleLogout}>
               <FiLogOut aria-hidden="true" />
@@ -201,7 +200,7 @@ const Navbar = () => {
 
       {mobileOpen && (
         <nav className="mobile-navigation" aria-label="Mobile navigation">
-          {navItems.map((item) => {
+          {visibleNavItems.map((item) => {
             const Icon = item.icon;
             return (
               <Link
