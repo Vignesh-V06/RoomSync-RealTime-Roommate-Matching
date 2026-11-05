@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import {
-  FiBell, FiChevronDown, FiLogOut, FiMenu, FiMessageCircle,
+  FiBell, FiHome, FiLogOut, FiMenu, FiMessageCircle,
   FiMoon, FiPlus, FiSearch, FiSun, FiUser, FiX
 } from 'react-icons/fi';
 import { useTheme } from '../context/ThemeContext';
@@ -21,7 +21,7 @@ const navItems = [
   { label: 'Find rooms', to: '/find-rooms', icon: FiSearch },
   { label: 'My profile', to: '/profile', icon: FiUser },
   { label: 'Create room', to: '/create-room', icon: FiPlus },
-  { label: 'Owner dashboard', to: '/dashboard', icon: FiChevronDown },
+  { label: 'Owner dashboard', to: '/dashboard', icon: FiHome },
   { label: 'Messages', to: '/chat', icon: FiMessageCircle }
 ];
 
