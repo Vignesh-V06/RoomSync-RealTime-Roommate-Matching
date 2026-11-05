@@ -2,15 +2,7 @@ import { Link } from 'react-router-dom';
 import { FiMoon, FiSun } from 'react-icons/fi';
 import { useTheme } from '../context/ThemeContext';
 
-const AuthLayout = ({
-  eyebrow = 'RoomSync · Student living',
-  title,
-  description,
-  topLinkText,
-  topLinkTo,
-  children,
-  footer
-}) => {
+const AuthLayout = ({ eyebrow = 'RoomSync · Student living', title, description, children, footer }) => {
   const { theme, toggleTheme } = useTheme();
 
   return (
@@ -29,12 +21,7 @@ const AuthLayout = ({
           >
             {theme === 'light' ? <FiMoon /> : <FiSun />}
           </button>
-          {topLinkText && topLinkTo && (
-            <div className="auth-topbar-prompt">
-              <span>{topLinkText}</span>
-              <Link to={topLinkTo}>{topLinkTo === '/register' ? 'Create account' : 'Sign in'}</Link>
-            </div>
-          )}
+          <Link to="/" className="auth-topbar-home">Back to home</Link>
         </div>
       </header>
 
