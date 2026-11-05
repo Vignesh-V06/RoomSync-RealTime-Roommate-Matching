@@ -10,6 +10,7 @@ import OwnerDashboard from './pages/OwnerDashboard';
 import ChatDashboard from './pages/ChatDashboard';
 import ForgotPassword from './pages/ForgotPassword';
 import Home from './pages/Home';
+import AdminDashboard from './pages/AdminDashboard';
 import { ThemeProvider } from './context/ThemeContext';
 import { Toaster } from 'react-hot-toast';
 
@@ -53,6 +54,15 @@ function App() {
               } />
               <Route path="/dashboard" element={
                 <ProtectedRoute><OwnerDashboard /></ProtectedRoute>
+              } />
+              <Route path="/admin" element={
+                <ProtectedRoute>
+                  {(() => {
+                    let user = {};
+                    try { user = JSON.parse(localStorage.getItem('user') || '{}'); } catch { user = {}; }
+                    return user.role === 'admin' ? <AdminDashboard /> : <Navigate to="/find-rooms" replace />;
+                  })()}
+                </ProtectedRoute>
               } />
               <Route path="/chat" element={
                 <ProtectedRoute><ChatDashboard /></ProtectedRoute>
