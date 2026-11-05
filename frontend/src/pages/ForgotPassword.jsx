@@ -42,7 +42,7 @@ const ForgotPassword = () => {
         <FiAlertTriangle aria-hidden="true" />
         <p>
           <strong>Development reset flow</strong>
-          <span>This project currently changes a password using an email address without an email or OTP verification step. Secure verification must be added before public production use.</span>
+          <span>A verified email or OTP reset flow is not configured yet. The legacy email-only password-reset endpoint is disabled by default to protect accounts.</span>
         </p>
       </div>
 
