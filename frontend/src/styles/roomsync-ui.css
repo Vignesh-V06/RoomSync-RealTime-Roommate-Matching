@@ -1087,3 +1087,197 @@
 .profile-page .border-indigo-100 { border-color: color-mix(in srgb, var(--brand-blue) 16%, var(--border-subtle)); }
 .profile-page input, .profile-page select, .profile-page textarea { color: var(--text-page); }
 .profile-page .btn-primary, .profile-page .btn-secondary { text-decoration: none; }
+
+
+/* RoomSync refinement pass — consistent premium spacing and functional detail surfaces. */
+.brand-link { width: 196px; height: 66px; overflow: visible; }
+.brand-logo { width: 100%; height: 64px; object-fit: contain; object-position: left center; }
+.user-menu { padding-left: 14px; }
+.user-name { max-width: 180px; font-size: 13px; font-weight: 700; }
+.nav-link { font-size: 12px; padding-inline: 10px; }
+.home-preview-column { min-height: 490px; padding: 28px 18px 66px; }
+.match-preview-card { width: min(440px, 100%); }
+.preview-insights { position: absolute; z-index: 3; bottom: 0; left: 50%; width: min(440px, 100%); transform: translateX(-50%); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+.preview-insights span { min-height: 42px; padding: 9px 11px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--border-subtle); border-radius: 10px; background: var(--bg-surface); color: var(--text-muted); box-shadow: 0 7px 18px rgba(20,38,55,.06); font-size: 10px; font-weight: 700; text-align: center; }
+.preview-insights svg { width: 15px; height: 15px; flex: 0 0 auto; color: var(--brand-blue); }
+.floating-note { display: none; }
+.auth-story { min-height: 650px; }
+.auth-story-content { padding: clamp(34px, 3.8vw, 52px); }
+.auth-story h1 { margin-top: 27px; }
+.auth-story-copy { max-width: 470px; font-size: 13px; line-height: 1.75; }
+.auth-story-stat-row { margin-top: 27px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
+.auth-story-stat-row div { min-height: 63px; padding: 10px; display: grid; align-content: center; gap: 2px; border: 1px solid rgba(125,201,230,.2); border-radius: 9px; background: rgba(255,255,255,.035); }
+.auth-story-stat-row strong { color: #80CDE8; font: 800 14px "Plus Jakarta Sans",sans-serif; }
+.auth-story-stat-row span { color: #D2E0E8; font-size: 9px; }
+.auth-factor-list { margin-top: 28px; }
+.auth-factor-row { min-height: 59px; }
+.auth-optional { margin-left: 6px; color: var(--text-muted); font-size: 9px; letter-spacing: .06em; }
+.discover-select-control select, .create-form-field select, .profile-page select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 38px;
+  background-color: var(--bg-surface);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%238294A1' stroke-width='1.8' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 13px center;
+  box-shadow: 0 1px 2px rgba(20,38,55,.025);
+}
+.discover-select-control select:hover, .create-form-field select:hover, .profile-page select:hover { border-color: color-mix(in srgb, var(--brand-blue) 45%, var(--border-subtle)); }
+.discover-select-control select:focus, .create-form-field select:focus, .profile-page select:focus { outline: 0; border-color: var(--brand-blue); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-blue) 13%, transparent); }
+select option { background: var(--bg-surface); color: var(--text-page); }
+.room-card-title-button { padding: 0; border: 0; background: transparent; color: var(--text-page); font: 700 17px "Plus Jakarta Sans",sans-serif; cursor: pointer; text-align: left; }
+.room-card-title-button:hover { color: var(--brand-blue); }
+.room-card-actions { display: grid; gap: 9px; }
+.room-view-details-button { min-height: 38px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--border-subtle); border-radius: 9px; background: var(--bg-surface); color: var(--brand-blue); font-size: 11px; font-weight: 800; cursor: pointer; }
+.room-view-details-button:hover { border-color: var(--brand-blue); background: color-mix(in srgb, var(--brand-blue) 6%, var(--bg-surface)); }
+.room-preview-backdrop { position: fixed; z-index: 120; inset: 0; padding: 24px; display: flex; align-items: center; justify-content: center; background: rgba(7,17,27,.62); backdrop-filter: blur(5px); }
+.room-preview-modal { width: min(760px, 100%); max-height: min(88vh, 860px); overflow: auto; border: 1px solid var(--border-subtle); border-radius: 18px; background: var(--bg-surface); box-shadow: 0 26px 90px rgba(0,0,0,.25); }
+.room-preview-modal-header { padding: 23px 25px; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; border-bottom: 1px solid var(--border-subtle); }
+.room-preview-modal-header h2 { margin: 5px 0; color: var(--text-page); font: 700 23px "Plus Jakarta Sans",sans-serif; letter-spacing: -.04em; }
+.room-preview-modal-header p { margin: 0; color: var(--text-muted); font-size: 12px; }
+.room-preview-modal-header button, .chat-detail-close { width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--border-subtle); border-radius: 9px; background: var(--bg-page); color: var(--text-page); cursor: pointer; }
+.room-preview-modal-body { padding: 22px 25px; display: grid; gap: 20px; }
+.room-preview-gallery { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 9px; }
+.room-preview-gallery img { width: 100%; height: 155px; object-fit: cover; border-radius: 10px; background: var(--bg-soft); }
+.room-preview-no-image { min-height: 125px; display: grid; place-items: center; align-content: center; gap: 8px; border: 1px dashed var(--border-subtle); border-radius: 12px; color: var(--text-muted); font-size: 11px; }
+.room-preview-no-image svg { width: 24px; height: 24px; color: var(--brand-blue); }
+.room-preview-detail-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px; }
+.room-preview-detail-grid div { padding: 13px; display: grid; gap: 4px; border: 1px solid var(--border-subtle); border-radius: 10px; background: var(--bg-page); }
+.room-preview-detail-grid span, .room-preview-notes h3 { color: var(--text-muted); font-size: 10px; font-weight: 700; }
+.room-preview-detail-grid strong { color: var(--text-page); font-size: 12px; }
+.room-preview-notes { display: grid; gap: 8px; }
+.room-preview-notes h3 { margin: 0; text-transform: uppercase; letter-spacing: .06em; }
+.room-preview-notes p { margin: 0; color: var(--text-page); font-size: 12px; line-height: 1.7; }
+.room-preview-custom-option { padding: 10px 12px; display: flex; justify-content: space-between; gap: 12px; border: 1px solid var(--border-subtle); border-radius: 9px; }
+.room-preview-custom-option strong { font-size: 11px; }
+.room-preview-custom-option span { color: var(--text-muted); font-size: 11px; text-align: right; }
+.room-preview-modal-footer { padding: 17px 25px; display: flex; align-items: center; justify-content: space-between; gap: 15px; border-top: 1px solid var(--border-subtle); color: var(--text-muted); font-size: 12px; }
+.room-preview-modal-footer strong { color: var(--brand-blue); }
+.room-preview-loading { position: fixed; z-index: 125; top: 24px; left: 50%; transform: translateX(-50%); padding: 10px 15px; border: 1px solid var(--border-subtle); border-radius: 10px; background: var(--bg-surface); color: var(--text-page); box-shadow: var(--shadow-soft); font-size: 12px; }
+.profile-contact-summary { display: grid; gap: 4px; margin-bottom: 17px; color: var(--text-muted); font-size: 11px; overflow-wrap: anywhere; }
+.profile-custom-pref-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 12px; align-items: end; }
+.profile-custom-pref-row label, .create-custom-option-row label { display: grid; gap: 7px; color: var(--text-muted); font-size: 11px; font-weight: 700; }
+.profile-add-pref, .create-add-option { padding: 9px 0; border: 0; background: transparent; color: var(--brand-blue); font-size: 11px; font-weight: 800; cursor: pointer; }
+.profile-remove-pref, .create-remove-option { width: 38px; height: 42px; border: 1px solid var(--border-subtle); border-radius: 9px; background: var(--bg-page); color: var(--text-muted); cursor: pointer; }
+.create-custom-help { margin: 10px 0 15px; color: var(--text-muted); font-size: 11px; line-height: 1.6; }
+.create-custom-option-list { display: grid; gap: 10px; }
+.create-custom-option-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 12px; align-items: end; }
+.owner-room-overview { padding: 21px 23px; margin-bottom: 17px; display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+.owner-room-overview-copy h2 { margin: 4px 0; color: var(--text-page); font: 700 22px "Plus Jakarta Sans",sans-serif; }
+.owner-room-overview-copy h2 span { color: var(--text-muted); font-size: 13px; font-weight: 600; }
+.owner-room-overview-copy p { margin: 0; color: var(--text-muted); font-size: 11px; }
+.owner-room-status-control { display: flex; align-items: center; gap: 12px; }
+.room-status-pill { padding: 6px 9px; display: inline-flex; border-radius: 99px; font-size: 10px; font-weight: 800; text-transform: capitalize; }
+.room-status-open { background: #E5F4EC; color: #39785A; }
+.room-status-closed { background: #F8EDED; color: #9A5555; }
+.dark .room-status-open { background: #1F4437; color: #A8D5BD; }
+.dark .room-status-closed { background: #472D34; color: #E2B3BC; }
+.owner-analytics-grid, .admin-metric-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 13px; margin-bottom: 18px; }
+.analytics-stat, .admin-metric-card { min-width: 0; padding: 17px; display: grid; gap: 5px; border: 1px solid var(--border-subtle); border-radius: 13px; background: var(--bg-surface); box-shadow: 0 5px 18px rgba(20,38,55,.03); }
+.analytics-stat-icon, .admin-metric-icon { width: 34px; height: 34px; margin-bottom: 5px; display: grid; place-items: center; border-radius: 9px; background: color-mix(in srgb, var(--brand-blue) 10%, var(--bg-surface)); color: var(--brand-blue); }
+.analytics-stat-icon svg, .admin-metric-icon svg { width: 17px; height: 17px; }
+.analytics-stat-label, .admin-metric-label { color: var(--text-muted); font-size: 10px; font-weight: 700; }
+.analytics-stat strong, .admin-metric-card strong { color: var(--text-page); font: 700 26px "Plus Jakarta Sans",sans-serif; letter-spacing: -.05em; }
+.analytics-stat small, .admin-metric-card small { color: var(--text-muted); font-size: 9px; line-height: 1.5; }
+.owner-ranking-panel { padding: 20px 23px; margin-bottom: 28px; display: flex; justify-content: space-between; align-items: center; gap: 18px; }
+.owner-ranking-panel h2 { margin: 4px 0; color: var(--text-page); font: 700 23px "Plus Jakarta Sans",sans-serif; }
+.owner-ranking-panel p { max-width: 530px; margin: 0; color: var(--text-muted); font-size: 11px; line-height: 1.6; }
+.owner-ranking-number { min-width: 76px; height: 76px; display: grid; place-items: center; border-radius: 16px; background: color-mix(in srgb, var(--brand-blue) 10%, var(--bg-surface)); color: var(--brand-blue); font: 800 25px "Plus Jakarta Sans",sans-serif; }
+.owner-form-error, .admin-error { padding: 16px; margin-bottom: 18px; border: 1px solid #EBCACA; border-radius: 11px; background: #FFF5F5; color: #9E4747; font-size: 12px; }
+.dark .owner-form-error, .dark .admin-error { border-color: #674147; background: #38272B; color: #F1B5B5; }
+.owner-state-card-compact { min-height: 190px; }
+.admin-page { min-height: calc(100vh - 74px); padding: 35px 0 60px; background: var(--bg-page); }
+.admin-container { width: min(1220px, calc(100% - 48px)); margin: 0 auto; }
+.admin-heading { margin-bottom: 28px; display: flex; justify-content: space-between; align-items: flex-end; gap: 18px; }
+.admin-heading h1 { margin: 9px 0 4px; color: var(--text-page); font: 800 clamp(30px,3vw,40px) "Plus Jakarta Sans",sans-serif; letter-spacing: -.05em; }
+.admin-heading p { margin: 0; color: var(--text-muted); font-size: 12px; }
+.admin-section { margin-bottom: 23px; }
+.admin-section > h2 { margin: 0 0 12px; color: var(--text-page); font: 700 17px "Plus Jakarta Sans",sans-serif; }
+.admin-content-grid, .admin-bottom-grid { display: grid; grid-template-columns: 1.2fr .8fr; gap: 15px; margin-bottom: 16px; }
+.admin-panel { min-width: 0; padding: 20px; border: 1px solid var(--border-subtle); border-radius: 13px; background: var(--bg-surface); }
+.admin-panel-heading { margin-bottom: 18px; }
+.admin-panel-heading h2, .admin-panel h2 { margin: 4px 0 0; color: var(--text-page); font: 700 17px "Plus Jakarta Sans",sans-serif; }
+.admin-signup-chart { min-height: 180px; display: grid; grid-template-columns: repeat(7,minmax(0,1fr)); gap: 10px; align-items: end; }
+.admin-signup-bar-wrap { height: 175px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 7px; }
+.admin-signup-bar-wrap strong { color: var(--text-page); font-size: 10px; }
+.admin-signup-bar { width: min(32px,70%); height: 105px; display: flex; align-items: flex-end; overflow: hidden; border-radius: 7px 7px 3px 3px; background: var(--bg-soft); }
+.admin-signup-bar span { width: 100%; display: block; border-radius: inherit; background: linear-gradient(180deg,var(--brand-sky-solid),var(--brand-blue-solid)); }
+.admin-signup-bar-wrap small { color: var(--text-muted); font-size: 9px; }
+.admin-outcome-list { display: grid; gap: 13px; }
+.admin-outcome-list div, .admin-block-row { padding: 10px 0; display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); color: var(--text-muted); font-size: 12px; }
+.admin-outcome-list strong, .admin-block-row strong { color: var(--text-page); }
+.admin-table-scroll { overflow-x: auto; }
+.admin-table { width: 100%; border-collapse: collapse; white-space: nowrap; font-size: 11px; }
+.admin-table th { padding: 11px; background: var(--bg-page); color: var(--text-muted); text-align: left; font-size: 10px; }
+.admin-table td { padding: 13px 11px; border-bottom: 1px solid var(--border-subtle); color: var(--text-page); }
+.admin-note-panel > svg { width: 25px; height: 25px; margin-bottom: 10px; color: var(--brand-blue); }
+.admin-note-panel p, .admin-muted { color: var(--text-muted); font-size: 11px; line-height: 1.7; }
+.admin-generated-at { margin-top: 14px; color: var(--text-muted); font-size: 10px; text-align: right; }
+.admin-loading { min-height: 360px; display: grid; place-items: center; color: var(--text-muted); }
+.chat-room-title-button { padding: 4px 0; border: 0; background: transparent; text-align: left; cursor: pointer; }
+.chat-room-title-button h2 { margin: 0 0 3px; color: var(--text-page); font: 700 14px "Plus Jakarta Sans",sans-serif; }
+.chat-room-title-button p { margin: 0; color: var(--text-muted); font-size: 9px; }
+.chat-room-title-button:hover h2 { color: var(--brand-blue); }
+.chat-member-trigger { border: 0; background: transparent; cursor: pointer; }
+.chat-member-trigger:hover { color: var(--brand-blue); text-decoration: underline; }
+.chat-detail-backdrop { position: absolute; z-index: 30; inset: 0; display: flex; justify-content: flex-end; background: rgba(5,14,22,.35); }
+.chat-detail-panel { width: min(430px,100%); height: 100%; overflow: auto; border-left: 1px solid var(--border-subtle); background: var(--bg-surface); box-shadow: -18px 0 50px rgba(0,0,0,.14); }
+.chat-detail-header { padding: 20px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--border-subtle); }
+.chat-detail-header h2 { margin: 4px 0 0; color: var(--text-page); font: 700 20px "Plus Jakarta Sans",sans-serif; }
+.chat-room-details-body { padding: 18px; display: grid; gap: 20px; }
+.chat-room-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.chat-room-detail-grid div { padding: 11px; display: grid; gap: 4px; border: 1px solid var(--border-subtle); border-radius: 9px; background: var(--bg-page); }
+.chat-room-detail-grid span, .chat-room-notes > span, .chat-room-custom-list > span { color: var(--text-muted); font-size: 9px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
+.chat-room-detail-grid strong { color: var(--text-page); font-size: 11px; }
+.chat-room-notes p { margin: 6px 0 0; color: var(--text-page); font-size: 11px; line-height: 1.7; }
+.chat-room-custom-list { display: grid; gap: 8px; }
+.chat-room-custom-list > div { padding: 9px 11px; display: flex; justify-content: space-between; gap: 12px; border: 1px solid var(--border-subtle); border-radius: 8px; }
+.chat-room-custom-list strong, .chat-room-custom-list small { font-size: 10px; }
+.chat-room-custom-list small { color: var(--text-muted); text-align: right; }
+.chat-detail-section-heading { margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+.chat-detail-section-heading h3 { margin: 0; color: var(--text-page); font: 700 14px "Plus Jakarta Sans",sans-serif; }
+.chat-detail-section-heading span { color: var(--text-muted); font-size: 10px; }
+.chat-room-gallery { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+.chat-room-gallery img { width: 100%; height: 120px; object-fit: cover; border-radius: 9px; background: var(--bg-soft); }
+.chat-room-gallery-empty { color: var(--text-muted); font-size: 10px; }
+.chat-upload-photo-button { min-height: 39px; margin-top: 10px; padding: 8px 12px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--border-subtle); border-radius: 9px; color: var(--brand-blue); font-size: 10px; font-weight: 800; cursor: pointer; }
+.chat-upload-photo-button:hover { border-color: var(--brand-blue); background: color-mix(in srgb, var(--brand-blue) 6%, var(--bg-surface)); }
+.chat-upload-photo-button input { display: none; }
+.chat-detail-member-row { width: 100%; padding: 10px 0; display: flex; align-items: center; gap: 10px; border: 0; border-bottom: 1px solid var(--border-subtle); background: transparent; text-align: left; cursor: pointer; }
+.chat-detail-member-row > span:nth-child(2) { flex: 1; display: grid; gap: 2px; }
+.chat-detail-member-row strong { color: var(--text-page); font-size: 11px; }
+.chat-detail-member-row small { color: var(--text-muted); font-size: 9px; }
+.chat-detail-member-row > svg { color: var(--text-muted); }
+.chat-detail-member-avatar, .chat-member-avatar { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; background: var(--bg-soft); color: var(--brand-blue); font-weight: 800; }
+.chat-member-card { padding: 28px 20px; display: flex; flex-direction: column; align-items: center; }
+.chat-member-avatar { width: 62px; height: 62px; margin-bottom: 12px; }
+.chat-member-card h3 { margin: 0; color: var(--text-page); font: 700 18px "Plus Jakarta Sans",sans-serif; }
+.chat-member-username { margin: 4px 0 20px; color: var(--brand-blue); font-size: 11px; }
+.chat-member-detail { width: 100%; padding: 12px 0; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border-subtle); color: var(--text-page); font-size: 11px; overflow-wrap: anywhere; }
+.chat-member-detail svg { color: var(--brand-blue); flex: 0 0 auto; }
+.chat-detail-back-button { margin-top: 18px; border: 0; background: transparent; color: var(--brand-blue); font-size: 11px; font-weight: 800; cursor: pointer; }
+@media (max-width: 760px) {
+  .home-preview-column { min-height: 440px; padding: 5px 0 72px; }
+  .preview-insights { bottom: 0; }
+  .auth-story { min-height: auto; }
+  .auth-story-content { padding: 28px 24px; }
+  .auth-story-stat-row { margin-top: 18px; }
+  .auth-factor-list { margin-top: 17px; }
+  .auth-story-foot { margin-top: 18px; }
+  .owner-room-overview, .owner-room-status-control { align-items: flex-start; flex-direction: column; }
+  .owner-analytics-grid, .admin-metric-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .admin-content-grid, .admin-bottom-grid { grid-template-columns: 1fr; }
+  .room-preview-detail-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .room-preview-backdrop { padding: 12px; }
+  .room-preview-modal-footer { align-items: flex-start; flex-direction: column; }
+  .profile-custom-pref-row, .create-custom-option-row { grid-template-columns: 1fr; }
+}
+@media (max-width: 430px) {
+  .preview-insights { grid-template-columns: 1fr; }
+  .home-preview-column { min-height: 475px; }
+  .room-preview-gallery { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .chat-page { padding: 8px; }
+  .chat-detail-panel { width: min(100%, 390px); }
+  .chat-detail-backdrop { z-index: 50; }
+  .admin-container, .discover-container { width: calc(100% - 30px); }
+}
