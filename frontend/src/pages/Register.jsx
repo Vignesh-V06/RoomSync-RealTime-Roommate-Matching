@@ -1,75 +1,157 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { FiArrowRight, FiEye, FiEyeOff, FiLock, FiMail, FiUser } from 'react-icons/fi';
 import api from '../api';
+import AuthLayout from '../components/AuthLayout';
 
 const Register = () => {
-  const [formData, setFormData] = useState({ name: '', email: '', password: '', role: 'student' });
+  const [formData, setFormData] = useState({ name: '', email: '', password: '', confirmPassword: '' });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const handleRegister = async (e) => {
-    e.preventDefault();
+  const updateField = (field, value) => {
+    setFormData((current) => ({ ...current, [field]: value }));
+    setError('');
+  };
+
+  const handleRegister = async (event) => {
+    event.preventDefault();
+    setError('');
+
+    if (formData.password.length < 8) {
+      setError('Use a password with at least 8 characters.');
+      return;
+    }
+    if (formData.password !== formData.confirmPassword) {
+      setError('Your passwords do not match.');
+      return;
+    }
+
+    setLoading(true);
     try {
-      const { data } = await api.post('/auth/register', formData);
+      // Do not send a client-selected role. New accounts are students by default.
+      const { data } = await api.post('/auth/register', {
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        password: formData.password
+      });
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
-      navigate('/profile');
+      navigate('/profile', { replace: true });
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed');
+      setError(err.response?.data?.message || 'We could not create your account. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="glass-panel w-full max-w-md p-8">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-indigo-500 bg-clip-text text-transparent">Create Account</h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-2">Join RoomSync today</p>
-        </div>
-        
-        {error && <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-6 text-sm">{error}</div>}
-        
-        <form onSubmit={handleRegister} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Full Name</label>
+    <AuthLayout
+      title="Create your account."
+      description="Start with a few details. You can add your living preferences to your profile next."
+      footer={<>Already have an account? <Link to="/login">Sign in</Link></>}
+    >
+      <form onSubmit={handleRegister} className="auth-form auth-register-form" noValidate>
+        {error && <div className="auth-error" role="alert">{error}</div>}
+
+        <div className="auth-field">
+          <label htmlFor="register-name">Full name</label>
+          <div className="auth-input-wrap">
+            <FiUser aria-hidden="true" />
             <input
+              id="register-name"
               type="text"
+              autoComplete="name"
               required
-              className="input-field"
+              maxLength={100}
               value={formData.name}
-              onChange={(e) => setFormData({...formData, name: e.target.value})}
+              onChange={(event) => updateField('name', event.target.value)}
+              placeholder="Your name"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Email Address</label>
+        </div>
+
+        <div className="auth-field">
+          <label htmlFor="register-email">Email address</label>
+          <div className="auth-input-wrap">
+            <FiMail aria-hidden="true" />
             <input
+              id="register-email"
               type="email"
+              autoComplete="email"
+              inputMode="email"
               required
-              className="input-field"
               value={formData.email}
-              onChange={(e) => setFormData({...formData, email: e.target.value})}
+              onChange={(event) => updateField('email', event.target.value)}
+              placeholder="you@example.com"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Password</label>
+        </div>
+
+        <div className="auth-field">
+          <label htmlFor="register-password">Password</label>
+          <div className="auth-input-wrap">
+            <FiLock aria-hidden="true" />
             <input
-              type="password"
+              id="register-password"
+              type={showPassword ? 'text' : 'password'}
+              autoComplete="new-password"
               required
-              className="input-field"
+              minLength={8}
               value={formData.password}
-              onChange={(e) => setFormData({...formData, password: e.target.value})}
+              onChange={(event) => updateField('password', event.target.value)}
+              placeholder="At least 8 characters"
             />
+            <button
+              type="button"
+              className="auth-password-toggle"
+              onClick={() => setShowPassword((visible) => !visible)}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+            >
+              {showPassword ? <FiEyeOff /> : <FiEye />}
+            </button>
           </div>
-          <button type="submit" className="btn-primary w-full mt-4">
-            Create Account
-          </button>
-        </form>
-        
-        <p className="mt-6 text-center text-sm text-slate-600 dark:text-slate-400">
-          Already have an account haa da ? <Link to="/login" className="text-primary font-semibold hover:underline">Sign In</Link>
-        </p>
-      </div>
-    </div>
+          <small className="auth-field-hint">Use at least 8 characters.</small>
+        </div>
+
+        <div className="auth-field">
+          <label htmlFor="register-confirm-password">Confirm password</label>
+          <div className="auth-input-wrap">
+            <FiLock aria-hidden="true" />
+            <input
+              id="register-confirm-password"
+              type={showConfirmPassword ? 'text' : 'password'}
+              autoComplete="new-password"
+              required
+              value={formData.confirmPassword}
+              onChange={(event) => updateField('confirmPassword', event.target.value)}
+              placeholder="Enter your password again"
+            />
+            <button
+              type="button"
+              className="auth-password-toggle"
+              onClick={() => setShowConfirmPassword((visible) => !visible)}
+              aria-label={showConfirmPassword ? 'Hide password confirmation' : 'Show password confirmation'}
+            >
+              {showConfirmPassword ? <FiEyeOff /> : <FiEye />}
+            </button>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          className="auth-submit"
+          disabled={loading || !formData.name.trim() || !formData.email.trim() || !formData.password || !formData.confirmPassword}
+        >
+          <span>{loading ? 'Creating account…' : 'Create account'}</span>
+          {!loading && <FiArrowRight aria-hidden="true" />}
+        </button>
+        <p className="auth-consent">By creating an account, you agree to use RoomSync respectfully and provide accurate profile details.</p>
+      </form>
+    </AuthLayout>
   );
 };
 
