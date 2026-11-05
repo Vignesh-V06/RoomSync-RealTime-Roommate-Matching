@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FiSend, FiArrowLeft } from 'react-icons/fi';
 import api from '../api';
-import { initSocket, getSocket } from '../socket';
+import { initSocket } from '../socket';
 
 const RoomChat = () => {
   const { roomId } = useParams();
@@ -94,7 +94,7 @@ const RoomChat = () => {
             </button>
             <div>
               <h2 className="font-bold text-slate-800 dark:text-white">Room Chat #{roomId}</h2>
-              <p className="text-xs text-primary dark:text-indigo-400 font-medium">End-to-end communication</p>
+              <p className="text-xs text-primary dark:text-indigo-400 font-medium">Room members can coordinate here</p>
             </div>
           </div>
         </div>
