@@ -51,7 +51,7 @@ const Profile = () => {
       toast.success('Profile updated successfully!');
       setProfile({...profile, ...formData, user_name: user?.name || profile?.user_name});
       setIsEditing(false);
-    } catch (err) {
+    } catch {
       toast.error('Failed to update profile');
     }
   };
