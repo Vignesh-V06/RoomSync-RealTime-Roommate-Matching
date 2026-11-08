@@ -118,6 +118,38 @@ npm run seed:admin
 
 The administrator analytics screen is served at /admin. Both the frontend route and the /api/admin/analytics endpoint check the account role; changing browser local storage is not sufficient to grant access.
 
+
+### Verified email OTP password reset
+
+The password-reset flow sends a six-digit code through Resend. Codes are stored only as keyed hashes, expire after 10 minutes, are single-use, and are locked after five incorrect attempts. Requests are throttled per account and by source IP.
+
+For an existing database, take a backup and run this migration once:
+
+```bash
+mysql -u YOUR_DB_USER -p roomsync < backend/migrations/2026-11-08-password-reset-otp.sql
+```
+
+For a new database, the latest `backend/schema.sql` already includes the OTP table.
+
+Configure these values in your private `backend/.env` file (never commit them):
+
+```env
+RESEND_API_KEY=re_your_private_api_key
+RESEND_FROM_EMAIL=RoomSync <auth@your-verified-domain.com>
+PASSWORD_RESET_OTP_SECRET=generate-a-separate-random-32-byte-secret
+ALLOW_UNVERIFIED_PASSWORD_RESET=false
+```
+
+Create a Resend account, generate an API key, add a domain you own, and verify its DNS records before using that domain in `RESEND_FROM_EMAIL`. Resend requires at least one verified domain for sending. The API call uses Bearer authentication and the transactional email endpoint.
+
+Generate a separate OTP secret from the backend folder with Node.js:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+Restart the backend after updating `.env`. Existing sample/test accounts are not changed by this feature; password reset will only deliver to a real mailbox when that exact email exists on the account and the Resend sender is configured correctly. Check the backend logs and Resend email logs when delivery fails.
+
 ### Photo storage note
 
 Room photos are currently stored in MySQL with a five-photo limit and a 4 MB per-image limit. This keeps local setup simple. Before a high-traffic production launch, move image binaries to S3 or another object store and keep only their metadata and storage keys in MySQL.
