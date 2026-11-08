@@ -40,6 +40,10 @@ jobs:
         working-directory: backend
         run: npm ci
 
+      - name: Run backend unit tests
+        working-directory: backend
+        run: npm test
+
       - name: Check backend JavaScript syntax
         working-directory: backend
         run: |
