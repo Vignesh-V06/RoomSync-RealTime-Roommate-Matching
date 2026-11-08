@@ -1862,3 +1862,20 @@ select option { background: var(--bg-surface); color: var(--text-page); }
 .auth-input-wrap input::-ms-clear {
   display: none;
 }
+
+
+/* Application history keeps the original mailbox emoji from the earlier UI. */
+.application-history-emoji {
+  display: inline-block;
+  font-family: "Segoe UI Emoji", "Apple Color Emoji", sans-serif;
+  font-size: 22px;
+  line-height: 1;
+  transform: translateY(1px);
+}
+.application-empty-postbox {
+  display: block;
+  margin: 0 auto 16px;
+  font-family: "Segoe UI Emoji", "Apple Color Emoji", sans-serif;
+  font-size: 44px;
+  line-height: 1.2;
+}
