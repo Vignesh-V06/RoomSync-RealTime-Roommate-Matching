@@ -177,7 +177,7 @@ exports.getRoomPreview = async (req, res) => {
     const roomId = Number(req.params.roomId);
     if (!Number.isInteger(roomId) || roomId < 1) return res.status(400).json({ message: 'Invalid room.' });
     const [rooms] = await pool.query(
-      "SELECT r.*, u.name AS owner_name, COALESCE(u.username, SUBSTRING_INDEX(u.email, '@', 1)) AS owner_username, p.language, p.branch, p.cgpa_range, p.bed_pref, p.sleep_pref, p.study_pref, p.food_pref, p.cleanliness FROM rooms r JOIN users u ON u.id = r.owner_id LEFT JOIN profiles p ON p.user_id = r.owner_id WHERE r.room_id = ? AND r.status = 'open' LIMIT 1",
+      "SELECT r.*, u.name AS owner_name, p.language, p.branch, p.cgpa_range, p.bed_pref, p.sleep_pref, p.study_pref, p.food_pref, p.cleanliness FROM rooms r JOIN users u ON u.id = r.owner_id LEFT JOIN profiles p ON p.user_id = r.owner_id WHERE r.room_id = ? AND r.status = 'open' LIMIT 1",
       [roomId]
     );
     if (!rooms.length) return res.status(404).json({ message: 'This room is no longer available.' });
