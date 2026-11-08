@@ -93,28 +93,3 @@ exports.login = async (req, res) => {
     res.status(500).json({ message: 'Server error during login.' });
   }
 };
-
-exports.directResetPassword = async (req, res) => {
-  if (process.env.ALLOW_UNVERIFIED_PASSWORD_RESET !== 'true') {
-    return res.status(501).json({
-      message: 'Password reset is unavailable until a verified email or OTP reset flow is configured.'
-    });
-  }
-
-  try {
-    const email = String(req.body.email || '').trim().toLowerCase();
-    const newPassword = String(req.body.newPassword || '');
-    if (newPassword.length < 8 || newPassword.length > 128) {
-      return res.status(400).json({ message: 'Password must contain 8 to 128 characters.' });
-    }
-    const [users] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);
-    if (!users.length) return res.status(404).json({ message: 'User with this email was not found.' });
-
-    const hashedPassword = await bcrypt.hash(newPassword, 12);
-    await pool.query('UPDATE users SET password = ? WHERE email = ?', [hashedPassword, email]);
-    res.json({ message: 'Password updated successfully.' });
-  } catch (error) {
-    console.error('Password reset failed:', error);
-    res.status(500).json({ message: 'Server error resetting password.' });
-  }
-};
