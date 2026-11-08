@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const pool = require('../db/config');
+const recordActivity = require('../utils/activityLogger');
 
 const GENERIC_REQUEST_MESSAGE = 'If an account exists for that email, a verification code will be sent shortly.';
 const INVALID_CODE_MESSAGE = 'The verification code is invalid or has expired. Request a new code and try again.';
@@ -216,6 +217,7 @@ exports.verifyOtpAndReset = async (req, res) => {
       [record.user_id]
     );
     await connection.commit();
+    await recordActivity({ actorUserId: record.user_id, subjectUserId: record.user_id, eventType: 'password_reset_completed', entityType: 'user', entityId: record.user_id });
 
     return res.json({ message: 'Your password has been reset. You can now sign in.' });
   } catch (error) {
