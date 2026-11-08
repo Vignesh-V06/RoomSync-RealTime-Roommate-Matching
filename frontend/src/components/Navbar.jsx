@@ -31,6 +31,7 @@ const Navbar = () => {
   const token = localStorage.getItem('token');
   const user = readUser();
   const userId = user?.id;
+  const userAvatar = `https://api.dicebear.com/7.x/notionists/svg?seed=${encodeURIComponent(user?.name || user?.id || 'RoomSync')}&backgroundColor=e2e8f0`;
   const visibleNavItems = user?.role === 'admin' ? [...navItems, { label: 'Admin analytics', to: '/admin', icon: FiShield }] : navItems;
   const { theme, toggleTheme } = useTheme();
   const [notifications, setNotifications] = useState([]);
@@ -180,7 +181,22 @@ const Navbar = () => {
           </button>
 
           <div className="user-menu">
-            <span className="user-name">{user?.name || 'Account'}</span>
+            <Link
+              to="/profile"
+              className="user-profile-link"
+              onClick={closeTransientMenus}
+              aria-label={`Open profile for ${user?.name || 'your account'}`}
+              title="Manage profile"
+            >
+              <img
+                src={userAvatar}
+                alt=""
+                aria-hidden="true"
+                className="user-avatar"
+                loading="lazy"
+              />
+              <span className="user-name">{user?.name || 'Account'}</span>
+            </Link>
             <button type="button" className="logout-button" onClick={handleLogout}>
               <FiLogOut aria-hidden="true" />
               <span>Sign out</span>
@@ -201,10 +217,13 @@ const Navbar = () => {
 
       {mobileOpen && (
         <nav className="mobile-navigation" aria-label="Mobile navigation">
-          <div className="mobile-user-summary">
-            <span className="mobile-user-label">SIGNED IN AS</span>
-            <strong>{user?.name || 'RoomSync account'}</strong>
-          </div>
+          <Link to="/profile" className="mobile-user-summary" onClick={closeTransientMenus}>
+            <img src={userAvatar} alt="" aria-hidden="true" className="mobile-user-avatar" />
+            <span>
+              <small className="mobile-user-label">PROFILE & ACCOUNT</small>
+              <strong>{user?.name || 'RoomSync account'}</strong>
+            </span>
+          </Link>
           {visibleNavItems.map((item) => {
             const Icon = item.icon;
             return (
