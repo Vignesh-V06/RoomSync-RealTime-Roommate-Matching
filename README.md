@@ -137,7 +137,6 @@ Configure these values in your private `backend/.env` file (never commit them):
 RESEND_API_KEY=re_your_private_api_key
 RESEND_FROM_EMAIL=RoomSync <auth@your-verified-domain.com>
 PASSWORD_RESET_OTP_SECRET=generate-a-separate-random-32-byte-secret
-ALLOW_UNVERIFIED_PASSWORD_RESET=false
 ```
 
 Create a Resend account, generate an API key, add a domain you own, and verify its DNS records before using that domain in `RESEND_FROM_EMAIL`. Resend requires at least one verified domain for sending. The API call uses Bearer authentication and the transactional email endpoint.
