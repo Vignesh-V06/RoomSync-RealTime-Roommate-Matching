@@ -1497,3 +1497,106 @@ select option { background: var(--bg-surface); color: var(--text-page); }
   .chat-composer button { min-width: 78px; height: 44px; padding-inline: 10px; }
   .chat-send-label { font-size: 10px; }
 }
+
+
+/* Profile shortcut in the authenticated navigation. */
+.user-menu { gap: 8px; }
+.user-profile-link {
+  min-height: 42px;
+  padding: 3px 9px 3px 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: var(--text-page);
+  text-decoration: none;
+  transition: background .16s ease, border-color .16s ease, transform .16s ease;
+}
+.user-profile-link:hover {
+  border-color: var(--border-subtle);
+  background: var(--bg-soft);
+}
+.user-profile-link:focus-visible {
+  outline: 0;
+  border-color: var(--brand-blue);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-blue) 16%, transparent);
+}
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  display: block;
+  flex: 0 0 36px;
+  overflow: hidden;
+  border: 2px solid var(--bg-surface);
+  border-radius: 50%;
+  background: #E5EFFB;
+  object-fit: cover;
+  box-shadow: 0 0 0 1px var(--border-subtle);
+}
+.user-profile-link .user-name {
+  display: block;
+  max-width: 170px;
+  color: var(--text-page);
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+.user-profile-link:hover .user-name { color: var(--brand-blue); }
+.mobile-user-summary {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 12px 13px 15px;
+  color: var(--text-page);
+  text-decoration: none;
+}
+.mobile-user-summary > span { display: grid; gap: 4px; }
+.mobile-user-summary:hover { background: var(--bg-page); }
+.mobile-user-avatar {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  border: 2px solid var(--bg-surface);
+  border-radius: 50%;
+  background: #E5EFFB;
+  object-fit: cover;
+  box-shadow: 0 0 0 1px var(--border-subtle);
+}
+.mobile-user-summary .mobile-user-label { display: block; margin: 0; font-size: 8px; }
+.mobile-user-summary strong { display: block; font-size: 13px; font-weight: 800; }
+
+/* Application history uses the same refined line-icon language as the rest of the app. */
+.application-history-heading { gap: 11px; }
+.application-history-heading-icon {
+  width: 21px;
+  height: 21px;
+  flex: 0 0 auto;
+  padding: 3px;
+  border: 1px solid color-mix(in srgb, var(--brand-blue) 24%, var(--border-subtle));
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--brand-blue) 9%, var(--bg-surface));
+  color: var(--brand-blue);
+  stroke-width: 2;
+}
+.application-empty-icon {
+  width: 62px;
+  height: 62px;
+  margin: 0 auto 18px;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--brand-blue) 22%, var(--border-subtle));
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--brand-blue) 8%, var(--bg-surface));
+  color: var(--brand-blue);
+  box-shadow: 0 8px 22px rgba(20,38,55,.07);
+}
+.application-empty-icon svg { width: 27px; height: 27px; stroke-width: 1.8; }
+
+@media (max-width: 1120px) {
+  .user-profile-link .user-name { max-width: 135px; }
+}
+@media (max-width: 680px) {
+  .user-menu { display: none; }
+}
