@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   FiArrowLeft, FiArrowRight, FiCamera, FiMail, FiMessageCircle, FiMessageSquare,
-  FiPhone, FiSend, FiUser, FiX
+  FiPhone, FiSend, FiSmile, FiUser, FiX
 } from 'react-icons/fi';
 import api from '../api';
 import { initSocket } from '../socket';
@@ -15,6 +15,37 @@ const getStoredUser = () => {
   }
 };
 
+const CHAT_EMOJIS = [
+  '😀', '😃', '😄', '😁', '😊', '😍', '🥰', '😘',
+  '😂', '🤣', '🙂', '😉', '😎', '🤔', '🙌', '👏',
+  '👍', '👎', '🙏', '❤️', '🔥', '🎉', '✨', '💯',
+  '😭', '🥹', '😴', '🤝', '👀', '💙', '☕', '🏠'
+];
+
+const getMessageDayKey = (value) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'unknown';
+  return [date.getFullYear(), date.getMonth() + 1, date.getDate()].join('-');
+};
+
+const formatMessageDay = (value) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Date unavailable';
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (getMessageDayKey(date) === getMessageDayKey(today)) return 'Today';
+  if (getMessageDayKey(date) === getMessageDayKey(yesterday)) return 'Yesterday';
+  return date.toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' });
+};
+
+const formatMessageTime = (value) => {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? ''
+    : date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+};
+
 const ChatDashboard = () => {
   const navigate = useNavigate();
   const user = getStoredUser();
@@ -22,6 +53,7 @@ const ChatDashboard = () => {
   const [activeRoom, setActiveRoom] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
+  const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [roomsError, setRoomsError] = useState('');
   const [messagesError, setMessagesError] = useState('');
@@ -311,19 +343,27 @@ const ChatDashboard = () => {
                 {messages.length === 0 ? (
                   <div className="chat-first-message"><FiMessageCircle /><strong>Start the conversation</strong><span>Say hello and get to know the people you may be sharing with.</span></div>
                 ) : (
-                  messages.map((message) => {
+                  messages.map((message, index) => {
                     const mine = String(message.sender_id) === String(user.id);
+                    const previousMessage = messages[index - 1];
+                    const showDateDivider = !previousMessage
+                      || getMessageDayKey(previousMessage.created_at) !== getMessageDayKey(message.created_at);
                     return (
-                      <div className={'chat-message-row' + (mine ? ' chat-message-mine' : '')} key={message.id}>
+                      <Fragment key={message.id}>
+                        {showDateDivider && (
+                          <div className="chat-date-divider"><span>{formatMessageDay(message.created_at)}</span></div>
+                        )}
+                        <div className={'chat-message-row' + (mine ? ' chat-message-mine' : '')}>
                         {!mine && <button type="button" className="chat-message-sender chat-member-trigger" onClick={() => openMember(message.sender_id)}>{message.sender_name || 'Room member'}</button>}
                         <div className={'chat-message-bubble' + (mine ? ' chat-message-bubble-mine' : '')}>
                           <p>{message.message}</p>
                         </div>
                         <span className="chat-message-time">
-                          {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          <time dateTime={new Date(message.created_at).toISOString()}>{formatMessageTime(message.created_at)}</time>
                           {message.pending ? ' · Sending' : ''}
                         </span>
-                      </div>
+                        </div>
+                      </Fragment>
                     );
                   })
                 )}
@@ -331,6 +371,37 @@ const ChatDashboard = () => {
               </div>
 
               <form className="chat-composer" onSubmit={handleSend}>
+                <div className="chat-emoji-wrap">
+                  <button
+                    type="button"
+                    className="chat-emoji-toggle"
+                    aria-label={emojiPickerOpen ? 'Close emoji picker' : 'Open emoji picker'}
+                    aria-expanded={emojiPickerOpen}
+                    onClick={() => setEmojiPickerOpen((open) => !open)}
+                  >
+                    <FiSmile />
+                  </button>
+                  {emojiPickerOpen && (
+                    <div className="chat-emoji-picker" role="group" aria-label="Choose an emoji">
+                      <div className="chat-emoji-grid">
+                        {CHAT_EMOJIS.map((emoji) => (
+                          <button
+                            type="button"
+                            key={emoji}
+                            className="chat-emoji-option"
+                            aria-label={`Insert ${emoji}`}
+                            onClick={() => {
+                              setNewMessage((current) => current + emoji);
+                              setEmojiPickerOpen(false);
+                            }}
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
                 <input
                   type="text"
                   aria-label="Write a message"
