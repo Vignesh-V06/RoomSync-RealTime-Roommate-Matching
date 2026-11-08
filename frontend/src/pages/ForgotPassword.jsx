@@ -167,7 +167,7 @@ const ForgotPassword = () => {
               {diagnostics.senderMode === 'resend-test-only' && (
                 <p className="reset-diagnostics-warning">Resend test sender is restricted to the email address registered to your Resend account. Other recipients require a verified sending domain.</p>
               )}
-              {diagnostics.notes?.filter((note) => diagnostics.senderMode !== 'resend-test-only').map((note) => (
+              {diagnostics.senderMode !== 'resend-test-only' && diagnostics.notes?.map((note) => (
                 <p className="reset-diagnostics-hint" key={note}>{note}</p>
               ))}
               <small>Only configuration status is shown. Secret values and API keys are never displayed.</small>
