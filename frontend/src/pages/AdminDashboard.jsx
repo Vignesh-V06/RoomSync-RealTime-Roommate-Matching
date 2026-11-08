@@ -282,7 +282,7 @@ const AdminDashboard = () => {
                 ['Applied to a room', funnel.applications],
                 ['Accepted into a room', funnel.accepted_applications],
                 ['Sent a chat message', funnel.chat_participants]
-              ].map(([label, value], index) => (
+              ].map(([label, value]) => (
                 <div className="admin-funnel-step" key={label}>
                   <div><span>{label}</span><strong>{formatNumber(value)}</strong></div>
                   <div className="admin-funnel-track"><span style={{ width: percentage(value, funnel.registered_users) + '%' }} /></div>
