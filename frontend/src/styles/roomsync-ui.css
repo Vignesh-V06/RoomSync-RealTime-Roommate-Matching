@@ -1600,3 +1600,46 @@ select option { background: var(--bg-surface); color: var(--text-page); }
 @media (max-width: 680px) {
   .user-menu { display: none; }
 }
+
+
+/* Align optional preference controls on the same visual baseline. */
+.create-custom-option-row { align-items: end; }
+.create-custom-option-row .create-remove-option {
+  width: 46px;
+  min-width: 46px;
+  height: 46px;
+  min-height: 46px;
+  margin: 0;
+  padding: 0;
+  align-self: end;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.create-custom-option-row .create-remove-option svg {
+  display: block;
+  width: 17px;
+  height: 17px;
+}
+.create-add-option {
+  min-height: 36px;
+  margin-top: 7px;
+  padding: 7px 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.create-add-option svg {
+  display: block;
+  width: 15px;
+  height: 15px;
+  flex: 0 0 15px;
+}
+@media (max-width: 680px) {
+  .create-custom-option-row .create-remove-option { justify-self: start; }
+  .create-add-option { white-space: normal; }
+}
