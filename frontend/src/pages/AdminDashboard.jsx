@@ -33,7 +33,8 @@ const EVENT_LABELS = {
   room_status_changed: 'Room status changed',
   room_photo_uploaded: 'Room photo uploaded',
   chat_message_sent: 'Chat message sent',
-  admin_report_exported: 'Admin report exported'
+  admin_report_exported: 'Admin report exported',
+  password_reset_completed: 'Password reset completed'
 };
 
 const AdminDashboard = () => {
