@@ -295,3 +295,50 @@ exports.verifyOtpAndReset = async (req, res) => {
     if (connection) connection.release();
   }
 };
+
+exports.getLocalDiagnostics = async (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.sendStatus(404);
+  }
+
+  const diagnostics = {
+    mysqlConnected: false,
+    otpTableExists: false,
+    otpColumnsReady: false,
+    missingOtpColumns: [],
+    resendApiKeyConfigured: Boolean(process.env.RESEND_API_KEY),
+    senderAddressConfigured: Boolean(process.env.RESEND_FROM_EMAIL),
+    otpSecretConfigured: Boolean(process.env.PASSWORD_RESET_OTP_SECRET),
+    senderMode: /@resend\\.dev\\b/i.test(process.env.RESEND_FROM_EMAIL || '')
+      ? 'resend-test-only'
+      : 'custom-sender'
+  };
+
+  try {
+    await pool.query('SELECT 1 AS connected');
+    diagnostics.mysqlConnected = true;
+  } catch (error) {
+    diagnostics.databaseErrorCode = error.code || 'UNKNOWN';
+  }
+
+  if (diagnostics.mysqlConnected) {
+    try {
+      const [columns] = await pool.query('SHOW COLUMNS FROM password_reset_otps');
+      diagnostics.otpTableExists = true;
+      const existing = new Set(columns.map((column) => column.Field));
+      const required = ['user_id', 'otp_hash', 'request_ip', 'attempts', 'expires_at', 'used_at', 'created_at'];
+      diagnostics.missingOtpColumns = required.filter((column) => !existing.has(column));
+      diagnostics.otpColumnsReady = diagnostics.missingOtpColumns.length === 0;
+    } catch (error) {
+      diagnostics.otpTableErrorCode = error.code || 'UNKNOWN';
+    }
+  }
+
+  res.set('Cache-Control', 'no-store');
+  res.json({
+    ...diagnostics,
+    notes: diagnostics.senderMode === 'resend-test-only'
+      ? ['The Resend test sender can only deliver to the email address that owns your Resend account. Use a verified domain to send to other recipients.']
+      : ['A custom sender address is configured. Confirm its domain is verified in Resend.']
+  });
+};
