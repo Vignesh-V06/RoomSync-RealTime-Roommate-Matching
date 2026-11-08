@@ -3,7 +3,7 @@ const recordActivity = require('../utils/activityLogger');
 const { createWorkbook } = require('../utils/xlsxWorkbook');
 
 const RANGE_DAYS = Object.freeze({ '3m': 90, '12m': 365, all: null });
-const DATASETS = new Set(['overview', 'users', 'rooms', 'applications', 'activity']);
+const DATASETS = new Set(['overview', 'users', 'rooms', 'applications', 'monthly', 'top_rooms', 'blocks', 'activity']);
 const EXPORT_LIMIT = 20000;
 
 const normalizeRange = (value) => Object.prototype.hasOwnProperty.call(RANGE_DAYS, value) ? value : '12m';
@@ -177,6 +177,12 @@ const getCsvDataset = async (range, dataset) => {
       WHERE 1=1${clause('q.created_at')} ORDER BY q.created_at DESC LIMIT ${EXPORT_LIMIT}`);
     return rows;
   }
+  if (dataset === 'monthly' || dataset === 'top_rooms' || dataset === 'blocks') {
+    const analytics = await getAnalyticsData(range);
+    if (dataset === 'monthly') return analytics.monthly_activity;
+    if (dataset === 'top_rooms') return analytics.top_rooms;
+    return analytics.block_stats;
+  }
   const [rows] = await pool.query(`SELECT e.id, e.event_type, e.entity_type, e.entity_id, e.metadata, e.occurred_at,
     actor.name AS actor_name, actor.email AS actor_email, subject.name AS subject_name
     FROM activity_events e LEFT JOIN users actor ON actor.id = e.actor_user_id
@@ -234,7 +240,10 @@ const getReportData = async (range) => {
     users: users[0],
     rooms: rooms[0],
     applications: applications[0],
-    activity: activity[0].map((event) => ({ ...event, metadata: safeJson(event.metadata) }))
+    activity: activity[0].map((event) => ({ ...event, metadata: safeJson(event.metadata) })),
+    monthly: overview.monthly_activity,
+    top_rooms: overview.top_rooms,
+    blocks: overview.block_stats
   };
 };
 
@@ -277,6 +286,9 @@ exports.exportReport = async (req, res) => {
       { name: 'Users', rows: report.users },
       { name: 'Rooms', rows: report.rooms },
       { name: 'Applications', rows: report.applications },
+      { name: 'Monthly Trends', rows: report.monthly },
+      { name: 'Top Rooms', rows: report.top_rooms },
+      { name: 'Hostel Blocks', rows: report.blocks },
       { name: 'Activity', rows: report.activity }
     ];
     const workbook = createWorkbook(sheets);
