@@ -430,7 +430,7 @@ const ChatDashboard = () => {
                 <div className="chat-member-card">
                   <div className="chat-member-avatar"><FiUser /></div>
                   <h3>{selectedMember.name}</h3>
-                  <p className="chat-member-username">@{selectedMember.username || 'username unavailable'}</p>
+                  <p className="chat-member-username">{Number(selectedMember.is_owner) === 1 ? 'Room owner' : '@' + (selectedMember.username || 'username unavailable')}</p>
                   <div className="chat-member-detail"><FiMail /><span>{selectedMember.email || 'Email not available'}</span></div>
                   <div className="chat-member-detail"><FiPhone /><span>{selectedMember.phone || 'Phone number not added'}</span></div>
                   <button type="button" className="chat-detail-back-button" onClick={() => setSelectedMember(null)}>Back to room details</button>
@@ -473,7 +473,7 @@ const ChatDashboard = () => {
                         {(roomDetails.members || []).map((member) => (
                           <button type="button" className="chat-detail-member-row" key={member.id} onClick={() => setSelectedMember(member)}>
                             <span className="chat-detail-member-avatar">{(member.name || 'U').charAt(0).toUpperCase()}</span>
-                            <span><strong>{member.name}</strong><small>@{member.username || 'member'}{Number(member.is_owner) === 1 ? ' · Owner' : ''}</small></span>
+                            <span><strong>{member.name}</strong><small>{Number(member.is_owner) === 1 ? 'Room owner' : '@' + (member.username || 'member')}</small></span>
                             <FiArrowRight />
                           </button>
                         ))}
