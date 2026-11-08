@@ -1,4 +1,5 @@
 const pool = require('../db/config');
+const recordActivity = require('../utils/activityLogger');
 const socket = require('../socket');
 
 exports.applyRoom = async (req, res) => {
@@ -47,8 +48,9 @@ exports.applyRoom = async (req, res) => {
       return res.status(409).json({ message: 'You already have an active application or room membership. You can only apply to one room at a time.' });
     }
 
-    await connection.query('INSERT INTO room_requests (room_id, user_id, status) VALUES (?, ?, ?)', [roomId, userId, 'applied']);
+    const [insertedRequest] = await connection.query('INSERT INTO room_requests (room_id, user_id, status) VALUES (?, ?, ?)', [roomId, userId, 'applied']);
     await connection.commit();
+    await recordActivity({ actorUserId: userId, subjectUserId: userId, eventType: 'room_application_submitted', entityType: 'room', entityId: roomId, metadata: { request_id: insertedRequest.insertId } });
     res.status(201).json({ message: 'Application sent successfully.' });
   } catch (error) {
     await connection.rollback();
@@ -116,6 +118,7 @@ exports.acceptRequest = async (req, res) => {
     await connection.query("UPDATE room_requests SET status = 'accepted' WHERE request_id = ?", [requestId]);
     await connection.query('UPDATE rooms SET current_occupancy = current_occupancy + 1 WHERE room_id = ?', [request.room_id]);
     await connection.commit();
+    await recordActivity({ actorUserId: ownerId, subjectUserId: request.user_id, eventType: 'room_application_accepted', entityType: 'room', entityId: request.room_id, metadata: { request_id: request.request_id } });
 
     notificationUserId = request.user_id;
     notificationMessage = 'Your request to join ' + request.block + ' (' + request.room_type + ') has been accepted.';
@@ -174,6 +177,7 @@ exports.rejectRequest = async (req, res) => {
     }
     await connection.query("UPDATE room_requests SET status = 'rejected' WHERE request_id = ?", [requestId]);
     await connection.commit();
+    await recordActivity({ actorUserId: ownerId, subjectUserId: request.user_id, eventType: 'room_application_rejected', entityType: 'room', entityId: request.room_id, metadata: { request_id: request.request_id } });
     notificationUserId = request.user_id;
     notificationMessage = 'Your request to join ' + request.block + ' (' + request.room_type + ') was declined.';
   } catch (error) {
