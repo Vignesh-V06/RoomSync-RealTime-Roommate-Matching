@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiEdit2, FiMapPin, FiBook, FiBriefcase, FiHeart, FiSettings, FiCheck, FiClipboard, FiInbox } from 'react-icons/fi';
+import { FiEdit2, FiMapPin, FiBook, FiBriefcase, FiHeart, FiSettings, FiCheck } from 'react-icons/fi';
 import api from '../api';
 import CustomSelect from '../components/CustomSelect';
 import toast from 'react-hot-toast';
@@ -307,13 +307,13 @@ const Profile = () => {
 
               {activeTab === 'rooms' && (
                 <div className="space-y-4">
-                  <h3 className="application-history-heading text-xl font-bold mb-4 text-slate-800 dark:text-white flex items-center gap-3">
-                    <FiClipboard className="application-history-heading-icon" aria-hidden="true" />
+                  <h3 className="application-history-heading text-xl font-bold mb-4 text-slate-800 dark:text-white flex items-center gap-2">
+                    <span aria-hidden="true">🗂️</span>
                     <span>Application History</span>
                   </h3>
                   {applications.length === 0 ? (
                     <div className="glass-panel p-12 text-center text-slate-500">
-                      <div className="application-empty-icon" aria-hidden="true"><FiInbox /></div>
+                      <div className="text-5xl mb-4" role="img" aria-label="Mailbox">📭</div>
                       <p className="text-lg font-medium">You haven't applied to any rooms yet.</p>
                       <button onClick={() => navigate('/find-rooms')} className="mt-4 btn-primary text-sm px-4 py-2">Find Rooms</button>
                     </div>
