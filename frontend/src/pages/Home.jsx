@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import logo from '../assets/RoomSync_ Find, Match, Share-Photoroom.png';
 import {
   FiArrowUpRight, FiCheck, FiCompass, FiMessageCircle, FiUsers
 } from 'react-icons/fi';
@@ -24,7 +25,7 @@ const Home = () => {
             <span className="home-wordmark">RoomSync</span>
           ) : (
             <img
-              src="/roomsync-logo.webp"
+              src= {logo}
               alt="RoomSync — Find, Match, Share"
               className="home-logo"
               onError={() => setLogoFailed(true)}

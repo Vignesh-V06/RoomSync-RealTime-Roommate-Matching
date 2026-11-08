@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import logo from '../assets/RoomSync_ Find, Match, Share-Photoroom.png';
 import {
   FiBell, FiHome, FiLogOut, FiMenu, FiMessageCircle,
   FiMoon, FiPlus, FiSearch, FiShield, FiSun, FiX
@@ -97,12 +98,12 @@ const Navbar = () => {
   return (
     <header className="app-header sticky top-0 z-50">
       <div className="app-header-inner">
-        <Link to="/" className="brand-link" aria-label="RoomSync home" onClick={closeTransientMenus}>
+        <Link to="" className="brand-link" aria-label="RoomSync home" onClick={closeTransientMenus}>
           {logoFailed ? (
             <span className="brand-wordmark">RoomSync</span>
           ) : (
             <img
-              src="/roomsync-logo.webp"
+              src={logo}
               alt="RoomSync — Find, Match, Share"
               className="brand-logo"
               onError={() => setLogoFailed(true)}

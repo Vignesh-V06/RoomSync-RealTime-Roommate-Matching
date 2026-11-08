@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { FiMoon, FiSun } from 'react-icons/fi';
 import { useTheme } from '../context/useTheme';
+import logo from '../assets/RoomSync_ Find, Match, Share-Photoroom.png';
 
 const AuthLayout = ({ eyebrow = 'RoomSync · Student living', title, description, children, footer }) => {
   const { theme, toggleTheme } = useTheme();
@@ -9,7 +10,7 @@ const AuthLayout = ({ eyebrow = 'RoomSync · Student living', title, description
     <div className="auth-page">
       <header className="auth-topbar">
         <Link to="/" className="auth-brand" aria-label="RoomSync home">
-          <img src="/roomsync-logo.webp" alt="RoomSync — Find, Match, Share" />
+          <img src={logo} alt="RoomSync — Find, Match, Share" />
         </Link>
         <div className="auth-topbar-actions">
           <button
