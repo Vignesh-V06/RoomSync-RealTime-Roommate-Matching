@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiEdit2, FiMapPin, FiBook, FiBriefcase, FiHeart, FiSettings, FiCheck } from 'react-icons/fi';
 import api from '../api';
+import CustomSelect from '../components/CustomSelect';
 import toast from 'react-hot-toast';
 
 const Profile = () => {
@@ -192,52 +193,52 @@ const Profile = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <div>
                       <label className="block text-sm font-medium mb-1">Branch</label>
-                      <select className="input-field" value={formData.branch} onChange={e => setFormData({...formData, branch: e.target.value})}>
-                        <option value="Computer Science">Computer Science</option>
-                        <option value="Electronics">Electronics</option>
-                        <option value="Mechanical">Mechanical</option>
-                        <option value="Civil">Civil</option>
-                      </select>
+                      <CustomSelect id="profile-branch" ariaLabel="Academic branch" value={formData.branch} onChange={(value) => setFormData((prev) => ({ ...prev, branch: value }))} options={[
+                        { value: 'Computer Science', label: 'Computer Science' },
+                        { value: 'Electronics', label: 'Electronics' },
+                        { value: 'Mechanical', label: 'Mechanical' },
+                        { value: 'Civil', label: 'Civil' }
+                      ]} />
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-1">Sleep Preference</label>
-                      <select className="input-field" value={formData.sleep_pref} onChange={e => setFormData({...formData, sleep_pref: e.target.value})}>
-                        <option value="Early Bird">Early Bird</option>
-                        <option value="Night Owl">Night Owl</option>
-                        <option value="Flexible">Flexible</option>
-                      </select>
+                      <CustomSelect id="profile-sleep" ariaLabel="Sleep preference" value={formData.sleep_pref} onChange={(value) => setFormData((prev) => ({ ...prev, sleep_pref: value }))} options={[
+                        { value: 'Early Bird', label: 'Early Bird' },
+                        { value: 'Night Owl', label: 'Night Owl' },
+                        { value: 'Flexible', label: 'Flexible' }
+                      ]} />
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-1">Study Preference</label>
-                      <select className="input-field" value={formData.study_pref} onChange={e => setFormData({...formData, study_pref: e.target.value})}>
-                        <option value="Total Silence">Total Silence</option>
-                        <option value="Background Music">Background Music</option>
-                        <option value="Group Study">Group Study</option>
-                      </select>
+                      <CustomSelect id="profile-study" ariaLabel="Study preference" value={formData.study_pref} onChange={(value) => setFormData((prev) => ({ ...prev, study_pref: value }))} options={[
+                        { value: 'Total Silence', label: 'Total Silence' },
+                        { value: 'Background Music', label: 'Background Music' },
+                        { value: 'Group Study', label: 'Group Study' }
+                      ]} />
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-1">Food Preference</label>
-                      <select className="input-field" value={formData.food_pref} onChange={e => setFormData({...formData, food_pref: e.target.value})}>
-                        <option value="Vegetarian">Vegetarian</option>
-                        <option value="Non-Vegetarian">Non-Vegetarian</option>
-                        <option value="Vegan">Vegan</option>
-                        <option value="Any">Any</option>
-                      </select>
+                      <CustomSelect id="profile-food" ariaLabel="Food preference" value={formData.food_pref} onChange={(value) => setFormData((prev) => ({ ...prev, food_pref: value }))} options={[
+                        { value: 'Vegetarian', label: 'Vegetarian' },
+                        { value: 'Non-Vegetarian', label: 'Non-Vegetarian' },
+                        { value: 'Vegan', label: 'Vegan' },
+                        { value: 'Any', label: 'Any' }
+                      ]} />
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-1">Cleanliness</label>
-                      <select className="input-field" value={formData.cleanliness} onChange={e => setFormData({...formData, cleanliness: e.target.value})}>
-                        <option value="Neat Freak">Neat Freak</option>
-                        <option value="Moderate">Moderate</option>
-                        <option value="Messy">Messy</option>
-                      </select>
+                      <CustomSelect id="profile-cleanliness" ariaLabel="Cleanliness preference" value={formData.cleanliness} onChange={(value) => setFormData((prev) => ({ ...prev, cleanliness: value }))} options={[
+                        { value: 'Neat Freak', label: 'Neat Freak' },
+                        { value: 'Moderate', label: 'Moderate' },
+                        { value: 'Messy', label: 'Messy' }
+                      ]} />
                     </div>
                     <div>
                        <label className="block text-sm font-medium mb-1">Bed Preference</label>
-                       <select className="input-field" value={formData.bed_pref} onChange={e => setFormData({...formData, bed_pref: e.target.value})}>
-                         <option value="lower">Lower</option>
-                         <option value="upper">Upper</option>
-                       </select>
+                       <CustomSelect id="profile-bed" ariaLabel="Bed preference" value={formData.bed_pref} onChange={(value) => setFormData((prev) => ({ ...prev, bed_pref: value }))} options={[
+                         { value: 'lower', label: 'Lower' },
+                         { value: 'upper', label: 'Upper' }
+                       ]} />
                     </div>
                   </div>
                 </div>
