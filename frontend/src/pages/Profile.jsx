@@ -308,12 +308,12 @@ const Profile = () => {
               {activeTab === 'rooms' && (
                 <div className="space-y-4">
                   <h3 className="application-history-heading text-xl font-bold mb-4 text-slate-800 dark:text-white flex items-center gap-2">
-                    <span aria-hidden="true">🗂️</span>
+                    <span className="application-history-emoji" role="img" aria-label="Application records">🗂️</span>
                     <span>Application History</span>
                   </h3>
                   {applications.length === 0 ? (
                     <div className="glass-panel p-12 text-center text-slate-500">
-                      <div className="text-5xl mb-4" role="img" aria-label="Mailbox">📭</div>
+                      <div className="application-empty-postbox text-5xl mb-4" role="img" aria-label="Mailbox">📭</div>
                       <p className="text-lg font-medium">You haven't applied to any rooms yet.</p>
                       <button onClick={() => navigate('/find-rooms')} className="mt-4 btn-primary text-sm px-4 py-2">Find Rooms</button>
                     </div>
