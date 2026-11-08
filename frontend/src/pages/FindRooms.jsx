@@ -5,6 +5,7 @@ import {
   FiSliders, FiUsers, FiX
 } from 'react-icons/fi';
 import api from '../api';
+import CustomSelect from '../components/CustomSelect';
 
 const readUserId = () => {
   try {
@@ -229,28 +230,40 @@ const FindRooms = () => {
 
           <div className="discover-select-control">
             <label htmlFor="block-filter">Hostel block</label>
-            <select id="block-filter" value={blockFilter} onChange={(event) => setBlockFilter(event.target.value)}>
-              <option value="all">All blocks</option>
-              {blocks.map((block) => <option key={block} value={block}>{block}</option>)}
-            </select>
+            <CustomSelect
+              id="block-filter"
+              ariaLabel="Hostel block"
+              value={blockFilter}
+              onChange={setBlockFilter}
+              options={[{ value: 'all', label: 'All blocks' }, ...blocks.map((block) => ({ value: block, label: block }))]}
+            />
           </div>
 
           <div className="discover-select-control">
             <label htmlFor="type-filter">Room type</label>
-            <select id="type-filter" value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}>
-              <option value="all">All sharing types</option>
-              {roomTypes.map((type) => <option key={type} value={type}>{type}</option>)}
-            </select>
+            <CustomSelect
+              id="type-filter"
+              ariaLabel="Room type"
+              value={typeFilter}
+              onChange={setTypeFilter}
+              options={[{ value: 'all', label: 'All sharing types' }, ...roomTypes.map((type) => ({ value: type, label: type }))]}
+            />
           </div>
 
           <div className="discover-select-control discover-sort-control">
             <label htmlFor="room-sort"><FiSliders aria-hidden="true" /> Sort by</label>
-            <select id="room-sort" value={sortOrder} onChange={(event) => setSortOrder(event.target.value)}>
-              <option value="match">Best match</option>
-              <option value="match-low">Lowest match</option>
-              <option value="occupancy">More space</option>
-              <option value="block">Block name</option>
-            </select>
+            <CustomSelect
+              id="room-sort"
+              ariaLabel="Sort rooms by"
+              value={sortOrder}
+              onChange={setSortOrder}
+              options={[
+                { value: 'match', label: 'Best match' },
+                { value: 'match-low', label: 'Lowest match' },
+                { value: 'occupancy', label: 'More space' },
+                { value: 'block', label: 'Block name' }
+              ]}
+            />
           </div>
         </section>
 
