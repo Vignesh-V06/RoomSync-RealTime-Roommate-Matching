@@ -402,7 +402,7 @@ const FindRooms = () => {
                   <div><span>Bed type</span><strong>{previewRoom.room.bed_type || 'Not specified'}</strong></div>
                   <div><span>Occupancy</span><strong>{previewRoom.room.current_occupancy} / {previewRoom.room.total_capacity}</strong></div>
                   <div><span>Availability</span><strong>{Math.max(0, Number(previewRoom.room.total_capacity) - Number(previewRoom.room.current_occupancy))} spaces</strong></div>
-                  <div><span>Owner username</span><strong>@{previewRoom.room.owner_username || 'room owner'}</strong></div>
+                  <div><span>Room owner</span><strong>{previewRoom.room.owner_name || 'Room owner'}</strong></div>
                 </div>
                 {previewRoom.room.additional_requirements && <div className="room-preview-notes"><h3>Room notes</h3><p>{previewRoom.room.additional_requirements}</p></div>}
                 {(previewRoom.room.custom_options || []).length > 0 && <div className="room-preview-notes"><h3>Owner-defined match preferences</h3>{previewRoom.room.custom_options.map((option) => <div className="room-preview-custom-option" key={option.key}><strong>{option.label}</strong><span>{option.value}</span></div>)}</div>}
