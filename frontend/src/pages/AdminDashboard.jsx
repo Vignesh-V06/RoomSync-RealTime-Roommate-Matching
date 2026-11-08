@@ -192,6 +192,9 @@ const AdminDashboard = () => {
                     { value: 'users', label: 'Users' },
                     { value: 'rooms', label: 'Rooms' },
                     { value: 'applications', label: 'Applications' },
+                    { value: 'monthly', label: 'Monthly trends' },
+                    { value: 'top_rooms', label: 'Top rooms' },
+                    { value: 'blocks', label: 'Hostel blocks' },
                     { value: 'activity', label: 'Activity log' }
                   ]}
                 />
