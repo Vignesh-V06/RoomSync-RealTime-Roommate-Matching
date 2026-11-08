@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   FiActivity, FiCalendar, FiCheckCircle, FiDatabase, FiDownload, FiEye,
   FiFileText, FiHome, FiMessageCircle, FiRefreshCw, FiShield,
-  FiTrendingUp, FiUsers, FiUserCheck
+  FiUsers, FiUserCheck
 } from 'react-icons/fi';
 import api from '../api';
 import CustomSelect from '../components/CustomSelect';
@@ -211,8 +211,8 @@ const AdminDashboard = () => {
           <div className="admin-metric-grid">
             <Metric label="Student accounts" value={users.total_users} caption={formatNumber(users.users_in_range) + ' registered in selected period'} icon={<FiUsers />} detail={formatNumber(users.new_users_30d) + ' new in 30 days'} />
             <Metric label="Active accounts" value={users.active_users_30d} caption="Signed in within 30 days" icon={<FiActivity />} detail={formatNumber(engagement.tracked_logins) + ' tracked sign-ins in period'} />
-            <Metric label="Profile completion" value={profileRate + '%'} caption={formatNumber(users.completed_profiles) + ' profiles created'} icon={<FiUserCheck />} detail="Profiles / student accounts" />
-            <Metric label="Room visitors" value={engagement.unique_room_visitors} caption={formatNumber(engagement.room_impressions) + ' total impressions'} icon={<FiEye />} detail={formatNumber(engagement.tracked_login_users) + ' users with tracked logins'} />
+            <Metric label="Profiles created" value={profileRate + '%'} caption={formatNumber(users.completed_profiles) + ' profile records'} icon={<FiUserCheck />} detail="Profiles / student accounts" />
+            <Metric label="Room visitors" value={engagement.unique_room_visitors} caption={formatNumber(engagement.room_impressions) + ' tracked impressions in period'} icon={<FiEye />} detail={formatNumber(engagement.tracked_login_users) + ' users with tracked logins'} />
           </div>
         </section>
 
@@ -222,7 +222,7 @@ const AdminDashboard = () => {
             <span className="admin-period-label">{occupancyRate}% of listed capacity occupied</span>
           </div>
           <div className="admin-metric-grid">
-            <Metric label="Room listings" value={rooms.total_rooms} caption={formatNumber(rooms.open_rooms) + ' open · ' + formatNumber(rooms.closed_rooms) + ' closed'} icon={<FiHome />} detail={formatNumber(rooms.full_rooms) + ' currently full'} />
+            <Metric label="Room listings" value={rooms.total_rooms} caption={formatNumber(rooms.open_rooms) + ' open · ' + formatNumber(rooms.closed_rooms) + ' closed now'} icon={<FiHome />} detail={formatNumber(rooms.full_rooms) + ' currently full'} />
             <Metric label="Occupied beds" value={rooms.occupied_beds} caption={formatNumber(rooms.total_beds) + ' total listed capacity'} icon={<FiUsers />} detail={occupancyRate + '% occupancy'} />
             <Metric label="Applications" value={apps.total_applications} caption={formatNumber(apps.pending_applications) + ' waiting for review'} icon={<FiCheckCircle />} detail={acceptanceRate + '% acceptance rate'} />
             <Metric label="Chat messages" value={engagement.total_messages} caption={formatNumber(engagement.room_photos) + ' room photos uploaded'} icon={<FiMessageCircle />} detail="Messages contain no reportable content" />
