@@ -341,7 +341,7 @@ const ChatDashboard = () => {
                   disabled={sending}
                 />
                 <button type="submit" disabled={!newMessage.trim() || sending} aria-label="Send message">
-                  <FiSend />
+                  <FiSend /><span className="chat-send-label">Send</span>
                 </button>
               </form>
             </>
