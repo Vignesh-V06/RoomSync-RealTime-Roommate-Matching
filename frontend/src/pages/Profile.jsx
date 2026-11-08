@@ -16,7 +16,7 @@ const Profile = () => {
   const navigate = useNavigate();
 
   const defaultFormData = {
-    bio: '', skills: '', interests: '', academic_details: '',
+    bio: '', skills: '', interests: '', academic_details: '', phone: '',
     language: 'English', branch: 'Computer Science', cgpa_range: '8-9',
     bed_pref: 'lower', expected_members: 2, sleep_pref: 'Night Owl',
     study_pref: 'Total Silence', food_pref: 'Vegetarian', cleanliness: 'Moderate'
@@ -61,7 +61,7 @@ const Profile = () => {
         .map((item) => [item.key.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, ''), item.value.trim()]));
       await api.post('/profiles', { ...formData, custom_preferences: customPreferences });
       toast.success('Profile updated successfully!');
-      setProfile({...profile, ...formData, custom_preferences: customPreferences, user_name: user?.name || profile?.user_name});
+      setProfile({ ...profile, ...formData, phone: formData.phone || null, custom_preferences: customPreferences, user_name: user?.name || profile?.user_name });
       setIsEditing(false);
     } catch {
       toast.error('Failed to update profile');
@@ -169,6 +169,21 @@ const Profile = () => {
                     <textarea className="input-field min-h-[100px]" value={formData.bio} onChange={e => setFormData({...formData, bio: e.target.value})} placeholder="Write a short summary about yourself..."></textarea>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="profile-phone" className="block text-sm font-medium mb-1">Phone number</label>
+                      <input
+                        id="profile-phone"
+                        type="tel"
+                        autoComplete="tel"
+                        inputMode="tel"
+                        maxLength={30}
+                        className="input-field"
+                        value={formData.phone || ''}
+                        onChange={(event) => setFormData({ ...formData, phone: event.target.value })}
+                        placeholder="+91 98765 43210"
+                      />
+                      <small className="text-slate-500">Optional. Room members can see this after joining the same room.</small>
+                    </div>
                     <div>
                       <label className="block text-sm font-medium mb-1">Skills (comma separated)</label>
                       <input type="text" className="input-field" value={formData.skills} onChange={e => setFormData({...formData, skills: e.target.value})} placeholder="React, Python, Design..."/>
