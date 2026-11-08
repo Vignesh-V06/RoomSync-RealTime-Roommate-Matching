@@ -215,7 +215,7 @@ const AdminDashboard = () => {
           <div className="admin-metric-grid">
             <Metric label="Student accounts" value={users.total_users} caption={formatNumber(users.users_in_range) + ' registered in selected period'} icon={<FiUsers />} detail={formatNumber(users.new_users_30d) + ' new in 30 days'} />
             <Metric label="Active accounts" value={users.active_users_30d} caption="Signed in within 30 days" icon={<FiActivity />} detail={formatNumber(engagement.tracked_logins) + ' tracked sign-ins in period'} />
-            <Metric label="Profiles created" value={profileRate + '%'} caption={formatNumber(users.completed_profiles) + ' profile records'} icon={<FiUserCheck />} detail="Profiles / student accounts" />
+            <Metric label="Profile coverage" value={profileRate + '%'} caption={formatNumber(users.completed_profiles) + ' profile records'} icon={<FiUserCheck />} detail="Profiles / student accounts" />
             <Metric label="Room visitors" value={engagement.unique_room_visitors} caption={formatNumber(engagement.room_impressions) + ' tracked impressions in period'} icon={<FiEye />} detail={formatNumber(engagement.tracked_login_users) + ' users with tracked logins'} />
           </div>
         </section>
