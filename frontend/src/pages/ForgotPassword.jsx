@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FiArrowRight, FiLock, FiMail, FiShield } from 'react-icons/fi';
+import { FiArrowRight, FiCheckCircle, FiAlertCircle, FiLock, FiMail, FiRefreshCw, FiShield } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import api from '../api';
 import AuthLayout from '../components/AuthLayout';
@@ -26,7 +26,24 @@ const ForgotPassword = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [diagnostics, setDiagnostics] = useState(null);
+  const [checkingDiagnostics, setCheckingDiagnostics] = useState(false);
+  const [diagnosticsError, setDiagnosticsError] = useState('');
   const navigate = useNavigate();
+
+  const handleCheckSetup = async () => {
+    setCheckingDiagnostics(true);
+    setDiagnosticsError('');
+    try {
+      const { data } = await api.get('/auth/password-reset/diagnostics');
+      setDiagnostics(data);
+    } catch (err) {
+      setDiagnostics(null);
+      setDiagnosticsError(getResetErrorMessage(err, 'Could not run the local email setup check.'));
+    } finally {
+      setCheckingDiagnostics(false);
+    }
+  };
 
   const handleRequestOtp = async (event) => {
     event.preventDefault();
@@ -105,6 +122,59 @@ const ForgotPassword = () => {
           <span>Codes expire after 10 minutes, can only be used once, and are locked after five incorrect attempts.</span>
         </p>
       </div>
+
+      {import.meta.env.DEV && (
+        <div className="reset-diagnostics">
+          <button
+            type="button"
+            className="reset-diagnostics-trigger"
+            onClick={handleCheckSetup}
+            disabled={checkingDiagnostics}
+          >
+            <FiRefreshCw className={checkingDiagnostics ? 'is-spinning' : ''} />
+            {checkingDiagnostics ? 'Checking local setup…' : 'Check email setup'}
+          </button>
+          {diagnosticsError && <p className="reset-diagnostics-error" role="alert">{diagnosticsError}</p>}
+          {diagnostics && (
+            <div className="reset-diagnostics-panel" aria-live="polite">
+              <strong>Local password-reset readiness</strong>
+              {[
+                ['MySQL is reachable', diagnostics.mysqlConnected],
+                ['OTP table exists', diagnostics.otpTableExists],
+                ['OTP table columns are correct', diagnostics.otpColumnsReady],
+                ['Resend API key is configured', diagnostics.resendApiKeyConfigured],
+                ['Sender email is configured', diagnostics.senderAddressConfigured],
+                ['OTP secret is configured', diagnostics.otpSecretConfigured]
+              ].map(([label, ready]) => (
+                <div className="reset-diagnostics-row" key={label}>
+                  {ready ? <FiCheckCircle /> : <FiAlertCircle />}
+                  <span>{label}</span>
+                  <b>{ready ? 'Ready' : 'Missing'}</b>
+                </div>
+              ))}
+              {diagnostics.missingOtpColumns?.length > 0 && (
+                <p className="reset-diagnostics-error">Missing OTP columns: {diagnostics.missingOtpColumns.join(', ')}. Check the OTP migration.</p>
+              )}
+              {diagnostics.databaseErrorCode && (
+                <p className="reset-diagnostics-error">MySQL error: {diagnostics.databaseErrorCode}. Check the backend database settings.</p>
+              )}
+              {!diagnostics.mysqlConnected && (
+                <p className="reset-diagnostics-error">Start MySQL and confirm DB_HOST, DB_USER, DB_PASSWORD and DB_NAME in backend/.env.</p>
+              )}
+              {diagnostics.mysqlConnected && !diagnostics.otpTableExists && (
+                <p className="reset-diagnostics-error">Run backend/migrations/2026-11-08-password-reset-otp.sql against the roomsync database.</p>
+              )}
+              {diagnostics.senderMode === 'resend-test-only' && (
+                <p className="reset-diagnostics-warning">Resend test sender is restricted to the email address registered to your Resend account. Other recipients require a verified sending domain.</p>
+              )}
+              {diagnostics.notes?.filter((note) => diagnostics.senderMode !== 'resend-test-only').map((note) => (
+                <p className="reset-diagnostics-hint" key={note}>{note}</p>
+              ))}
+              <small>Only configuration status is shown. Secret values and API keys are never displayed.</small>
+            </div>
+          )}
+        </div>
+      )}
 
       <form
         onSubmit={step === 'request' ? handleRequestOtp : handleVerifyAndReset}
