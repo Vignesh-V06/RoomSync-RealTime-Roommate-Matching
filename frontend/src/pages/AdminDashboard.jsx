@@ -8,7 +8,7 @@ import api from '../api';
 import CustomSelect from '../components/CustomSelect';
 
 const formatNumber = (value) => Number(value || 0).toLocaleString();
-const percentage = (part, total) => total ? Math.round((Number(part || 0) / Number(total)) * 100) : 0;
+const percentage = (part, total) => total ? Math.max(0, Math.min(100, Math.round((Number(part || 0) / Number(total)) * 100))) : 0;
 
 const Metric = ({ label, value, caption, icon, detail }) => (
   <article className="admin-metric-card">
@@ -132,7 +132,7 @@ const AdminDashboard = () => {
   const funnel = data?.funnel || {};
   const maxMonthly = Math.max(1, ...monthly.flatMap((item) => [
     item['Sign-ups'] || 0, item['Rooms created'] || 0, item.Applications || 0,
-    item.Messages || 0, item['Logins (tracked)'] || 0, item['Room views (tracked)'] || 0
+    item.Messages || 0
   ]));
   const profileRate = percentage(users.completed_profiles, users.total_users);
   const acceptanceRate = percentage(apps.accepted_applications, apps.total_applications);
@@ -339,7 +339,7 @@ const AdminDashboard = () => {
             <div className="admin-table-scroll">
               <table className="admin-table"><thead><tr><th>Name</th><th>Email</th><th>Profile</th><th>Room</th><th>Registered</th></tr></thead>
                 <tbody>{(data.recent_users || []).map((user) => <tr key={user.id}>
-                  <td>{user.name}</td><td>{user.email}</td><td>{Number(user.has_profile) ? 'Complete' : 'Incomplete'}</td>
+                  <td>{user.name}</td><td>{user.email}</td><td>{Number(user.has_profile) ? 'Created' : 'Not created'}</td>
                   <td>{Number(user.rooms_owned) ? 'Owner' : Number(user.active_relationships) ? 'Member/applicant' : '—'}</td>
                   <td>{user.created_at ? new Date(user.created_at).toLocaleDateString() : '—'}</td>
                 </tr>)}
