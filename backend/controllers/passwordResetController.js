@@ -54,6 +54,8 @@ const sendOtpEmail = async ({ to, name, otp, recordId }) => {
 
 exports.requestOtp = async (req, res) => {
   const email = normalizeEmail(req.body.email);
+  const isDevelopment = process.env.NODE_ENV !== 'production';
+
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 100) {
     return res.status(400).json({ message: 'Enter a valid email address.' });
   }
@@ -64,18 +66,22 @@ exports.requestOtp = async (req, res) => {
     || !process.env.PASSWORD_RESET_OTP_SECRET
   ) {
     return res.status(503).json({
-      message: 'Password reset email is not configured on this server yet.'
+      message: 'Password reset is not configured. Set RESEND_API_KEY, RESEND_FROM_EMAIL and PASSWORD_RESET_OTP_SECRET in backend/.env, then restart the backend.'
     });
   }
 
   const requestIp = String(req.ip || req.socket?.remoteAddress || '').slice(0, 45) || null;
-  const connection = await pool.getConnection();
+  let connection = null;
   let user = null;
   let otp = null;
   let otpRecordId = null;
 
   try {
+    // Acquire the connection inside the try block so refused MySQL connections
+    // return a useful API response instead of falling through Express.
+    connection = await pool.getConnection();
     await connection.beginTransaction();
+
     const [users] = await connection.query(
       'SELECT id, name, email FROM users WHERE email = ? LIMIT 1 FOR UPDATE',
       [email]
@@ -83,6 +89,12 @@ exports.requestOtp = async (req, res) => {
 
     if (!users.length) {
       await connection.commit();
+      if (isDevelopment) {
+        return res.status(404).json({
+          message: 'No RoomSync account uses this email address. Register a test account with an inbox you can access, then request the code again.'
+        });
+      }
+      // Keep production responses generic to avoid account enumeration.
       return res.json({ message: GENERIC_REQUEST_MESSAGE });
     }
 
@@ -94,6 +106,9 @@ exports.requestOtp = async (req, res) => {
     );
     if (requestIp && Number(ipRate[0]?.request_count || 0) >= 10) {
       await connection.commit();
+      if (isDevelopment) {
+        return res.status(429).json({ message: 'Too many reset requests from this device. Wait 10 minutes before trying again.' });
+      }
       return res.json({ message: GENERIC_REQUEST_MESSAGE });
     }
 
@@ -103,6 +118,9 @@ exports.requestOtp = async (req, res) => {
     );
     if (recent.length) {
       await connection.commit();
+      if (isDevelopment) {
+        return res.status(429).json({ message: 'A code was requested recently. Wait 60 seconds before requesting another one.' });
+      }
       return res.json({ message: GENERIC_REQUEST_MESSAGE });
     }
 
@@ -121,11 +139,34 @@ exports.requestOtp = async (req, res) => {
     otpRecordId = inserted.insertId;
     await connection.commit();
   } catch (error) {
-    await connection.rollback();
-    console.error('Password reset OTP request could not be prepared:', error);
-    return res.status(500).json({ message: 'We could not start password reset. Please try again.' });
+    if (connection) {
+      try { await connection.rollback(); } catch (rollbackError) {
+        console.error('Password reset transaction rollback failed:', rollbackError.code || rollbackError.message);
+      }
+    }
+    console.error('Password reset OTP request could not be prepared:', {
+      code: error.code,
+      errno: error.errno,
+      message: error.message
+    });
+
+    if (error.code === 'ER_NO_SUCH_TABLE' || Number(error.errno) === 1146) {
+      return res.status(503).json({
+        message: 'The password reset table is missing. Run backend/migrations/2026-11-08-password-reset-otp.sql against the roomsync database, then restart the backend.'
+      });
+    }
+    if (['ECONNREFUSED', 'PROTOCOL_CONNECTION_LOST', 'ER_ACCESS_DENIED_ERROR', 'ETIMEDOUT'].includes(error.code)) {
+      return res.status(503).json({
+        message: 'RoomSync cannot connect to MySQL. Check that MySQL is running and DB_HOST, DB_USER, DB_PASSWORD and DB_NAME in backend/.env are correct.'
+      });
+    }
+    return res.status(500).json({
+      message: isDevelopment
+        ? 'The password reset request failed in MySQL (' + (error.code || 'unknown database error') + '). Check the backend terminal for the SQL error.'
+        : 'We could not start password reset. Please try again.'
+    });
   } finally {
-    connection.release();
+    if (connection) connection.release();
   }
 
   try {
@@ -142,13 +183,27 @@ exports.requestOtp = async (req, res) => {
         [otpRecordId]
       );
     } catch (invalidateError) {
-      console.error('Could not invalidate undelivered password reset code:', invalidateError);
+      console.error('Could not invalidate undelivered password reset code:', invalidateError.code || invalidateError.message);
     }
-    console.error('Password reset email delivery failed:', error.message);
-    // Keep the response generic so it does not reveal whether the email is registered.
+
+    console.error('Password reset email delivery failed:', {
+      code: error.status || error.code,
+      message: error.message
+    });
+
+    if (isDevelopment) {
+      return res.status(503).json({
+        message: 'Resend could not deliver the OTP email: ' + error.message + '. Check the API key, sender address and verified-domain restriction in your Resend account.'
+      });
+    }
+
+    // Production stays generic so responses do not reveal whether an account exists.
+    return res.status(503).json({
+      message: 'Email delivery is temporarily unavailable. Please try again later.'
+    });
   }
 
-  return res.json({ message: GENERIC_REQUEST_MESSAGE });
+  return res.json({ message: 'Verification code sent if this email belongs to a RoomSync account. Check your inbox and spam folder.' });
 };
 
 exports.verifyOtpAndReset = async (req, res) => {
@@ -169,8 +224,9 @@ exports.verifyOtpAndReset = async (req, res) => {
     return res.status(503).json({ message: 'Password reset is not configured on this server yet.' });
   }
 
-  const connection = await pool.getConnection();
+  let connection = null;
   try {
+    connection = await pool.getConnection();
     await connection.beginTransaction();
     const [records] = await connection.query(
       'SELECT pr.id, pr.user_id, pr.otp_hash, pr.attempts FROM password_reset_otps pr JOIN users u ON u.id = pr.user_id WHERE u.email = ? AND pr.used_at IS NULL AND pr.expires_at > NOW() ORDER BY pr.id DESC LIMIT 1 FOR UPDATE',
@@ -221,10 +277,21 @@ exports.verifyOtpAndReset = async (req, res) => {
 
     return res.json({ message: 'Your password has been reset. You can now sign in.' });
   } catch (error) {
-    await connection.rollback();
-    console.error('Password reset verification failed:', error);
-    return res.status(500).json({ message: 'We could not reset your password. Please try again.' });
+    if (connection) {
+      try { await connection.rollback(); } catch (rollbackError) {
+        console.error('Password reset verification rollback failed:', rollbackError.code || rollbackError.message);
+      }
+    }
+    console.error('Password reset verification failed:', { code: error.code, errno: error.errno, message: error.message });
+    if (error.code === 'ER_NO_SUCH_TABLE' || Number(error.errno) === 1146) {
+      return res.status(503).json({ message: 'The password reset table is missing. Run backend/migrations/2026-11-08-password-reset-otp.sql, then restart the backend.' });
+    }
+    return res.status(500).json({
+      message: process.env.NODE_ENV !== 'production'
+        ? 'Password reset verification failed (' + (error.code || 'database error') + '). Check the backend terminal.'
+        : 'We could not reset your password. Please try again.'
+    });
   } finally {
-    connection.release();
+    if (connection) connection.release();
   }
 };
