@@ -1856,3 +1856,9 @@ select option { background: var(--bg-surface); color: var(--text-page); }
   .admin-month-row { grid-template-columns: 45px minmax(0,1fr) 32px; gap: 6px; }
   .admin-tracked-summary { gap: 9px; }
 }
+
+/* Use RoomSync's single password visibility control, not the browser's duplicate reveal glyph. */
+.auth-input-wrap input::-ms-reveal,
+.auth-input-wrap input::-ms-clear {
+  display: none;
+}
