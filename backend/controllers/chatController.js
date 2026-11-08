@@ -1,4 +1,5 @@
 const pool = require('../db/config');
+const recordActivity = require('../utils/activityLogger');
 const socket = require('../socket');
 
 const getRoomAccess = async (roomId, userId) => {
@@ -45,6 +46,7 @@ exports.sendMessage = async (req, res) => {
       'SELECT name, COALESCE(username, SUBSTRING_INDEX(email, \"@\", 1)) AS username FROM users WHERE id = ? LIMIT 1',
       [req.user.id]
     );
+    await recordActivity({ actorUserId: req.user.id, subjectUserId: req.user.id, eventType: 'chat_message_sent', entityType: 'room', entityId: req.params.roomId });
     const newMessage = {
       id: result.insertId,
       room_id: Number(req.params.roomId),
