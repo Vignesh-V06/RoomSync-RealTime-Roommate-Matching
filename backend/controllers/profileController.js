@@ -1,4 +1,5 @@
 const pool = require('../db/config');
+const recordActivity = require('../utils/activityLogger');
 
 const normalizeCustomPreferences = (value) => {
   let source = value;
@@ -55,6 +56,7 @@ exports.upsertProfile = async (req, res) => {
         'UPDATE profiles SET language=?, branch=?, cgpa_range=?, bed_pref=?, expected_members=?, sleep_pref=?, study_pref=?, food_pref=?, cleanliness=?, bio=?, skills=?, interests=?, academic_details=?, custom_preferences=? WHERE user_id=?',
         [language || null, branch || null, cgpa_range || null, bed_pref || null, Number(expected_members) || null, sleep_pref || null, study_pref || null, food_pref || null, cleanliness || null, bio || null, skills || null, interests || null, academic_details || null, JSON.stringify(customPreferences), userId]
       );
+      await recordActivity({ actorUserId: userId, subjectUserId: userId, eventType: 'profile_updated', entityType: 'profile', entityId: userId });
       return res.json({ message: 'Profile updated successfully.', phone, custom_preferences: customPreferences });
     }
 
@@ -62,6 +64,7 @@ exports.upsertProfile = async (req, res) => {
       'INSERT INTO profiles (user_id, language, branch, cgpa_range, bed_pref, expected_members, sleep_pref, study_pref, food_pref, cleanliness, bio, skills, interests, academic_details, custom_preferences) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [userId, language || null, branch || null, cgpa_range || null, bed_pref || null, Number(expected_members) || null, sleep_pref || null, study_pref || null, food_pref || null, cleanliness || null, bio || null, skills || null, interests || null, academic_details || null, JSON.stringify(customPreferences)]
     );
+    await recordActivity({ actorUserId: userId, subjectUserId: userId, eventType: 'profile_created', entityType: 'profile', entityId: userId });
     res.status(201).json({ message: 'Profile created successfully.', phone, custom_preferences: customPreferences });
   } catch (error) {
     console.error('Profile save failed:', error);
