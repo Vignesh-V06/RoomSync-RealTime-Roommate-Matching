@@ -1,4 +1,5 @@
 const pool = require('../db/config');
+const recordActivity = require('../utils/activityLogger');
 
 const parseJson = (value, fallback) => {
   if (value == null) return fallback;
@@ -112,6 +113,7 @@ exports.createRoom = async (req, res) => {
       [ownerId, block, roomType, bedType, capacity, customOptions.length > 0, notes, JSON.stringify(customOptions), 'open']
     );
     await connection.commit();
+    await recordActivity({ actorUserId: ownerId, subjectUserId: ownerId, eventType: 'room_created', entityType: 'room', entityId: result.insertId });
     res.status(201).json({ message: 'Room created successfully.', room_id: result.insertId });
   } catch (error) {
     await connection.rollback();
@@ -199,6 +201,7 @@ exports.getRoomPreview = async (req, res) => {
         'INSERT INTO room_views (room_id, viewer_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE view_count = view_count + 1, last_viewed_at = CURRENT_TIMESTAMP',
         [roomId, req.user.id]
       );
+      await recordActivity({ actorUserId: req.user.id, subjectUserId: room.owner_id, eventType: 'room_viewed', entityType: 'room', entityId: roomId });
     }
     const [images] = await pool.query(
       'SELECT id, original_name, mime_type FROM room_images WHERE room_id = ? ORDER BY id ASC',
@@ -271,6 +274,7 @@ exports.setRoomStatus = async (req, res) => {
       return res.status(409).json({ message: 'A full room cannot be reopened until a space becomes available.' });
     }
     await pool.query('UPDATE rooms SET status = ? WHERE room_id = ?', [status, rooms[0].room_id]);
+    await recordActivity({ actorUserId: req.user.id, subjectUserId: req.user.id, eventType: 'room_status_changed', entityType: 'room', entityId: rooms[0].room_id, metadata: { status } });
     res.json({ message: 'Room status updated.', status });
   } catch (error) {
     console.error('Room status update failed:', error);
@@ -338,6 +342,7 @@ exports.uploadRoomImage = async (req, res) => {
       'INSERT INTO room_images (room_id, uploaded_by, original_name, mime_type, image_data) VALUES (?, ?, ?, ?, ?)',
       [req.params.roomId, req.user.id, originalName, mimeType, imageData]
     );
+    await recordActivity({ actorUserId: req.user.id, subjectUserId: req.user.id, eventType: 'room_photo_uploaded', entityType: 'room', entityId: req.params.roomId, metadata: { image_id: result.insertId } });
     res.status(201).json({ id: result.insertId, original_name: originalName, mime_type: mimeType });
   } catch (error) {
     console.error('Room photo upload failed:', error);
