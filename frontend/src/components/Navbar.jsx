@@ -200,6 +200,10 @@ const Navbar = () => {
 
       {mobileOpen && (
         <nav className="mobile-navigation" aria-label="Mobile navigation">
+          <div className="mobile-user-summary">
+            <span className="mobile-user-label">SIGNED IN AS</span>
+            <strong>{user?.name || 'RoomSync account'}</strong>
+          </div>
           {visibleNavItems.map((item) => {
             const Icon = item.icon;
             return (
