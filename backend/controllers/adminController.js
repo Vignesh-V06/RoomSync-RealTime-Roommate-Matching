@@ -56,8 +56,8 @@ const getAnalyticsData = async (range) => {
       (SELECT COUNT(*) FROM activity_events WHERE event_type = 'room_viewed'${dateClause('occurred_at', range)}) AS room_impressions,
       (SELECT COUNT(*) FROM chat_messages WHERE 1=1${dateClause('created_at', range)}) AS total_messages,
       (SELECT COUNT(*) FROM room_images WHERE 1=1${dateClause('created_at', range)}) AS room_photos,
-      (SELECT COUNT(*) FROM activity_events WHERE event_type = 'user_logged_in'${dateClause('occurred_at', range)}) AS tracked_logins,
-      (SELECT COUNT(DISTINCT actor_user_id) FROM activity_events WHERE event_type = 'user_logged_in'${dateClause('occurred_at', range)}) AS tracked_login_users`),
+      (SELECT COUNT(*) FROM activity_events e JOIN users u ON u.id = e.actor_user_id WHERE e.event_type = 'user_logged_in' AND u.role <> 'admin'${dateClause('e.occurred_at', range)}) AS tracked_logins,
+      (SELECT COUNT(DISTINCT e.actor_user_id) FROM activity_events e JOIN users u ON u.id = e.actor_user_id WHERE e.event_type = 'user_logged_in' AND u.role <> 'admin'${dateClause('e.occurred_at', range)}) AS tracked_login_users`),
     pool.query(`SELECT
       (SELECT COUNT(*) FROM users WHERE role <> 'admin') AS registered_users,
       (SELECT COUNT(*) FROM profiles p JOIN users u ON u.id = p.user_id WHERE u.role <> 'admin') AS profiled_users,
@@ -74,7 +74,7 @@ const getAnalyticsData = async (range) => {
       UNION ALL
       SELECT DATE_FORMAT(created_at, '%Y-%m'), 'Messages', COUNT(*) FROM chat_messages WHERE 1=1${dateClause('created_at', range)} GROUP BY DATE_FORMAT(created_at, '%Y-%m')
       UNION ALL
-      SELECT DATE_FORMAT(occurred_at, '%Y-%m'), 'Logins (tracked)', COUNT(*) FROM activity_events WHERE event_type = 'user_logged_in'${dateClause('occurred_at', range)} GROUP BY DATE_FORMAT(occurred_at, '%Y-%m')
+      SELECT DATE_FORMAT(e.occurred_at, '%Y-%m'), 'Logins (tracked)', COUNT(*) FROM activity_events e JOIN users u ON u.id = e.actor_user_id WHERE e.event_type = 'user_logged_in' AND u.role <> 'admin'${dateClause('e.occurred_at', range)} GROUP BY DATE_FORMAT(e.occurred_at, '%Y-%m')
       UNION ALL
       SELECT DATE_FORMAT(occurred_at, '%Y-%m'), 'Room views (tracked)', COUNT(*) FROM activity_events WHERE event_type = 'room_viewed'${dateClause('occurred_at', range)} GROUP BY DATE_FORMAT(occurred_at, '%Y-%m')
     ) AS monthly_activity ORDER BY period ASC, metric ASC`),
@@ -106,7 +106,7 @@ const getAnalyticsData = async (range) => {
       ORDER BY e.occurred_at DESC, e.id DESC LIMIT 24`),
     pool.query(`SELECT u.id, u.name, COUNT(e.id) AS login_count, MAX(e.occurred_at) AS last_tracked_login
       FROM activity_events e JOIN users u ON u.id = e.actor_user_id
-      WHERE e.event_type = 'user_logged_in'${dateClause('e.occurred_at', range)}
+      WHERE e.event_type = 'user_logged_in' AND u.role <> 'admin'${dateClause('e.occurred_at', range)}
       GROUP BY u.id, u.name ORDER BY login_count DESC, last_tracked_login DESC LIMIT 8`)
   ]);
 
