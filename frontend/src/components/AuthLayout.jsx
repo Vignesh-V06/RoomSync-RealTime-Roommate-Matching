@@ -29,11 +29,22 @@ const AuthLayout = ({ eyebrow = 'RoomSync · Student living', title, description
         <section className="auth-story" aria-label="About RoomSync matching">
           <div className="auth-story-content">
             <span className="auth-eyebrow"><i /> {eyebrow}</span>
-            <h1>Shared space.<br /><span>Better fit.</span></h1>
+            <h1>Find your people.<br /><span>Feel at home.</span></h1>
             <p className="auth-story-copy">
-              A better shared space starts with the details that matter to you.
-              Compare routines, expectations and everyday preferences before you decide.
+              A good roommate match goes beyond an empty bed. RoomSync brings everyday
+              routines and shared expectations into the decision, so you can choose with more confidence.
             </p>
+            <div className="auth-fit-card">
+              <div className="auth-fit-card-heading">
+                <span>THE ROOMSYNC APPROACH</span>
+                <strong>Compatibility, with context.</strong>
+              </div>
+              <div className="auth-fit-signals">
+                <span><i /> Daily routines</span>
+                <span><i /> Study atmosphere</span>
+                <span><i /> Shared expectations</span>
+              </div>
+            </div>
             <div className="auth-story-stat-row">
               <div><strong>01</strong><span>Set your rhythm</span></div>
               <div><strong>02</strong><span>Compare the fit</span></div>
