@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FiArrowLeft, FiArrowRight, FiCheck, FiHome, FiInfo, FiPlus, FiTrash2 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import api from '../api';
+import CustomSelect from '../components/CustomSelect';
 
 const initialForm = {
   block: '',
@@ -114,20 +115,32 @@ const CreateRoom = () => {
               <div className="create-form-grid">
                 <div className="create-form-field">
                   <label htmlFor="room-type">Sharing type</label>
-                  <select id="room-type" className="input-field" value={formData.room_type} onChange={(event) => handleRoomTypeChange(event.target.value)}>
-                    <option value="1-sharing">1-sharing</option>
-                    <option value="2-sharing">2-sharing</option>
-                    <option value="3-sharing">3-sharing</option>
-                    <option value="4-sharing">4-sharing</option>
-                  </select>
+                  <CustomSelect
+                    id="room-type"
+                    ariaLabel="Sharing type"
+                    value={formData.room_type}
+                    onChange={handleRoomTypeChange}
+                    options={[
+                      { value: '1-sharing', label: '1-sharing' },
+                      { value: '2-sharing', label: '2-sharing' },
+                      { value: '3-sharing', label: '3-sharing' },
+                      { value: '4-sharing', label: '4-sharing' }
+                    ]}
+                  />
                 </div>
 
                 <div className="create-form-field">
                   <label htmlFor="bed-type">Bed type</label>
-                  <select id="bed-type" className="input-field" value={formData.bed_type} onChange={(event) => updateField('bed_type', event.target.value)}>
-                    <option value="Normal Bed">Normal bed</option>
-                    <option value="Bunk Bed">Bunk bed</option>
-                  </select>
+                  <CustomSelect
+                    id="bed-type"
+                    ariaLabel="Bed type"
+                    value={formData.bed_type}
+                    onChange={(value) => updateField('bed_type', value)}
+                    options={[
+                      { value: 'Normal Bed', label: 'Normal bed' },
+                      { value: 'Bunk Bed', label: 'Bunk bed' }
+                    ]}
+                  />
                 </div>
               </div>
 
