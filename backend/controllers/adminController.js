@@ -128,6 +128,63 @@ const getAnalyticsData = async (range) => {
   };
 };
 
+const getCsvDataset = async (range, dataset) => {
+  const clause = (column) => dateClause(column, range);
+  if (dataset === 'overview') {
+    const overview = await getAnalyticsData(range);
+    return [
+      { metric: 'Generated at', value: overview.generated_at },
+      { metric: 'Selected range', value: range },
+      { metric: 'Total student accounts', value: overview.users.total_users },
+      { metric: 'Profiles created', value: overview.users.completed_profiles },
+      { metric: 'New accounts in period', value: overview.users.users_in_range },
+      { metric: 'Rooms currently listed', value: overview.rooms.total_rooms },
+      { metric: 'Open rooms', value: overview.rooms.open_rooms },
+      { metric: 'Closed rooms', value: overview.rooms.closed_rooms },
+      { metric: 'Applications in period', value: overview.applications.total_applications },
+      { metric: 'Accepted applications', value: overview.applications.accepted_applications },
+      { metric: 'Pending applications', value: overview.applications.pending_applications },
+      { metric: 'Unique room visitors', value: overview.engagement.unique_room_visitors },
+      { metric: 'Tracked room impressions', value: overview.engagement.room_impressions },
+      { metric: 'Chat messages in period', value: overview.engagement.total_messages },
+      { metric: 'Tracked logins', value: overview.engagement.tracked_logins }
+    ];
+  }
+  if (dataset === 'users') {
+    const [rows] = await pool.query(`SELECT u.id, u.name, u.username, u.email, u.created_at, u.last_login_at,
+      (p.user_id IS NOT NULL) AS profile_created,
+      (SELECT COUNT(*) FROM rooms r WHERE r.owner_id = u.id) AS rooms_owned,
+      (SELECT COUNT(*) FROM room_requests q WHERE q.user_id = u.id AND q.status IN ('applied','accepted')) AS active_room_relationships
+      FROM users u LEFT JOIN profiles p ON p.user_id = u.id
+      WHERE u.role <> 'admin' ORDER BY u.created_at DESC LIMIT ${EXPORT_LIMIT}`);
+    return rows;
+  }
+  if (dataset === 'rooms') {
+    const [rows] = await pool.query(`SELECT r.room_id, r.block, r.room_type, r.bed_type, r.status, r.current_occupancy, r.total_capacity, r.created_at,
+      u.name AS owner_name, u.email AS owner_email,
+      (SELECT COUNT(DISTINCT v.viewer_id) FROM room_views v WHERE v.room_id = r.room_id) AS unique_visitors,
+      (SELECT COALESCE(SUM(v.view_count), 0) FROM room_views v WHERE v.room_id = r.room_id) AS all_time_impressions,
+      (SELECT COUNT(*) FROM room_requests q WHERE q.room_id = r.room_id) AS all_time_applications
+      FROM rooms r JOIN users u ON u.id = r.owner_id
+      WHERE 1=1${clause('r.created_at')} ORDER BY r.created_at DESC LIMIT ${EXPORT_LIMIT}`);
+    return rows;
+  }
+  if (dataset === 'applications') {
+    const [rows] = await pool.query(`SELECT q.request_id, q.status, q.created_at, r.room_id, r.block, r.room_type,
+      applicant.name AS applicant_name, applicant.email AS applicant_email, owner.name AS owner_name
+      FROM room_requests q JOIN rooms r ON r.room_id = q.room_id
+      JOIN users applicant ON applicant.id = q.user_id JOIN users owner ON owner.id = r.owner_id
+      WHERE 1=1${clause('q.created_at')} ORDER BY q.created_at DESC LIMIT ${EXPORT_LIMIT}`);
+    return rows;
+  }
+  const [rows] = await pool.query(`SELECT e.id, e.event_type, e.entity_type, e.entity_id, e.metadata, e.occurred_at,
+    actor.name AS actor_name, actor.email AS actor_email, subject.name AS subject_name
+    FROM activity_events e LEFT JOIN users actor ON actor.id = e.actor_user_id
+    LEFT JOIN users subject ON subject.id = e.subject_user_id
+    WHERE 1=1${clause('e.occurred_at')} ORDER BY e.occurred_at DESC, e.id DESC LIMIT ${EXPORT_LIMIT}`);
+  return rows.map((event) => ({ ...event, metadata: safeJson(event.metadata) }));
+};
+
 const getReportData = async (range) => {
   const clause = (column) => dateClause(column, range);
   const [overview, users, rooms, applications, activity] = await Promise.all([
@@ -199,10 +256,10 @@ exports.exportReport = async (req, res) => {
     const format = String(req.query.format || 'xlsx').toLowerCase();
     if (!['xlsx', 'csv'].includes(format)) return res.status(400).json({ message: 'Choose xlsx or csv.' });
 
-    const report = await getReportData(range);
     if (format === 'csv') {
       const dataset = String(req.query.dataset || 'overview').toLowerCase();
       if (!DATASETS.has(dataset)) return res.status(400).json({ message: 'Choose a supported report dataset.' });
+      const rows = await getCsvDataset(range, dataset);
       await recordActivity({ actorUserId: req.user.id, subjectUserId: req.user.id, eventType: 'admin_report_exported', entityType: 'report', entityId: dataset, metadata: { format, range } });
       const filename = `roomsync-${dataset}-${range}-report.csv`;
       res.set({
@@ -211,9 +268,10 @@ exports.exportReport = async (req, res) => {
         'Cache-Control': 'no-store',
         'X-Content-Type-Options': 'nosniff'
       });
-      return res.send(toCsv(report[dataset]));
+      return res.send(toCsv(rows));
     }
 
+    const report = await getReportData(range);
     const sheets = [
       { name: 'Overview', rows: report.overview },
       { name: 'Users', rows: report.users },
