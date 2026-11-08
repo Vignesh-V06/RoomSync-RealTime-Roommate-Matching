@@ -49,11 +49,11 @@ const getAnalyticsData = async (range) => {
     pool.query("SELECT COUNT(*) AS total_users, SUM(created_at >= NOW() - INTERVAL 30 DAY) AS new_users_30d, SUM(last_login_at >= NOW() - INTERVAL 30 DAY) AS active_users_30d FROM users WHERE role <> 'admin'"),
     pool.query(`SELECT COUNT(*) AS users_in_range FROM users WHERE role <> 'admin' AND 1=1${dateClause('created_at', range)}`),
     pool.query("SELECT COUNT(*) AS completed_profiles FROM profiles p JOIN users u ON u.id = p.user_id WHERE u.role <> 'admin'"),
-    pool.query(`SELECT COUNT(*) AS total_rooms, SUM(status = 'open') AS open_rooms, SUM(status = 'closed') AS closed_rooms, SUM(current_occupancy >= total_capacity) AS full_rooms, COALESCE(SUM(current_occupancy), 0) AS occupied_beds, COALESCE(SUM(total_capacity), 0) AS total_beds FROM rooms WHERE 1=1${dateClause('created_at', range)}`),
+    pool.query("SELECT COUNT(*) AS total_rooms, SUM(status = 'open') AS open_rooms, SUM(status = 'closed') AS closed_rooms, SUM(current_occupancy >= total_capacity) AS full_rooms, COALESCE(SUM(current_occupancy), 0) AS occupied_beds, COALESCE(SUM(total_capacity), 0) AS total_beds FROM rooms"),
     pool.query(`SELECT COUNT(*) AS total_applications, SUM(status = 'applied') AS pending_applications, SUM(status = 'accepted') AS accepted_applications, SUM(status = 'rejected') AS rejected_applications FROM room_requests WHERE 1=1${dateClause('created_at', range)}`),
     pool.query(`SELECT
       (SELECT COUNT(DISTINCT viewer_id) FROM room_views WHERE 1=1${dateClause('last_viewed_at', range)}) AS unique_room_visitors,
-      (SELECT COALESCE(SUM(view_count), 0) FROM room_views WHERE 1=1${dateClause('last_viewed_at', range)}) AS room_impressions,
+      (SELECT COUNT(*) FROM activity_events WHERE event_type = 'room_viewed'${dateClause('occurred_at', range)}) AS room_impressions,
       (SELECT COUNT(*) FROM chat_messages WHERE 1=1${dateClause('created_at', range)}) AS total_messages,
       (SELECT COUNT(*) FROM room_images WHERE 1=1${dateClause('created_at', range)}) AS room_photos,
       (SELECT COUNT(*) FROM activity_events WHERE event_type = 'user_logged_in'${dateClause('occurred_at', range)}) AS tracked_logins,
