@@ -6,5 +6,6 @@ const adminController = require('../controllers/adminController');
 
 router.use(authMiddleware, adminMiddleware);
 router.get('/analytics', adminController.getAnalytics);
+router.get('/reports/export', adminController.exportReport);
 
 module.exports = router;
