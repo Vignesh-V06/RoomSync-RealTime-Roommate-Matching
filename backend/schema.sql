@@ -120,3 +120,23 @@ CREATE TABLE IF NOT EXISTS password_reset_otps (
   INDEX idx_password_reset_expiry (expires_at),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+
+-- Privacy-conscious operational events used for admin analytics.
+-- Never store message bodies, credentials, OTP values or contact details here.
+CREATE TABLE IF NOT EXISTS activity_events (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  actor_user_id INT NULL,
+  subject_user_id INT NULL,
+  event_type VARCHAR(50) NOT NULL,
+  entity_type VARCHAR(40) NULL,
+  entity_id VARCHAR(64) NULL,
+  metadata JSON NULL,
+  occurred_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_activity_events_type_time (event_type, occurred_at),
+  INDEX idx_activity_events_actor_time (actor_user_id, occurred_at),
+  INDEX idx_activity_events_subject_time (subject_user_id, occurred_at),
+  INDEX idx_activity_events_entity (entity_type, entity_id),
+  FOREIGN KEY (actor_user_id) REFERENCES users(id) ON DELETE SET NULL,
+  FOREIGN KEY (subject_user_id) REFERENCES users(id) ON DELETE SET NULL
+);
