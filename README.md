@@ -122,7 +122,7 @@ The administrator analytics screen is served at /admin. Both the frontend route 
 
 ### Admin analytics and activity event tracking
 
-The administrator API and report downloads require both a valid session and a database-backed `admin` role. The admin dashboard supports 3-month, 12-month (default), and all-available-history views. Excel exports contain Overview, Users, Rooms, Applications and Activity sheets. CSV exports are available per dataset.
+The administrator API and report downloads require both a valid session and a database-backed `admin` role. The admin dashboard supports 3-month, 12-month (default), and all-available-history views. Excel exports contain Overview, Users, Rooms, Applications, Monthly Trends, Top Rooms, Hostel Blocks and Activity sheets. CSV exports are available per dataset.
 
 For an existing database, take a backup and run this migration once:
 
