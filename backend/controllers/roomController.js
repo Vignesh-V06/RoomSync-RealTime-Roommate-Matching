@@ -298,7 +298,7 @@ exports.getRoomDetails = async (req, res) => {
     if (access.error) return res.status(access.error).json({ message: access.message });
     const room = access.room;
     const [details] = await pool.query(
-      'SELECT r.*, u.name AS owner_name, u.username AS owner_username FROM rooms r JOIN users u ON u.id = r.owner_id WHERE r.room_id = ? LIMIT 1',
+      'SELECT r.*, u.name AS owner_name FROM rooms r JOIN users u ON u.id = r.owner_id WHERE r.room_id = ? LIMIT 1',
       [room.room_id]
     );
     const [members] = await pool.query(
