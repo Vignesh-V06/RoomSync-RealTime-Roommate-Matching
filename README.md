@@ -119,6 +119,28 @@ npm run seed:admin
 The administrator analytics screen is served at /admin. Both the frontend route and the /api/admin/analytics endpoint check the account role; changing browser local storage is not sufficient to grant access.
 
 
+
+### Admin analytics and activity event tracking
+
+The administrator API and report downloads require both a valid session and a database-backed `admin` role. The admin dashboard supports 3-month, 12-month (default), and all-available-history views. Excel exports contain Overview, Users, Rooms, Applications and Activity sheets. CSV exports are available per dataset.
+
+For an existing database, take a backup and run this migration once:
+
+```bash
+mysql -u YOUR_DB_USER -p roomsync < backend/migrations/2026-11-08-activity-events.sql
+```
+
+For a new database, the latest `backend/schema.sql` already includes `activity_events`.
+
+Activity logging intentionally excludes passwords, OTPs, message contents, email contents and phone numbers. The event log begins only after this migration and application version are deployed. Older registration, room, application, view and message totals are still derived from their existing tables; historic login/event detail cannot be reconstructed.
+
+The reporting endpoints are under `/api/admin` and are protected by the server-side admin middleware:
+- `GET /api/admin/analytics?range=12m`
+- `GET /api/admin/reports/export?format=xlsx&range=12m`
+- `GET /api/admin/reports/export?format=csv&dataset=users&range=12m`
+
+CSV datasets: `overview`, `users`, `rooms`, `applications`, `activity`. Export rows are capped at 20,000 per dataset. Reports contain limited account identifiers needed for administration and must be handled as confidential data.
+
 ### Verified email OTP password reset
 
 The password-reset flow sends a six-digit code through Resend. Codes are stored only as keyed hashes, expire after 10 minutes, are single-use, and are locked after five incorrect attempts. Requests are throttled per account and by source IP.
