@@ -156,7 +156,7 @@ const getCsvDataset = async (range, dataset) => {
       (SELECT COUNT(*) FROM rooms r WHERE r.owner_id = u.id) AS rooms_owned,
       (SELECT COUNT(*) FROM room_requests q WHERE q.user_id = u.id AND q.status IN ('applied','accepted')) AS active_room_relationships
       FROM users u LEFT JOIN profiles p ON p.user_id = u.id
-      WHERE u.role <> 'admin' ORDER BY u.created_at DESC LIMIT ${EXPORT_LIMIT}`);
+      WHERE u.role <> 'admin'${clause('u.created_at')} ORDER BY u.created_at DESC LIMIT ${EXPORT_LIMIT}`);
     return rows;
   }
   if (dataset === 'rooms') {
