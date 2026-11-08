@@ -79,9 +79,9 @@ const Home = () => {
                 <span>Better habits. Better shared living.</span>
               </div>
             </div>
-            <div className="preview-insights">
-              <span><FiCompass /> Find a space that fits you</span>
-              <span><FiMessageCircle /> Talk before you move in</span>
+            <div className="preview-insights" aria-label="RoomSync benefits">
+              <span><FiCompass aria-hidden="true" /><span><strong>Find your fit</strong><small>Explore compatible spaces</small></span></span>
+              <span><FiMessageCircle aria-hidden="true" /><span><strong>Talk first</strong><small>Connect before moving in</small></span></span>
             </div>
           </div>
         </section>
