@@ -42,7 +42,12 @@ exports.upsertProfile = async (req, res) => {
       sleep_pref, study_pref, food_pref, cleanliness,
       bio, skills, interests, academic_details
     } = req.body;
+    const phone = String(req.body.phone || '').trim() || null;
+    if (phone && !/^[+0-9() .-]{7,30}$/.test(phone)) {
+      return res.status(400).json({ message: 'Enter a valid phone number (7 to 30 characters).' });
+    }
     const customPreferences = normalizeCustomPreferences(req.body.custom_preferences);
+    await pool.query('UPDATE users SET phone = ? WHERE id = ?', [phone, userId]);
 
     const [existing] = await pool.query('SELECT user_id FROM profiles WHERE user_id = ? LIMIT 1', [userId]);
     if (existing.length) {
@@ -50,14 +55,14 @@ exports.upsertProfile = async (req, res) => {
         'UPDATE profiles SET language=?, branch=?, cgpa_range=?, bed_pref=?, expected_members=?, sleep_pref=?, study_pref=?, food_pref=?, cleanliness=?, bio=?, skills=?, interests=?, academic_details=?, custom_preferences=? WHERE user_id=?',
         [language || null, branch || null, cgpa_range || null, bed_pref || null, Number(expected_members) || null, sleep_pref || null, study_pref || null, food_pref || null, cleanliness || null, bio || null, skills || null, interests || null, academic_details || null, JSON.stringify(customPreferences), userId]
       );
-      return res.json({ message: 'Profile updated successfully.', custom_preferences: customPreferences });
+      return res.json({ message: 'Profile updated successfully.', phone, custom_preferences: customPreferences });
     }
 
     await pool.query(
       'INSERT INTO profiles (user_id, language, branch, cgpa_range, bed_pref, expected_members, sleep_pref, study_pref, food_pref, cleanliness, bio, skills, interests, academic_details, custom_preferences) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [userId, language || null, branch || null, cgpa_range || null, bed_pref || null, Number(expected_members) || null, sleep_pref || null, study_pref || null, food_pref || null, cleanliness || null, bio || null, skills || null, interests || null, academic_details || null, JSON.stringify(customPreferences)]
     );
-    res.status(201).json({ message: 'Profile created successfully.', custom_preferences: customPreferences });
+    res.status(201).json({ message: 'Profile created successfully.', phone, custom_preferences: customPreferences });
   } catch (error) {
     console.error('Profile save failed:', error);
     res.status(500).json({ message: 'Server error saving profile.' });
