@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const pool = require('../db/config');
+const recordActivity = require('../utils/activityLogger');
 
 const normalizeUsername = (value) => String(value || '')
   .trim()
@@ -53,6 +54,7 @@ exports.register = async (req, res) => {
     );
 
     const user = { id: result.insertId, name, username, email, phone, role: 'student' };
+    await recordActivity({ actorUserId: user.id, subjectUserId: user.id, eventType: 'user_registered', entityType: 'user', entityId: user.id });
     const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
     res.status(201).json({ token, user });
   } catch (error) {
@@ -78,6 +80,7 @@ exports.login = async (req, res) => {
     if (!isMatch) return res.status(400).json({ message: 'Invalid credentials.' });
 
     await pool.query('UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?', [user.id]);
+    await recordActivity({ actorUserId: user.id, subjectUserId: user.id, eventType: 'user_logged_in', entityType: 'user', entityId: user.id });
     const safeUser = {
       id: user.id,
       name: user.name,
