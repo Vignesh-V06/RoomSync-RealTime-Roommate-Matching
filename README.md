@@ -139,7 +139,7 @@ The reporting endpoints are under `/api/admin` and are protected by the server-s
 - `GET /api/admin/reports/export?format=xlsx&range=12m`
 - `GET /api/admin/reports/export?format=csv&dataset=users&range=12m`
 
-CSV datasets: `overview`, `users`, `rooms`, `applications`, `activity`. Export rows are capped at 20,000 per dataset. Reports contain limited account identifiers needed for administration and must be handled as confidential data.
+CSV datasets: `overview`, `users`, `rooms`, `applications`, `monthly`, `top_rooms`, `blocks`, `activity`. Export rows are capped at 20,000 per dataset. Reports contain limited account identifiers needed for administration and must be handled as confidential data.
 
 ### Verified email OTP password reset
 
