@@ -200,7 +200,7 @@ const getReportData = async (range) => {
       (SELECT COUNT(*) FROM rooms r WHERE r.owner_id = u.id) AS rooms_owned,
       (SELECT COUNT(*) FROM room_requests q WHERE q.user_id = u.id AND q.status IN ('applied','accepted')) AS active_room_relationships
       FROM users u LEFT JOIN profiles p ON p.user_id = u.id
-      WHERE u.role <> 'admin' ORDER BY u.created_at DESC LIMIT ${EXPORT_LIMIT}`),
+      WHERE u.role <> 'admin'${clause('u.created_at')} ORDER BY u.created_at DESC LIMIT ${EXPORT_LIMIT}`),
     pool.query(`SELECT r.room_id, r.block, r.room_type, r.bed_type, r.status, r.current_occupancy, r.total_capacity, r.created_at,
       u.name AS owner_name, u.email AS owner_email,
       (SELECT COUNT(DISTINCT v.viewer_id) FROM room_views v WHERE v.room_id = r.room_id) AS unique_visitors,
