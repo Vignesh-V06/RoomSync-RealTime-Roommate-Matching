@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "test": "echo \"Backend check passed\"",
+    "test": "node --test",
     "seed:admin": "node scripts/seed-admin.js"
   },
   "keywords": [],
