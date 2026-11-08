@@ -5,6 +5,19 @@ import toast from 'react-hot-toast';
 import api from '../api';
 import AuthLayout from '../components/AuthLayout';
 
+const getResetErrorMessage = (error, fallback) => {
+  if (!error.response) {
+    return 'Cannot reach the RoomSync backend. Start it with npm start in the backend folder and check VITE_API_BASE_URL.';
+  }
+  if (error.response.status === 404 && !error.response.data?.message) {
+    return 'The password-reset API route was not found. Pull the latest branch and restart the backend server.';
+  }
+  if (error.response.status >= 500 && !error.response.data?.message) {
+    return 'The RoomSync server failed to process this request. Check the backend terminal for the exact error.';
+  }
+  return error.response.data?.message || fallback;
+};
+
 const ForgotPassword = () => {
   const [step, setStep] = useState('request');
   const [email, setEmail] = useState('');
@@ -27,7 +40,7 @@ const ForgotPassword = () => {
       setStep('verify');
       setNotice(data.message || 'If an account exists for that email, a verification code will be sent shortly.');
     } catch (err) {
-      setError(err.response?.data?.message || 'We could not start password reset. Please try again.');
+      setError(getResetErrorMessage(err, 'We could not start password reset. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -43,7 +56,7 @@ const ForgotPassword = () => {
       });
       setNotice(data.message || 'If an account exists for that email, a verification code will be sent shortly. Wait a minute before requesting another code.');
     } catch (err) {
-      setError(err.response?.data?.message || 'We could not resend the code. Please try again.');
+      setError(getResetErrorMessage(err, 'We could not resend the code. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -71,7 +84,7 @@ const ForgotPassword = () => {
       toast.success('Password reset successfully. You can now sign in.');
       navigate('/login', { replace: true });
     } catch (err) {
-      setError(err.response?.data?.message || 'We could not verify the code. Please try again.');
+      setError(getResetErrorMessage(err, 'We could not verify the code. Please try again.'));
     } finally {
       setLoading(false);
     }
