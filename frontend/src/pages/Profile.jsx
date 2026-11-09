@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { FiEdit2, FiMapPin, FiBook, FiBriefcase, FiHeart, FiSettings, FiCheck } from 'react-icons/fi';
 import api from '../api';
 import CustomSelect from '../components/CustomSelect';
-import RoomSyncLoader, { useRoomSyncLoader } from '../components/RoomSyncLoader';
+import RoomSyncLoader from '../components/RoomSyncLoader';
+import useRoomSyncLoader from '../hooks/useRoomSyncLoader';
 import toast from 'react-hot-toast';
 
 const Profile = () => {
