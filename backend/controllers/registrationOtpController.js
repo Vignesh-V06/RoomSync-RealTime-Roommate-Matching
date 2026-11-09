@@ -21,7 +21,7 @@ const escapeHtml = (value) => String(value || '').replace(/[&<>"']/g, (character
 })[character]);
 
 const getUniqueUsername = async (connection, name) => {
-  const normalized = normalizeUsername(String(name || '').replace(/\\s+/g, '.'));
+  const normalized = normalizeUsername(String(name || '').replace(/\s+/g, '.'));
   const base = (normalized.length >= 3 ? normalized : 'student.' + normalized).slice(0, 24);
   for (let suffix = 1; suffix <= 9999; suffix += 1) {
     const candidate = suffix === 1 ? base : base.slice(0, 29 - String(suffix).length) + '.' + suffix;
@@ -44,7 +44,7 @@ exports.requestOtp = async (req, res) => {
   const phone = String(req.body.phone || '').trim() || null;
 
   if (!name || name.length > 100) return res.status(400).json({ message: 'Enter a valid name.' });
-  if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) || email.length > 100) {
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 100) {
     return res.status(400).json({ message: 'Enter a valid email address.' });
   }
   if (password.length < 8 || password.length > 128) {
@@ -176,7 +176,7 @@ exports.verifyOtp = async (req, res) => {
   const email = normalizeEmail(req.body.email);
   const otp = String(req.body.otp || '').trim();
 
-  if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) || email.length > 100) {
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 100) {
     return res.status(400).json({ message: 'Enter a valid email address.' });
   }
   if (!isValidOtp(otp)) {
