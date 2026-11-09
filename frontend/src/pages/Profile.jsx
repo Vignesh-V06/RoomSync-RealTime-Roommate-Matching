@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiEdit2, FiMapPin, FiBook, FiBriefcase, FiHeart, FiSettings, FiCheck } from 'react-icons/fi';
 import api from '../api';
+import CustomSelect from '../components/CustomSelect';
 import toast from 'react-hot-toast';
 
 const Profile = () => {
@@ -15,13 +16,14 @@ const Profile = () => {
   const navigate = useNavigate();
 
   const defaultFormData = {
-    bio: '', skills: '', interests: '', academic_details: '',
+    bio: '', skills: '', interests: '', academic_details: '', phone: '',
     language: 'English', branch: 'Computer Science', cgpa_range: '8-9',
     bed_pref: 'lower', expected_members: 2, sleep_pref: 'Night Owl',
     study_pref: 'Total Silence', food_pref: 'Vegetarian', cleanliness: 'Moderate'
   };
 
   const [formData, setFormData] = useState(defaultFormData);
+  const [customPrefRows, setCustomPrefRows] = useState([{ key: '', value: '' }]);
   useEffect(() => {
     const fetchProfileData = async () => {
       try {
@@ -31,6 +33,12 @@ const Profile = () => {
         ]);
         setProfile(profileRes.data);
         setFormData(prev => ({ ...prev, ...profileRes.data }));
+        if (!profileRes.data.user_id) {
+          setIsEditing(true);
+          toast('Complete your matching profile to get more accurate room scores.');
+        }
+        const customPrefs = profileRes.data.custom_preferences || {};
+        setCustomPrefRows([...Object.entries(customPrefs).map(([key, value]) => ({ key, value })), { key: '', value: '' }]);
         setApplications(appsRes.data);
       } catch (err) {
         if (err?.response?.status === 404) {
@@ -47,11 +55,15 @@ const Profile = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await api.post('/profiles', formData);
+      const customPreferences = Object.fromEntries(customPrefRows
+        .filter((item) => item.key.trim() && item.value.trim())
+        .slice(0, 12)
+        .map((item) => [item.key.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, ''), item.value.trim()]));
+      await api.post('/profiles', { ...formData, custom_preferences: customPreferences });
       toast.success('Profile updated successfully!');
-      setProfile({...profile, ...formData, user_name: user?.name || profile?.user_name});
+      setProfile({ ...profile, ...formData, phone: formData.phone || null, custom_preferences: customPreferences, user_name: user?.name || profile?.user_name });
       setIsEditing(false);
-    } catch (err) {
+    } catch {
       toast.error('Failed to update profile');
     }
   };
@@ -62,7 +74,7 @@ const Profile = () => {
   const name = profile?.user_name || user?.name || 'New User';
 
   return (
-    <div className="max-w-6xl mx-auto p-4 md:p-6 mt-4">
+    <div className="profile-page max-w-6xl mx-auto p-4 md:p-6 mt-4">
       <div className="flex flex-col md:flex-row gap-8">
         
         {/* LEFT SIDEBAR (GitHub Style) */}
@@ -74,7 +86,8 @@ const Profile = () => {
             </div>
             
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white mt-6 text-center md:text-left">{name}</h1>
-            <p className="text-slate-500 dark:text-slate-400 text-sm text-center md:text-left mb-4">@{name.toLowerCase().replace(/\s/g, '')}</p>
+            <p className="text-slate-500 dark:text-slate-400 text-sm text-center md:text-left mb-2">@{profile?.username || user?.username || name.toLowerCase().replace(/\s/g, '')}</p>
+            <div className="profile-contact-summary"><span>{profile?.user_email || user?.email || 'Email not added'}</span><span>{profile?.phone || user?.phone || 'Phone not added'}</span></div>
             
             {profile?.bio && <p className="text-slate-700 dark:text-slate-300 mb-6 text-sm">{profile.bio}</p>}
 
@@ -157,6 +170,21 @@ const Profile = () => {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
+                      <label htmlFor="profile-phone" className="block text-sm font-medium mb-1">Phone number</label>
+                      <input
+                        id="profile-phone"
+                        type="tel"
+                        autoComplete="tel"
+                        inputMode="tel"
+                        maxLength={30}
+                        className="input-field"
+                        value={formData.phone || ''}
+                        onChange={(event) => setFormData({ ...formData, phone: event.target.value })}
+                        placeholder="+91 98765 43210"
+                      />
+                      <small className="text-slate-500">Optional. Room members can see this after joining the same room.</small>
+                    </div>
+                    <div>
                       <label className="block text-sm font-medium mb-1">Skills (comma separated)</label>
                       <input type="text" className="input-field" value={formData.skills} onChange={e => setFormData({...formData, skills: e.target.value})} placeholder="React, Python, Design..."/>
                     </div>
@@ -180,55 +208,67 @@ const Profile = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <div>
                       <label className="block text-sm font-medium mb-1">Branch</label>
-                      <select className="input-field" value={formData.branch} onChange={e => setFormData({...formData, branch: e.target.value})}>
-                        <option value="Computer Science">Computer Science</option>
-                        <option value="Electronics">Electronics</option>
-                        <option value="Mechanical">Mechanical</option>
-                        <option value="Civil">Civil</option>
-                      </select>
+                      <CustomSelect id="profile-branch" ariaLabel="Academic branch" value={formData.branch} onChange={(value) => setFormData((prev) => ({ ...prev, branch: value }))} options={[
+                        { value: 'Computer Science', label: 'Computer Science' },
+                        { value: 'Electronics', label: 'Electronics' },
+                        { value: 'Mechanical', label: 'Mechanical' },
+                        { value: 'Civil', label: 'Civil' }
+                      ]} />
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-1">Sleep Preference</label>
-                      <select className="input-field" value={formData.sleep_pref} onChange={e => setFormData({...formData, sleep_pref: e.target.value})}>
-                        <option value="Early Bird">Early Bird</option>
-                        <option value="Night Owl">Night Owl</option>
-                        <option value="Flexible">Flexible</option>
-                      </select>
+                      <CustomSelect id="profile-sleep" ariaLabel="Sleep preference" value={formData.sleep_pref} onChange={(value) => setFormData((prev) => ({ ...prev, sleep_pref: value }))} options={[
+                        { value: 'Early Bird', label: 'Early Bird' },
+                        { value: 'Night Owl', label: 'Night Owl' },
+                        { value: 'Flexible', label: 'Flexible' }
+                      ]} />
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-1">Study Preference</label>
-                      <select className="input-field" value={formData.study_pref} onChange={e => setFormData({...formData, study_pref: e.target.value})}>
-                        <option value="Total Silence">Total Silence</option>
-                        <option value="Background Music">Background Music</option>
-                        <option value="Group Study">Group Study</option>
-                      </select>
+                      <CustomSelect id="profile-study" ariaLabel="Study preference" value={formData.study_pref} onChange={(value) => setFormData((prev) => ({ ...prev, study_pref: value }))} options={[
+                        { value: 'Total Silence', label: 'Total Silence' },
+                        { value: 'Background Music', label: 'Background Music' },
+                        { value: 'Group Study', label: 'Group Study' }
+                      ]} />
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-1">Food Preference</label>
-                      <select className="input-field" value={formData.food_pref} onChange={e => setFormData({...formData, food_pref: e.target.value})}>
-                        <option value="Vegetarian">Vegetarian</option>
-                        <option value="Non-Vegetarian">Non-Vegetarian</option>
-                        <option value="Vegan">Vegan</option>
-                        <option value="Any">Any</option>
-                      </select>
+                      <CustomSelect id="profile-food" ariaLabel="Food preference" value={formData.food_pref} onChange={(value) => setFormData((prev) => ({ ...prev, food_pref: value }))} options={[
+                        { value: 'Vegetarian', label: 'Vegetarian' },
+                        { value: 'Non-Vegetarian', label: 'Non-Vegetarian' },
+                        { value: 'Vegan', label: 'Vegan' },
+                        { value: 'Any', label: 'Any' }
+                      ]} />
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-1">Cleanliness</label>
-                      <select className="input-field" value={formData.cleanliness} onChange={e => setFormData({...formData, cleanliness: e.target.value})}>
-                        <option value="Neat Freak">Neat Freak</option>
-                        <option value="Moderate">Moderate</option>
-                        <option value="Messy">Messy</option>
-                      </select>
+                      <CustomSelect id="profile-cleanliness" ariaLabel="Cleanliness preference" value={formData.cleanliness} onChange={(value) => setFormData((prev) => ({ ...prev, cleanliness: value }))} options={[
+                        { value: 'Neat Freak', label: 'Neat Freak' },
+                        { value: 'Moderate', label: 'Moderate' },
+                        { value: 'Messy', label: 'Messy' }
+                      ]} />
                     </div>
                     <div>
                        <label className="block text-sm font-medium mb-1">Bed Preference</label>
-                       <select className="input-field" value={formData.bed_pref} onChange={e => setFormData({...formData, bed_pref: e.target.value})}>
-                         <option value="lower">Lower</option>
-                         <option value="upper">Upper</option>
-                       </select>
+                       <CustomSelect id="profile-bed" ariaLabel="Bed preference" value={formData.bed_pref} onChange={(value) => setFormData((prev) => ({ ...prev, bed_pref: value }))} options={[
+                         { value: 'lower', label: 'Lower' },
+                         { value: 'upper', label: 'Upper' }
+                       ]} />
                     </div>
                   </div>
                 </div>
+
+                <section className="space-y-4 pt-6">
+                  <div><h3 className="text-lg font-semibold border-b border-slate-100 dark:border-slate-700 pb-2">My custom living preferences</h3><p className="text-sm text-slate-500 mt-2">Add answers to room-specific questions. Matching answers can improve your compatibility score.</p></div>
+                  {customPrefRows.map((item, index) => (
+                    <div className="profile-custom-pref-row" key={index}>
+                      <label><span>Preference name</span><input className="input-field" maxLength={40} value={item.key} placeholder="e.g. Quiet hours" onChange={(event) => setCustomPrefRows((rows) => rows.map((row, i) => i === index ? { ...row, key: event.target.value } : row))} /></label>
+                      <label><span>My answer</span><input className="input-field" maxLength={100} value={item.value} placeholder="e.g. Quiet after 11 PM" onChange={(event) => setCustomPrefRows((rows) => rows.map((row, i) => i === index ? { ...row, value: event.target.value } : row))} /></label>
+                      {customPrefRows.length > 1 && <button type="button" className="profile-remove-pref" onClick={() => setCustomPrefRows((rows) => rows.filter((_, i) => i !== index))} aria-label="Remove preference">×</button>}
+                    </div>
+                  ))}
+                  {customPrefRows.length < 12 && <button type="button" className="profile-add-pref" onClick={() => setCustomPrefRows((rows) => [...rows, { key: '', value: '' }])}>+ Add another preference</button>}
+                </section>
 
                 <div className="flex gap-4 pt-4">
                   <button type="submit" className="btn-primary flex-1">Save Changes</button>
@@ -267,12 +307,13 @@ const Profile = () => {
 
               {activeTab === 'rooms' && (
                 <div className="space-y-4">
-                  <h3 className="text-xl font-bold mb-4 text-slate-800 dark:text-white flex items-center gap-2">
-                    🏠 Application History
+                  <h3 className="application-history-heading text-xl font-bold mb-4 text-slate-800 dark:text-white flex items-center gap-2">
+                    <span className="application-history-emoji" role="img" aria-label="Application records">🗂️</span>
+                    <span>Application History</span>
                   </h3>
                   {applications.length === 0 ? (
                     <div className="glass-panel p-12 text-center text-slate-500">
-                      <div className="text-5xl mb-4">📭</div>
+                      <div className="application-empty-postbox text-5xl mb-4" role="img" aria-label="Mailbox">📭</div>
                       <p className="text-lg font-medium">You haven't applied to any rooms yet.</p>
                       <button onClick={() => navigate('/find-rooms')} className="mt-4 btn-primary text-sm px-4 py-2">Find Rooms</button>
                     </div>
@@ -280,11 +321,11 @@ const Profile = () => {
                     <div className="grid gap-4">
                       {applications.map(app => (
                         <div key={app.request_id} className="glass-panel p-5 flex flex-col sm:flex-row justify-between sm:items-center gap-4 border-l-4" style={{
-                          borderLeftColor: app.status === 'accepted' ? '#10b981' : app.status === 'rejected' ? '#ef4444' : '#f59e0b'
+                          borderLeftColor: app.status === 'accepted' ? '#10b981' : app.status === 'rejected' ? '#ef4444' : app.status === 'removed' ? '#94a3b8' : '#f59e0b'
                         }}>
                           <div>
                             <div className="flex items-center gap-2 mb-1">
-                              <h4 className="text-lg font-bold text-slate-800 dark:text-slate-100">Block {app.block}</h4>
+                              <h4 className="text-lg font-bold text-slate-800 dark:text-slate-100">Block {app.block} · Room {app.room_number || 'not set'}</h4>
                               <span className="text-xs font-semibold px-2 py-0.5 bg-slate-100 dark:bg-slate-700 rounded-full text-slate-600 dark:text-slate-300">
                                 {app.room_type}
                               </span>
@@ -298,9 +339,10 @@ const Profile = () => {
                             <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
                               app.status === 'accepted' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
                               app.status === 'rejected' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                              app.status === 'removed' ? 'bg-slate-100 text-slate-600 dark:bg-slate-700/60 dark:text-slate-300' :
                               'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
                             }`}>
-                              {app.status === 'applied' ? 'Pending' : app.status}
+                              {app.status === 'applied' ? 'Pending' : app.status === 'removed' ? 'Removed from room' : app.status}
                             </span>
                           </div>
                         </div>

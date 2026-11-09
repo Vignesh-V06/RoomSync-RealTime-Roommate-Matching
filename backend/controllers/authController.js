@@ -1,65 +1,49 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const pool = require('../db/config');
+const recordActivity = require('../utils/activityLogger');
+
+const normalizeUsername = (value) => String(value || '')
+  .trim()
+  .toLowerCase()
+  .replace(/[^a-z0-9._]/g, '')
+  .slice(0, 30);
 
 exports.register = async (req, res) => {
-  const { name, email, password, role } = req.body;
-  try {
-    const [existing] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
-    if (existing.length > 0) return res.status(400).json({ message: 'User already exists' });
-
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-    
-    const userRole = role === 'admin' ? 'admin' : 'student';
-
-    const [result] = await pool.query(
-      'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)',
-      [name, email, hashedPassword, userRole]
-    );
-
-    const token = jwt.sign({ id: result.insertId, role: userRole }, process.env.JWT_SECRET, { expiresIn: '7d' });
-    res.status(201).json({ token, user: { id: result.insertId, name, email, role: userRole } });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error during registration' });
-  }
+  return res.status(410).json({
+    message: 'Direct registration is disabled. Request and verify your email OTP to create your RoomSync account.'
+  });
 };
 
 exports.login = async (req, res) => {
-  const { email, password } = req.body;
+  const email = String(req.body.email || '').trim().toLowerCase();
+  const password = String(req.body.password || '');
+
   try {
-    const [users] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
-    if (users.length === 0) return res.status(400).json({ message: 'Invalid credentials' });
+    const [users] = await pool.query(
+      'SELECT id, name, username, email, phone, password, role FROM users WHERE email = ? LIMIT 1',
+      [email]
+    );
+    if (!users.length) return res.status(400).json({ message: 'Invalid credentials.' });
 
     const user = users[0];
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
+    if (!isMatch) return res.status(400).json({ message: 'Invalid credentials.' });
 
+    await pool.query('UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?', [user.id]);
+    await recordActivity({ actorUserId: user.id, subjectUserId: user.id, eventType: 'user_logged_in', entityType: 'user', entityId: user.id });
+    const safeUser = {
+      id: user.id,
+      name: user.name,
+      username: user.username || String(user.email).split('@')[0],
+      email: user.email,
+      phone: user.phone || null,
+      role: user.role
+    };
     const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
+    res.json({ token, user: safeUser });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error during login' });
-  }
-};
-
-exports.directResetPassword = async (req, res) => {
-  try {
-    const { email, newPassword } = req.body;
-    
-    // Find user
-    const [users] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
-    if (users.length === 0) return res.status(404).json({ message: 'User with this email not found' });
-    
-    // Hash new password and update
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(newPassword, salt);
-    await pool.query('UPDATE users SET password = ? WHERE email = ?', [hashedPassword, email]);
-    
-    res.json({ message: 'Password updated successfully' });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error resetting password' });
+    console.error('Login failed:', error);
+    res.status(500).json({ message: 'Server error during login.' });
   }
 };
