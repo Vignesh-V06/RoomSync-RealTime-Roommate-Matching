@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
+const nodemailer = require('nodemailer');
 const pool = require('../db/config');
 const recordActivity = require('../utils/activityLogger');
 
@@ -21,35 +22,113 @@ const createOtpHash = (userId, otp) => crypto
   .update(String(userId) + ':' + String(otp))
   .digest('hex');
 
-const sendOtpEmail = async ({ to, name, otp, recordId }) => {
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: 'Bearer ' + process.env.RESEND_API_KEY,
-      'Content-Type': 'application/json',
-      'Idempotency-Key': 'roomsync-password-reset-' + recordId,
-      'User-Agent': 'RoomSync/1.0'
-    },
-    body: JSON.stringify({
-      from: process.env.RESEND_FROM_EMAIL,
-      to: [to],
-      subject: 'Your RoomSync password reset code',
-      text: 'Hi ' + name + ', your RoomSync verification code is ' + otp + '. It expires in 10 minutes and can only be used once. If you did not request this, ignore this email.',
-      html: '<div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:28px;color:#172b3b"><p style="color:#3976d7;font-weight:700;letter-spacing:.08em">ROOMSYNC SECURITY</p><h2>Password reset code</h2><p>Hi ' + escapeHtml(name) + ',</p><p>Use this code to reset your RoomSync password:</p><div style="margin:24px 0;padding:18px;background:#edf4fb;border-radius:12px;text-align:center;font-size:32px;font-weight:800;letter-spacing:10px;color:#205cc9">' + otp + '</div><p>This code expires in 10 minutes and can only be used once.</p><p>If you did not request this change, you can safely ignore this email.</p></div>'
-    }),
-    signal: AbortSignal.timeout(10000)
-  });
+const getEmailProvider = () => {
+  const configured = String(process.env.EMAIL_PROVIDER || '').trim().toLowerCase();
+  if (configured) return configured;
+  return process.env.NODE_ENV === 'production' ? 'resend' : 'gmail';
+};
 
-  const responseText = await response.text();
-  let result = {};
-  try {
-    result = responseText ? JSON.parse(responseText) : {};
-  } catch {
-    result = {};
+const getEmailProviderStatus = () => {
+  const provider = getEmailProvider();
+  const gmailUserConfigured = Boolean(process.env.SMTP_USER);
+  const gmailAppPasswordConfigured = Boolean(process.env.SMTP_APP_PASSWORD);
+  const resendApiKeyConfigured = Boolean(process.env.RESEND_API_KEY);
+  const resendSenderConfigured = Boolean(process.env.RESEND_FROM_EMAIL);
+  const gmailReady = gmailUserConfigured && gmailAppPasswordConfigured;
+  const resendReady = resendApiKeyConfigured && resendSenderConfigured;
+
+  return {
+    provider,
+    configured: provider === 'gmail'
+      ? gmailReady
+      : provider === 'resend'
+        ? resendReady
+        : false,
+    gmailUserConfigured,
+    gmailAppPasswordConfigured,
+    resendApiKeyConfigured,
+    resendSenderConfigured,
+    senderAddressConfigured: provider === 'gmail'
+      ? gmailUserConfigured
+      : provider === 'resend'
+        ? resendSenderConfigured
+        : false
+  };
+};
+
+const createGmailTransporter = () => {
+  const port = Number(process.env.SMTP_PORT || 587);
+  const secure = String(process.env.SMTP_SECURE || '').toLowerCase() === 'true' || port === 465;
+
+  return nodemailer.createTransport({
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port,
+    secure,
+    requireTLS: !secure,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: String(process.env.SMTP_APP_PASSWORD || '').replace(/\\s+/g, '')
+    },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
+    tls: { minVersion: 'TLSv1.2' }
+  });
+};
+
+const buildOtpEmail = ({ to, name, otp, from }) => ({
+  from,
+  to,
+  subject: 'Your RoomSync password reset code',
+  text: 'Hi ' + name + ', your RoomSync verification code is ' + otp + '. It expires in 10 minutes and can only be used once. If you did not request this, ignore this email.',
+  html: '<div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:28px;color:#172b3b"><p style="color:#3976d7;font-weight:700;letter-spacing:.08em">ROOMSYNC SECURITY</p><h2>Password reset code</h2><p>Hi ' + escapeHtml(name) + ',</p><p>Use this code to reset your RoomSync password:</p><div style="margin:24px 0;padding:18px;background:#edf4fb;border-radius:12px;text-align:center;font-size:32px;font-weight:800;letter-spacing:10px;color:#205cc9">' + otp + '</div><p>This code expires in 10 minutes and can only be used once.</p><p>If you did not request this change, you can safely ignore this email.</p></div>'
+});
+
+const sendOtpEmail = async ({ to, name, otp, recordId }) => {
+  const provider = getEmailProvider();
+
+  if (provider === 'gmail') {
+    const transporter = createGmailTransporter();
+    try {
+      const from = process.env.SMTP_FROM_EMAIL || 'RoomSync <' + process.env.SMTP_USER + '>';
+      await transporter.sendMail(buildOtpEmail({ to, name, otp, from }));
+    } finally {
+      transporter.close();
+    }
+    return;
   }
-  if (!response.ok) {
-    throw new Error(result.message || 'The email provider rejected the password reset message.');
+
+  if (provider === 'resend') {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer ' + process.env.RESEND_API_KEY,
+        'Content-Type': 'application/json',
+        'Idempotency-Key': 'roomsync-password-reset-' + recordId,
+        'User-Agent': 'RoomSync/1.0'
+      },
+      body: JSON.stringify({
+        from: process.env.RESEND_FROM_EMAIL,
+        to: [to],
+        ...buildOtpEmail({ to, name, otp, from: process.env.RESEND_FROM_EMAIL })
+      }),
+      signal: AbortSignal.timeout(10000)
+    });
+
+    const responseText = await response.text();
+    let result = {};
+    try {
+      result = responseText ? JSON.parse(responseText) : {};
+    } catch {
+      result = {};
+    }
+    if (!response.ok) {
+      throw new Error(result.message || 'The Resend email provider rejected the password reset message.');
+    }
+    return;
   }
+
+  throw new Error('Unsupported EMAIL_PROVIDER. Choose gmail or resend.');
 };
 
 exports.requestOtp = async (req, res) => {
@@ -60,13 +139,16 @@ exports.requestOtp = async (req, res) => {
     return res.status(400).json({ message: 'Enter a valid email address.' });
   }
 
-  if (
-    !process.env.RESEND_API_KEY
-    || !process.env.RESEND_FROM_EMAIL
-    || !process.env.PASSWORD_RESET_OTP_SECRET
-  ) {
+  const emailStatus = getEmailProviderStatus();
+  const emailProvider = emailStatus.provider;
+  if (!emailStatus.configured || !process.env.PASSWORD_RESET_OTP_SECRET) {
+    const providerHint = emailProvider === 'gmail'
+      ? 'Set SMTP_USER and SMTP_APP_PASSWORD (a Google App Password) in backend/.env.'
+      : emailProvider === 'resend'
+        ? 'Set RESEND_API_KEY and RESEND_FROM_EMAIL in backend/.env.'
+        : 'Set EMAIL_PROVIDER to gmail or resend.';
     return res.status(503).json({
-      message: 'Password reset is not configured. Set RESEND_API_KEY, RESEND_FROM_EMAIL and PASSWORD_RESET_OTP_SECRET in backend/.env, then restart the backend.'
+      message: 'Password reset email is not configured. ' + providerHint + ' Also set PASSWORD_RESET_OTP_SECRET and restart the backend.'
     });
   }
 
@@ -192,8 +274,14 @@ exports.requestOtp = async (req, res) => {
     });
 
     if (isDevelopment) {
+      const providerMessage = emailProvider === 'gmail'
+        ? 'Gmail SMTP could not deliver the OTP email: '
+        : 'Resend could not deliver the OTP email: ';
+      const providerHint = emailProvider === 'gmail'
+        ? 'Check SMTP_USER, the 16-character Google App Password in SMTP_APP_PASSWORD, and that 2-Step Verification is enabled.'
+        : 'Check RESEND_API_KEY, RESEND_FROM_EMAIL and the verified-domain restriction.';
       return res.status(503).json({
-        message: 'Resend could not deliver the OTP email: ' + error.message + '. Check the API key, sender address and verified-domain restriction in your Resend account.'
+        message: providerMessage + error.message + '. ' + providerHint
       });
     }
 
@@ -301,17 +389,21 @@ exports.getLocalDiagnostics = async (req, res) => {
     return res.sendStatus(404);
   }
 
+  const emailStatus = getEmailProviderStatus();
   const diagnostics = {
+    emailProvider: emailStatus.provider,
+    emailProviderConfigured: emailStatus.configured,
+    gmailSmtpUserConfigured: emailStatus.gmailUserConfigured,
+    gmailAppPasswordConfigured: emailStatus.gmailAppPasswordConfigured,
+    resendApiKeyConfigured: emailStatus.resendApiKeyConfigured,
+    resendSenderConfigured: emailStatus.resendSenderConfigured,
+    senderAddressConfigured: emailStatus.senderAddressConfigured,
+    smtpConnectionVerified: null,
+    otpSecretConfigured: Boolean(process.env.PASSWORD_RESET_OTP_SECRET),
     mysqlConnected: false,
     otpTableExists: false,
     otpColumnsReady: false,
-    missingOtpColumns: [],
-    resendApiKeyConfigured: Boolean(process.env.RESEND_API_KEY),
-    senderAddressConfigured: Boolean(process.env.RESEND_FROM_EMAIL),
-    otpSecretConfigured: Boolean(process.env.PASSWORD_RESET_OTP_SECRET),
-    senderMode: /@resend\\.dev\\b/i.test(process.env.RESEND_FROM_EMAIL || '')
-      ? 'resend-test-only'
-      : 'custom-sender'
+    missingOtpColumns: []
   };
 
   try {
@@ -334,11 +426,39 @@ exports.getLocalDiagnostics = async (req, res) => {
     }
   }
 
+  if (emailStatus.provider === 'gmail' && emailStatus.configured) {
+    const transporter = createGmailTransporter();
+    try {
+      await transporter.verify();
+      diagnostics.smtpConnectionVerified = true;
+    } catch (error) {
+      diagnostics.smtpConnectionVerified = false;
+      diagnostics.smtpErrorCode = error.code || error.responseCode || 'SMTP_VERIFY_FAILED';
+    } finally {
+      transporter.close();
+    }
+  }
+
+  const notes = [];
+  if (emailStatus.provider === 'gmail') {
+    notes.push('Gmail SMTP sends from SMTP_USER. SMTP uses smtp.gmail.com on port 587 with STARTTLS by default.');
+    if (!emailStatus.gmailUserConfigured || !emailStatus.gmailAppPasswordConfigured) {
+      notes.push('Enable 2-Step Verification in the Google Account, create an App Password, and store it as SMTP_APP_PASSWORD. The regular Google password will not work.');
+    } else if (diagnostics.smtpConnectionVerified === true) {
+      notes.push('Gmail SMTP connection and authentication verified. A test message has not been sent by this check.');
+    } else if (diagnostics.smtpConnectionVerified === false) {
+      notes.push('Gmail SMTP verification failed. Check the App Password, Google account eligibility, and network access to smtp.gmail.com.');
+    }
+  } else if (emailStatus.provider === 'resend') {
+    if (!emailStatus.resendApiKeyConfigured || !emailStatus.resendSenderConfigured) {
+      notes.push('Configure RESEND_API_KEY and RESEND_FROM_EMAIL to use Resend.');
+    } else {
+      notes.push('Resend is selected. Confirm that the sender domain is verified in your Resend account.');
+    }
+  } else {
+    notes.push('Unsupported EMAIL_PROVIDER. Set it to gmail or resend.');
+  }
+
   res.set('Cache-Control', 'no-store');
-  res.json({
-    ...diagnostics,
-    notes: diagnostics.senderMode === 'resend-test-only'
-      ? ['The Resend test sender can only deliver to the email address that owns your Resend account. Use a verified domain to send to other recipients.']
-      : ['A custom sender address is configured. Confirm its domain is verified in Resend.']
-  });
+  res.json({ ...diagnostics, notes });
 };
