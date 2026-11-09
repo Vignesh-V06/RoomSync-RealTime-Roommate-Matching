@@ -142,9 +142,19 @@ const ForgotPassword = () => {
                 ['MySQL is reachable', diagnostics.mysqlConnected],
                 ['OTP table exists', diagnostics.otpTableExists],
                 ['OTP table columns are correct', diagnostics.otpColumnsReady],
-                ['Resend API key is configured', diagnostics.resendApiKeyConfigured],
-                ['Sender email is configured', diagnostics.senderAddressConfigured],
-                ['OTP secret is configured', diagnostics.otpSecretConfigured]
+                ['OTP secret is configured', diagnostics.otpSecretConfigured],
+                ...(diagnostics.emailProvider === 'gmail' ? [
+                  ['Gmail account is configured', diagnostics.gmailSmtpUserConfigured],
+                  ['Google App Password is configured', diagnostics.gmailAppPasswordConfigured],
+                  ...(diagnostics.smtpConnectionVerified === null ? [] : [
+                    ['Gmail SMTP authentication works', diagnostics.smtpConnectionVerified]
+                  ])
+                ] : diagnostics.emailProvider === 'resend' ? [
+                  ['Resend API key is configured', diagnostics.resendApiKeyConfigured],
+                  ['Resend sender is configured', diagnostics.resendSenderConfigured]
+                ] : [
+                  ['Supported email provider selected', false]
+                ])
               ].map(([label, ready]) => (
                 <div className="reset-diagnostics-row" key={label}>
                   {ready ? <FiCheckCircle /> : <FiAlertCircle />}
@@ -164,10 +174,12 @@ const ForgotPassword = () => {
               {diagnostics.mysqlConnected && !diagnostics.otpTableExists && (
                 <p className="reset-diagnostics-error">Run backend/migrations/2026-11-08-password-reset-otp.sql against the roomsync database.</p>
               )}
-              {diagnostics.senderMode === 'resend-test-only' && (
-                <p className="reset-diagnostics-warning">Resend test sender is restricted to the email address registered to your Resend account. Other recipients require a verified sending domain.</p>
+              {diagnostics.emailProvider && (
+                <p className="reset-diagnostics-hint">
+                  Selected email provider: <strong>{diagnostics.emailProvider.toUpperCase()}</strong>
+                </p>
               )}
-              {diagnostics.senderMode !== 'resend-test-only' && diagnostics.notes?.map((note) => (
+              {diagnostics.notes?.map((note) => (
                 <p className="reset-diagnostics-hint" key={note}>{note}</p>
               ))}
               <small>Only configuration status is shown. Secret values and API keys are never displayed.</small>
