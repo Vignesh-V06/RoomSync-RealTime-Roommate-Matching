@@ -4,6 +4,8 @@ import { FiArrowRight, FiCheck, FiEye, FiHome, FiMail, FiRefreshCw, FiUsers, FiU
 import toast from 'react-hot-toast';
 import api from '../api';
 
+const API_VERSION = 'roomsync-owner-room-management-2';
+
 const detailItems = [
   ['Language', 'language'], ['Branch', 'branch'], ['CGPA range', 'cgpa_range'],
   ['Sleep routine', 'sleep_pref'], ['Study environment', 'study_pref'],
@@ -31,22 +33,28 @@ const OwnerDashboard = () => {
   const [changingStatus, setChangingStatus] = useState(false);
   const [savingRoomNumber, setSavingRoomNumber] = useState(false);
   const [deletingRoom, setDeletingRoom] = useState(false);
+  const [backendOutdated, setBackendOutdated] = useState(false);
 
   const fetchDashboard = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const [requestResult, analyticsResult] = await Promise.all([
-        api.get('/rooms/requests/current'),
-        api.get('/rooms/owner/analytics')
+      const [analyticsResult, healthResult] = await Promise.all([
+        api.get('/rooms/owner/analytics'),
+        api.get('/health').catch(() => null)
       ]);
-      const requestData = Array.isArray(requestResult.data) ? requestResult.data : [];
       const nextAnalytics = analyticsResult.data || null;
-      // The authenticated owner-requests endpoint is the source of truth for the
-      // roster and includes legacy memberships even when a student account row is missing.
-      // Avoid a second room-specific request so older locally running API servers do
-      // not leave the roster empty when the optional /:roomId/members route is absent.
+      const ownerId = nextAnalytics?.room?.owner_id;
+
+      // Send the actual numeric owner ID in the parameterized route. Older API
+      // builds use req.params.ownerId; newer builds independently verify req.user.id.
+      // Both are compatible with this request and it avoids the old "/current" mismatch.
+      const requestResult = ownerId
+        ? await api.get('/rooms/requests/' + encodeURIComponent(ownerId))
+        : { data: [] };
+      const requestData = Array.isArray(requestResult.data) ? requestResult.data : [];
       const memberData = requestData.filter((request) => request.status === 'accepted');
+      setBackendOutdated(healthResult?.data?.apiVersion !== API_VERSION);
 
       setRequests(requestData);
       setMembers(memberData);
@@ -108,7 +116,13 @@ const OwnerDashboard = () => {
       toast.success('Room number updated.');
       setRefreshKey((value) => value + 1);
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Room number could not be updated.');
+      const serverMessage = err.response?.data?.message;
+      const isMissingRoute = err.response?.status === 404 && !serverMessage;
+      toast.error(
+        isMissingRoute
+          ? 'The API server on port 5000 is outdated. Restart the RoomSync backend from the latest branch.'
+          : serverMessage || 'Room number could not be updated.'
+      );
     } finally {
       setSavingRoomNumber(false);
     }
@@ -168,6 +182,12 @@ const OwnerDashboard = () => {
         </section>
 
         {error && <div className="owner-form-error" role="alert">{error}</div>}
+        {backendOutdated && (
+          <div className="owner-member-sync-warning" role="status">
+            <strong>The RoomSync API server needs updating.</strong>
+            <span>This dashboard is newer than the API answering on port 5000. Stop the old backend process and restart backend/server.js from the latest project branch before editing room details.</span>
+          </div>
+        )}
 
         {!room ? (
           <div className="owner-state-card">
