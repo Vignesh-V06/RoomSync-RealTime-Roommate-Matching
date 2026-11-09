@@ -300,28 +300,51 @@ exports.updateRoomNumber = async (req, res) => {
 
   try {
     const [rooms] = await pool.query(
-      'SELECT room_id FROM rooms WHERE room_id = ? AND owner_id = ? LIMIT 1',
+      'SELECT room_id, block, room_number FROM rooms WHERE room_id = ? AND owner_id = ? LIMIT 1',
       [roomId, req.user.id]
     );
-    if (!rooms.length) return res.status(404).json({ message: 'Your room listing was not found.' });
+    if (!rooms.length) return res.status(404).json({ message: 'This room does not belong to your account. Refresh the dashboard and try again.' });
 
-    await pool.query('UPDATE rooms SET room_number = ? WHERE room_id = ?', [roomNumber, roomId]);
+    // Treat saving the current value as success (MySQL can report zero changed rows).
+    if (String(rooms[0].room_number || '').trim() === roomNumber) {
+      return res.json({ message: 'Room number is already up to date.', room_number: roomNumber });
+    }
+
+    const [updated] = await pool.query(
+      'UPDATE rooms SET room_number = ? WHERE room_id = ? AND owner_id = ?',
+      [roomNumber, roomId, req.user.id]
+    );
+    if (updated.affectedRows !== 1) {
+      const [stillOwned] = await pool.query(
+        'SELECT room_id FROM rooms WHERE room_id = ? AND owner_id = ? LIMIT 1',
+        [roomId, req.user.id]
+      );
+      if (!stillOwned.length) return res.status(404).json({ message: 'This room no longer belongs to your account. Refresh the dashboard.' });
+      return res.status(409).json({ message: 'The room number was not changed. Refresh the dashboard and try again.' });
+    }
+
     try {
       await recordActivity({
         actorUserId: req.user.id,
         subjectUserId: req.user.id,
         eventType: 'room_number_updated',
         entityType: 'room',
-        entityId: roomId
+        entityId: roomId,
+        metadata: { room_number: roomNumber, block: rooms[0].block }
       });
     } catch (activityError) {
       console.error('Room number activity logging failed:', activityError);
     }
-    res.json({ message: 'Room number updated.', room_number: roomNumber });
+    return res.json({ message: 'Room number updated.', room_number: roomNumber });
   } catch (error) {
-    if (error.code === 'ER_DUP_ENTRY') return res.status(409).json({ message: 'That room number is already listed in this block.' });
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(409).json({ message: 'That room number is already used by another listing in this block.' });
+    }
+    if (error.code === 'ER_BAD_FIELD_ERROR') {
+      return res.status(503).json({ message: 'The room-number database migration is missing. Apply the room-number migration, then restart the backend.' });
+    }
     console.error('Room number update failed:', error);
-    res.status(500).json({ message: 'Server error updating the room number.' });
+    return res.status(500).json({ message: 'Server error updating the room number.' });
   }
 };
 
