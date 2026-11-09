@@ -29,7 +29,7 @@ const FindRooms = () => {
   const [sortOrder, setSortOrder] = useState('match');
   const [refreshKey, setRefreshKey] = useState(0);
   const [applyingRoomId, setApplyingRoomId] = useState(null);
-  const [appliedRoomIds, setAppliedRoomIds] = useState(() => new Set());
+  const [applicationStatusByRoomId, setApplicationStatusByRoomId] = useState(() => new Map());
   const [feedback, setFeedback] = useState({ roomId: null, message: '', type: '' });
   const [previewRoom, setPreviewRoom] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -63,7 +63,7 @@ const FindRooms = () => {
           const existingApplications = Array.isArray(applicationsResult.value.data)
             ? applicationsResult.value.data
             : [];
-          setAppliedRoomIds(new Set(existingApplications.map((application) => application.room_id)));
+          setApplicationStatusByRoomId(new Map(existingApplications.map((application) => [String(application.room_id), application.status])));
           setActiveApplication(existingApplications.some((application) => ['applied', 'accepted'].includes(application.status)));
         }
       } catch (err) {
@@ -120,6 +120,10 @@ const FindRooms = () => {
   };
 
   const hasActiveFilters = Boolean(query.trim()) || blockFilter !== 'all' || typeFilter !== 'all' || sortOrder !== 'match';
+  const previewApplicationStatus = previewRoom
+    ? applicationStatusByRoomId.get(String(previewRoom.room.room_id))
+    : null;
+  const previewHasApplication = Boolean(previewApplicationStatus);
 
   const handlePreview = async (roomId) => {
     setPreviewLoading(true);
@@ -137,13 +141,15 @@ const FindRooms = () => {
     setFeedback({ roomId: null, message: '', type: '' });
     try {
       await api.post('/rooms/apply', { room_id: roomId });
-      setAppliedRoomIds((previous) => new Set(previous).add(roomId));
+      setApplicationStatusByRoomId((previous) => new Map(previous).set(String(roomId), 'applied'));
       setActiveApplication(true);
       setFeedback({ roomId, message: 'Application sent. You can track its status in your profile.', type: 'success' });
     } catch (err) {
       const message = err.response?.data?.message || 'Your application could not be sent. Please try again.';
       if (message.toLowerCase().includes('already applied')) {
-        setAppliedRoomIds((previous) => new Set(previous).add(roomId));
+        setApplicationStatusByRoomId((previous) => previous.has(String(roomId))
+          ? previous
+          : new Map(previous).set(String(roomId), 'applied'));
       }
       if (message.toLowerCase().includes('active application') || message.toLowerCase().includes('room relationship')) {
         setActiveApplication(true);
@@ -297,7 +303,8 @@ const FindRooms = () => {
             {visibleRooms.map((room) => {
               const score = getScore(room);
               const matches = Array.isArray(room.compatibility_matches) ? room.compatibility_matches : [];
-              const isApplied = appliedRoomIds.has(room.room_id);
+              const applicationStatus = applicationStatusByRoomId.get(String(room.room_id));
+              const isApplied = Boolean(applicationStatus);
               const isApplying = applyingRoomId === room.room_id;
               const roomFeedback = feedback.roomId === room.room_id ? feedback : null;
               const occupancy = Number(room.current_occupancy || 0);
@@ -377,7 +384,7 @@ const FindRooms = () => {
                       onClick={() => handleApply(room.room_id)}
                       disabled={isApplying || isApplied || available <= 0 || activeApplication || ownsRoom}
                     >
-                      {isApplying ? 'Sending application…' : isApplied ? 'Application sent' : available <= 0 ? 'Room is full' : ownsRoom ? 'Already a room owner' : activeApplication ? 'One active application allowed' : 'Apply for room'}
+                      {isApplying ? 'Sending application…' : applicationStatus === 'removed' ? 'Membership removed' : applicationStatus === 'rejected' ? 'Application declined' : applicationStatus === 'accepted' ? 'Already a room member' : applicationStatus === 'applied' ? 'Application sent' : available <= 0 ? 'Room is full' : ownsRoom ? 'Already a room owner' : activeApplication ? 'One active application allowed' : 'Apply for room'}
                       {!isApplying && !isApplied && available > 0 && <FiArrowRight />}
                       {isApplied && <FiCheck />}
                     </button>
@@ -409,7 +416,7 @@ const FindRooms = () => {
               </div>
               <footer className="room-preview-modal-footer">
                 <span>Compatibility: <strong>{Number(previewRoom.room.compatibility_score || 0)}%</strong></span>
-                <button type="button" className="btn-primary" onClick={() => { const id = previewRoom.room.room_id; setPreviewRoom(null); handleApply(id); }} disabled={activeApplication || ownsRoom}>Apply for this room <FiArrowRight /></button>
+                <button type="button" className="btn-primary" onClick={() => { const id = previewRoom.room.room_id; setPreviewRoom(null); handleApply(id); }} disabled={activeApplication || ownsRoom || previewHasApplication}>{previewApplicationStatus === 'removed' ? 'Membership removed' : previewApplicationStatus === 'rejected' ? 'Application declined' : previewApplicationStatus === 'accepted' ? 'Already a room member' : previewApplicationStatus === 'applied' ? 'Application sent' : 'Apply for this room'} <FiArrowRight /></button>
               </footer>
             </section>
           </div>
