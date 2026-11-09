@@ -42,16 +42,11 @@ const OwnerDashboard = () => {
       ]);
       const requestData = Array.isArray(requestResult.data) ? requestResult.data : [];
       const nextAnalytics = analyticsResult.data || null;
-      let memberData = requestData.filter((request) => request.status === 'accepted');
-
-      if (nextAnalytics?.room?.room_id) {
-        try {
-          const memberResult = await api.get('/rooms/' + nextAnalytics.room.room_id + '/members');
-          if (Array.isArray(memberResult.data)) memberData = memberResult.data;
-        } catch {
-          // Keep the accepted rows from the applications endpoint as a compatibility fallback.
-        }
-      }
+      // The authenticated owner-requests endpoint is the source of truth for the
+      // roster and includes legacy memberships even when a student account row is missing.
+      // Avoid a second room-specific request so older locally running API servers do
+      // not leave the roster empty when the optional /:roomId/members route is absent.
+      const memberData = requestData.filter((request) => request.status === 'accepted');
 
       setRequests(requestData);
       setMembers(memberData);
