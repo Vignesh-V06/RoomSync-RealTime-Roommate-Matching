@@ -1,5 +1,6 @@
 const pool = require('../db/config');
 const recordActivity = require('../utils/activityLogger');
+const { getInitialRoomStatus, isRoomFull } = require('../utils/roomCapacity');
 
 const parseJson = (value, fallback) => {
   if (value == null) return fallback;
@@ -85,6 +86,7 @@ exports.createRoom = async (req, res) => {
   const capacity = Number(req.body.total_capacity);
   const notes = String(req.body.additional_requirements || '').trim().slice(0, 1000);
   const customOptions = normalizeOptions(req.body.custom_options);
+  const roomStatus = getInitialRoomStatus(1, capacity);
 
   if (!block || block.length > 50) return res.status(400).json({ message: 'Enter a valid hostel block.' });
   if (!/^[1-4]-sharing$/i.test(roomType)) return res.status(400).json({ message: 'Choose a valid sharing type.' });
@@ -110,7 +112,7 @@ exports.createRoom = async (req, res) => {
 
     const [result] = await connection.query(
       'INSERT INTO rooms (owner_id, block, room_type, bed_type, total_capacity, current_occupancy, use_custom_logic, additional_requirements, custom_options, status) VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, ?)',
-      [ownerId, block, roomType, bedType, capacity, customOptions.length > 0, notes, JSON.stringify(customOptions), 'open']
+      [ownerId, block, roomType, bedType, capacity, customOptions.length > 0, notes, JSON.stringify(customOptions), roomStatus]
     );
     await connection.commit();
     await recordActivity({ actorUserId: ownerId, subjectUserId: ownerId, eventType: 'room_created', entityType: 'room', entityId: result.insertId });
@@ -179,7 +181,7 @@ exports.getRoomPreview = async (req, res) => {
     const roomId = Number(req.params.roomId);
     if (!Number.isInteger(roomId) || roomId < 1) return res.status(400).json({ message: 'Invalid room.' });
     const [rooms] = await pool.query(
-      "SELECT r.*, u.name AS owner_name, p.language, p.branch, p.cgpa_range, p.bed_pref, p.sleep_pref, p.study_pref, p.food_pref, p.cleanliness FROM rooms r JOIN users u ON u.id = r.owner_id LEFT JOIN profiles p ON p.user_id = r.owner_id WHERE r.room_id = ? AND r.status = 'open' LIMIT 1",
+      "SELECT r.*, u.name AS owner_name, p.language, p.branch, p.cgpa_range, p.bed_pref, p.sleep_pref, p.study_pref, p.food_pref, p.cleanliness FROM rooms r JOIN users u ON u.id = r.owner_id LEFT JOIN profiles p ON p.user_id = r.owner_id WHERE r.room_id = ? AND r.status = 'open' AND r.current_occupancy < r.total_capacity LIMIT 1",
       [roomId]
     );
     if (!rooms.length) return res.status(404).json({ message: 'This room is no longer available.' });
@@ -267,18 +269,32 @@ exports.getOwnerAnalytics = async (req, res) => {
 exports.setRoomStatus = async (req, res) => {
   const status = String(req.body.status || '').toLowerCase();
   if (!['open', 'closed'].includes(status)) return res.status(400).json({ message: 'Choose open or closed.' });
+
+  const connection = await pool.getConnection();
+  let roomId = null;
   try {
-    const [rooms] = await pool.query('SELECT room_id, total_capacity, current_occupancy FROM rooms WHERE owner_id = ? LIMIT 1', [req.user.id]);
-    if (!rooms.length) return res.status(404).json({ message: 'You do not have a room to update.' });
-    if (status === 'open' && Number(rooms[0].current_occupancy) >= Number(rooms[0].total_capacity)) {
+    await connection.beginTransaction();
+    const [rooms] = await connection.query('SELECT room_id, total_capacity, current_occupancy FROM rooms WHERE owner_id = ? LIMIT 1 FOR UPDATE', [req.user.id]);
+    if (!rooms.length) {
+      await connection.rollback();
+      return res.status(404).json({ message: 'You do not have a room to update.' });
+    }
+    const room = rooms[0];
+    roomId = room.room_id;
+    if (status === 'open' && isRoomFull(room.current_occupancy, room.total_capacity)) {
+      await connection.rollback();
       return res.status(409).json({ message: 'A full room cannot be reopened until a space becomes available.' });
     }
-    await pool.query('UPDATE rooms SET status = ? WHERE room_id = ?', [status, rooms[0].room_id]);
-    await recordActivity({ actorUserId: req.user.id, subjectUserId: req.user.id, eventType: 'room_status_changed', entityType: 'room', entityId: rooms[0].room_id, metadata: { status } });
+    await connection.query('UPDATE rooms SET status = ? WHERE room_id = ?', [status, roomId]);
+    await connection.commit();
+    await recordActivity({ actorUserId: req.user.id, subjectUserId: req.user.id, eventType: 'room_status_changed', entityType: 'room', entityId: roomId, metadata: { status } });
     res.json({ message: 'Room status updated.', status });
   } catch (error) {
+    await connection.rollback();
     console.error('Room status update failed:', error);
     res.status(500).json({ message: 'Server error updating room status.' });
+  } finally {
+    connection.release();
   }
 };
 
