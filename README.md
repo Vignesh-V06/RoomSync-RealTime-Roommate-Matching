@@ -155,9 +155,16 @@ For a new database, the latest `backend/schema.sql` already includes the OTP tab
 
 #### Local development with Gmail SMTP
 
-Use a dedicated development Gmail account where practical. Enable Google 2-Step Verification, then create an App Password for RoomSync. App Passwords are only available for eligible Google Accounts with 2-Step Verification enabled; some managed, Advanced Protection, or security-key-only configurations may not offer them.
+Use a dedicated development Gmail account where practical. This is a development/testing option, not a production mail service. Enable Google 2-Step Verification, then create an App Password:
 
-Configure the following in your private `backend/.env` file. Do not commit or share this file:
+1. Sign in to the Google account that will send RoomSync emails.
+2. Open [Google Account Security](https://myaccount.google.com/security).
+3. Under **How you sign in to Google**, select **2-Step Verification** and complete setup.
+4. Open [Google App Passwords](https://myaccount.google.com/apppasswords).
+5. Enter an app name such as `RoomSync Local Development`, create the password, and copy the 16-character value immediately.
+6. If the App Password page is unavailable, the account may be using a security-key-only 2-Step Verification setup, Advanced Protection, or a managed work/school account whose administrator restricts App Passwords. Use an eligible personal Google Account for local development instead.
+
+Configure these values in your private `backend/.env` file. Keep your existing MySQL credentials, `JWT_SECRET`, and `PASSWORD_RESET_OTP_SECRET`. Do not commit or share this file:
 
 ```env
 EMAIL_PROVIDER=gmail
@@ -167,18 +174,14 @@ SMTP_SECURE=false
 SMTP_USER=your-development-account@gmail.com
 SMTP_APP_PASSWORD=your-16-character-google-app-password
 SMTP_FROM_EMAIL=
-PASSWORD_RESET_OTP_SECRET=your-separate-random-32-byte-secret
+PASSWORD_RESET_OTP_SECRET=your-existing-separate-random-secret
 ```
 
-Leave `SMTP_FROM_EMAIL` blank to send from the authenticated Gmail account. The app password is not your normal Google account password. RoomSync removes spaces from the 16-character app password before SMTP authentication. Gmail SMTP uses `smtp.gmail.com:587` with STARTTLS; port 465 with implicit TLS is also supported by setting `SMTP_PORT=465` and `SMTP_SECURE=true`.
+Leave `SMTP_FROM_EMAIL` blank to send from the authenticated Gmail account. The App Password is not your normal Google account password. RoomSync strips spaces from the copied App Password before SMTP authentication. Gmail SMTP uses `smtp.gmail.com:587` with STARTTLS; port 465 with implicit TLS is also supported by setting `SMTP_PORT=465` and `SMTP_SECURE=true`.
 
-Generate the OTP secret from the backend folder with Node.js:
+After editing `.env`, restart the backend. On the Forgot Password page, click **Check email setup**. The local check verifies MySQL and the OTP table, then checks Gmail SMTP authentication if the credentials are present. It does not send a test email. Once the SMTP check passes, request an OTP for a RoomSync account whose registered email is a real inbox you can access.
 
-```bash
-node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-```
-
-Restart the backend after editing `.env`. The local Forgot Password page's **Check email setup** action verifies the MySQL table and, when Gmail credentials are present, checks the SMTP connection/authentication without sending an email.
+Google's App Password guidance: [Create and use App Passwords](https://support.google.com/mail/answer/185833). SMTP settings: `smtp.gmail.com`, port 587 with TLS/STARTTLS. Gmail can impose account-level sending limits or block suspicious automated sign-ins, so use this only for local, low-volume testing.
 
 #### Optional Resend provider
 
