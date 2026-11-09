@@ -6,7 +6,6 @@ import {
 } from 'react-icons/fi';
 import api from '../api';
 import AuthLayout from '../components/AuthLayout';
-import RoomSyncLoader from '../components/RoomSyncLoader';
 
 const Register = () => {
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', password: '', confirmPassword: '' });
@@ -249,7 +248,7 @@ const Register = () => {
               disabled={loading || !formData.name.trim() || !formData.email.trim() || !formData.password || !formData.confirmPassword}
             >
               {loading
-                ? <RoomSyncLoader mode="button" label="Sending verification code…" />
+                ? <span>Sending verification code…</span>
                 : <><span>Continue to email verification</span><FiArrowRight aria-hidden="true" /></>}
             </button>
             <p className="auth-consent">We will email you a one-time code. Your account is created only after the code is verified.</p>
@@ -288,7 +287,7 @@ const Register = () => {
             </div>
             <button type="submit" className="auth-submit" disabled={loading || otp.length !== 6}>
               {loading
-                ? <RoomSyncLoader mode="button" label="Verifying email…" />
+                ? <span>Verifying email…</span>
                 : <><span>Verify email & create account</span><FiArrowRight aria-hidden="true" /></>}
             </button>
             <div className="register-otp-actions">
@@ -297,7 +296,7 @@ const Register = () => {
               </button>
               <button type="button" className="register-otp-resend" onClick={handleResendOtp} disabled={loading || resending || resendCountdown > 0}>
                 {resending
-                  ? <RoomSyncLoader mode="button" label="Sending…" />
+                  ? 'Sending…'
                   : resendCountdown > 0 ? 'Resend in ' + resendCountdown + 's' : 'Resend code'}
               </button>
             </div>
