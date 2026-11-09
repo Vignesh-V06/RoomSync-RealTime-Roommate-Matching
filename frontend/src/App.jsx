@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import RoomSyncEntryOverlay from './components/RoomSyncEntryOverlay';
@@ -21,6 +22,8 @@ const HomeRoute = () => {
 };
 
 function App() {
+  const [showEntryLoader, setShowEntryLoader] = useState(false);
+
   return (
     <ThemeProvider>
       <Router>
@@ -40,7 +43,7 @@ function App() {
           <main>
             <Routes>
               <Route path="/" element={<HomeRoute />} />
-              <Route path="/login" element={<Login />} />
+              <Route path="/login" element={<Login onLoginSuccess={() => setShowEntryLoader(true)} />} />
               <Route path="/register" element={<Register />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
 
@@ -71,7 +74,7 @@ function App() {
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </main>
-          <RoomSyncEntryOverlay />
+          {showEntryLoader && <RoomSyncEntryOverlay onComplete={() => setShowEntryLoader(false)} />}
         </div>
       </Router>
     </ThemeProvider>
