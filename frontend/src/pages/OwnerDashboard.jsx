@@ -90,11 +90,7 @@ const OwnerDashboard = () => {
     const memberKey = member.user_id || member.request_id;
     setActingRequestId(memberKey);
     try {
-      await api.post('/rooms/requests/remove', {
-        room_id: member.room_id || room?.room_id,
-        user_id: member.user_id,
-        request_id: member.request_id
-      });
+      await api.post('/rooms/requests/remove', { request_id: member.request_id });
       toast.success('Roommate removed. Their bed is available again.');
       setRefreshKey((value) => value + 1);
     } catch (err) {
@@ -251,8 +247,10 @@ const OwnerDashboard = () => {
                         <div className="owner-member-avatar">{(member.applicant_name || 'S').charAt(0).toUpperCase()}</div>
                         <div className="owner-member-copy">
                           <span className="section-kicker">JOINED ROOMMATE</span>
-                          <strong>{member.applicant_name || 'Student'}</strong>
-                          <a href={'mailto:' + member.applicant_email}>{member.applicant_email || 'Email not available'}</a>
+                          <strong>{member.applicant_name || 'Student account #' + (member.user_id || member.request_id)}</strong>
+                          {member.applicant_email
+                            ? <a href={'mailto:' + member.applicant_email}>{member.applicant_email}</a>
+                            : <small>Account details unavailable · membership can still be removed</small>}
                           <small>{member.created_at ? 'Applied ' + new Date(member.created_at).toLocaleDateString() : 'Membership active'}</small>
                         </div>
                         <button
