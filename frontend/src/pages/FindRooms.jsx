@@ -5,7 +5,8 @@ import {
 } from 'react-icons/fi';
 import api from '../api';
 import CustomSelect from '../components/CustomSelect';
-import RoomSyncLoader, { useRoomSyncLoader } from '../components/RoomSyncLoader';
+import RoomSyncLoader from '../components/RoomSyncLoader';
+import useRoomSyncLoader from '../hooks/useRoomSyncLoader';
 
 const readUserId = () => {
   try {
