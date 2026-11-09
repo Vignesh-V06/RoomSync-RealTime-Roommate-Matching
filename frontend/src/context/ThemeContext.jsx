@@ -3,14 +3,9 @@ import { ThemeContext } from './theme-context';
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(() => {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme) return savedTheme;
-
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      return 'dark';
-    }
-
-    return 'light';
+    // RoomSync starts in light mode for new visitors. An explicit saved choice
+    // takes precedence so returning users keep the theme they selected.
+    return localStorage.getItem('theme') === 'dark' ? 'dark' : 'light';
   });
 
   useEffect(() => {
@@ -18,23 +13,6 @@ export const ThemeProvider = ({ children }) => {
     root.classList.toggle('dark', theme === 'dark');
     localStorage.setItem('theme', theme);
   }, [theme]);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = (event) => {
-      if (!localStorage.getItem('theme')) {
-        setTheme(event.matches ? 'dark' : 'light');
-      }
-    };
-
-    if (mediaQuery.addEventListener) {
-      mediaQuery.addEventListener('change', handleChange);
-      return () => mediaQuery.removeEventListener('change', handleChange);
-    }
-
-    mediaQuery.addListener(handleChange);
-    return () => mediaQuery.removeListener(handleChange);
-  }, []);
 
   const toggleTheme = () => {
     setTheme((previous) => previous === 'light' ? 'dark' : 'light');
