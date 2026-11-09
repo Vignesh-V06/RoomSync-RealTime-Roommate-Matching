@@ -1300,7 +1300,7 @@ select option { background: var(--bg-surface); color: var(--text-page); }
 
 /* RoomSync finishing pass: crisp navigation, non-overlapping previews and accessible selects. */
 .brand-link { width: 218px; min-width: 172px; height: 60px; }
-.brand-logo { width: 100%; height: 54px; max-height: 54px; object-fit: contain; object-position: left center; }
+.brand-logo { width: 100%; height: 250px; max-height: 250px; object-fit: contain; object-position: left center; }
 .desktop-navigation { flex: 1 1 auto; gap: 3px; }
 .header-actions { gap: 5px; }
 .user-menu { flex: 0 0 auto; gap: 10px; }
