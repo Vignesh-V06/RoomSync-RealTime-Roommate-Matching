@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { FiArrowRight, FiEye, FiEyeOff, FiLock, FiMail } from 'react-icons/fi';
 import api from '../api';
 import AuthLayout from '../components/AuthLayout';
+import RoomSyncLoader from '../components/RoomSyncLoader';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -82,8 +83,9 @@ const Login = () => {
         </div>
 
         <button type="submit" className="auth-submit" disabled={loading || !email.trim() || !password}>
-          <span>{loading ? 'Signing in…' : 'Sign in'}</span>
-          {!loading && <FiArrowRight aria-hidden="true" />}
+          {loading
+            ? <RoomSyncLoader mode="button" label="Signing in…" />
+            : <><span>Sign in</span><FiArrowRight aria-hidden="true" /></>}
         </button>
       </form>
     </AuthLayout>
