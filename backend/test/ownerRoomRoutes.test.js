@@ -43,3 +43,16 @@ test('registration requires OTP request and verification endpoints', () => {
     assert.ok(route.methods.includes(method));
   }
 });
+
+test('API health diagnostics identify registration email OTP support', () => {
+  const healthRoute = apiRoutes.stack.find((layer) => layer.route?.path === '/health');
+  assert.ok(healthRoute, 'GET /health must be registered');
+
+  let payload = null;
+  healthRoute.route.stack[0].handle({}, {
+    json(body) { payload = body; return this; }
+  });
+
+  assert.ok(payload);
+  assert.ok(payload.features.includes('registration-email-otp'));
+});
