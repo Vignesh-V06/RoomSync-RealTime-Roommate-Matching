@@ -55,7 +55,7 @@ const ForgotPassword = () => {
         email: email.trim()
       });
       setStep('verify');
-      setNotice(data.message || 'If an account exists for that email, a verification code will be sent shortly.');
+      setNotice(data.message || 'Verification code sent to ' + email.trim() + '. Check your inbox and spam folder.');
     } catch (err) {
       setError(getResetErrorMessage(err, 'We could not start password reset. Please try again.'));
     } finally {
@@ -71,7 +71,7 @@ const ForgotPassword = () => {
       const { data } = await api.post('/auth/password-reset/request-otp', {
         email: email.trim()
       });
-      setNotice(data.message || 'If an account exists for that email, a verification code will be sent shortly. Wait a minute before requesting another code.');
+      setNotice(data.message || 'A new verification code has been sent to ' + email.trim() + '. Check your inbox and spam folder.');
     } catch (err) {
       setError(getResetErrorMessage(err, 'We could not resend the code. Please try again.'));
     } finally {
@@ -115,6 +115,17 @@ const ForgotPassword = () => {
         : 'Enter the six-digit code and choose a new password.'}
       footer={<>Back to your account? <Link to="/login">Sign in</Link></>}
     >
+      <div className="reset-step-indicator" aria-label={step === 'request' ? 'Step 1 of 2: Request a code' : 'Step 2 of 2: Verify and reset'}>
+        <span className={step === 'request' ? 'is-current' : 'is-complete'}>1 <span>Request code</span></span>
+        <i aria-hidden="true" />
+        <span className={step === 'verify' ? 'is-current' : ''}>2 <span>Verify & reset</span></span>
+      </div>
+      <p className="reset-step-explainer">
+        {step === 'request'
+          ? 'After the email is sent successfully, this form will reveal the six-digit code field and your new-password field.'
+          : 'Enter the six-digit code sent to ' + email + ' below, then choose your new password.'}
+      </p>
+
       <div className="auth-security-notice" id="reset-security-note">
         <FiShield aria-hidden="true" />
         <p>
