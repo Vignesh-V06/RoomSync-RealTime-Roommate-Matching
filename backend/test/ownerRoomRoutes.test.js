@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 
 const apiRoutes = require('../routes');
 const roomRoutes = require('../routes/roomRoutes');
+const authRoutes = require('../routes/authRoutes');
 
 const getRegisteredRoutes = (router) => router.stack
   .filter((layer) => layer.route)
@@ -23,14 +24,22 @@ test('owner room management routes are registered with the expected methods', ()
     ['/:roomId/room-number', 'patch'],
     ['/:roomId/members', 'get'],
     ['/requests/:ownerId', 'get'],
-    ['/requests/remove', 'post'],
-    ['/register/request-otp', 'post'],
-    ['/register/verify-otp', 'post']
+    ['/requests/remove', 'post']
   ];
 
   for (const [path, method] of expected) {
     const route = routes.find((candidate) => candidate.path === path);
     assert.ok(route, `Expected ${path} to be registered`);
     assert.ok(route.methods.includes(method), `Expected ${method.toUpperCase()} ${path}`);
+  }
+});
+
+
+test('registration requires OTP request and verification endpoints', () => {
+  const routes = getRegisteredRoutes(authRoutes);
+  for (const [path, method] of [['/register/request-otp', 'post'], ['/register/verify-otp', 'post']]) {
+    const route = routes.find((candidate) => candidate.path === path);
+    assert.ok(route, `Expected ${path} to be registered`);
+    assert.ok(route.methods.includes(method));
   }
 });
