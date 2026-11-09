@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FiEdit2, FiMapPin, FiBook, FiBriefcase, FiHeart, FiSettings, FiCheck } from 'react-icons/fi';
 import api from '../api';
 import CustomSelect from '../components/CustomSelect';
+import RoomSyncLoader, { useRoomSyncLoader } from '../components/RoomSyncLoader';
 import toast from 'react-hot-toast';
 
 const Profile = () => {
@@ -11,6 +12,7 @@ const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
+  const showInitialLoader = useRoomSyncLoader(loading);
   
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const navigate = useNavigate();
@@ -68,7 +70,7 @@ const Profile = () => {
     }
   };
 
-  if (loading) return <div className="p-12 text-center text-slate-500 animate-pulse">Loading amazing profile...</div>;
+  if (showInitialLoader) return <RoomSyncLoader label="Preparing your profile…" />;
 
   const avatarUrl = `https://api.dicebear.com/7.x/notionists/svg?seed=${user?.name || user?.id}&backgroundColor=e2e8f0`;
   const name = profile?.user_name || user?.name || 'New User';
