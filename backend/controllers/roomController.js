@@ -287,7 +287,11 @@ exports.setRoomStatus = async (req, res) => {
     }
     await connection.query('UPDATE rooms SET status = ? WHERE room_id = ?', [status, roomId]);
     await connection.commit();
-    await recordActivity({ actorUserId: req.user.id, subjectUserId: req.user.id, eventType: 'room_status_changed', entityType: 'room', entityId: roomId, metadata: { status } });
+    try {
+      await recordActivity({ actorUserId: req.user.id, subjectUserId: req.user.id, eventType: 'room_status_changed', entityType: 'room', entityId: roomId, metadata: { status } });
+    } catch (activityError) {
+      console.error('Room status activity logging failed:', activityError);
+    }
     res.json({ message: 'Room status updated.', status });
   } catch (error) {
     await connection.rollback();
