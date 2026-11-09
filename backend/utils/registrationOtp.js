@@ -17,6 +17,6 @@ const safeCompareHex = (submittedHex, storedHex) => {
   return submitted.length === stored.length && crypto.timingSafeEqual(submitted, stored);
 };
 
-const isValidOtp = (value) => /^\\d{6}$/.test(String(value || '').trim());
+const isValidOtp = (value) => /^\d{6}$/.test(String(value || '').trim());
 
 module.exports = { normalizeEmail, createRegistrationOtpHash, safeCompareHex, isValidOtp };
