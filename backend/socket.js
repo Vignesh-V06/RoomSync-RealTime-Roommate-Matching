@@ -31,6 +31,8 @@ module.exports = {
     });
 
     io.on('connection', (client) => {
+      client.data.userId = client.user.id;
+
       client.on('join_user', (userId) => {
         if (String(userId) === String(client.user.id)) {
           client.join(`user_${client.user.id}`);
