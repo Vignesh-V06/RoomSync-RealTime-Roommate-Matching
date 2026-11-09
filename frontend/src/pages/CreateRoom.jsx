@@ -4,6 +4,7 @@ import { FiArrowLeft, FiArrowRight, FiCheck, FiHome, FiInfo, FiPlus, FiTrash2 } 
 import toast from 'react-hot-toast';
 import api from '../api';
 import CustomSelect from '../components/CustomSelect';
+import RoomSyncLoader from '../components/RoomSyncLoader';
 
 const initialForm = {
   block: '',
@@ -231,8 +232,9 @@ const CreateRoom = () => {
             <div className="create-form-actions">
               <button type="button" className="btn-secondary" onClick={() => navigate('/dashboard')} disabled={submitting}>Cancel</button>
               <button type="submit" className="btn-primary" disabled={submitting || !formData.block.trim()}>
-                {submitting ? 'Listing room…' : 'List your room'}
-                {!submitting && <FiArrowRight />}
+                {submitting
+                  ? <RoomSyncLoader mode="button" label="Listing room…" />
+                  : <><span>List your room</span><FiArrowRight /></>}
               </button>
             </div>
           </form>
