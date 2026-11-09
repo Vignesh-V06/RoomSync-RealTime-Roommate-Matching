@@ -6,6 +6,7 @@ import {
 } from 'react-icons/fi';
 import api from '../api';
 import CustomSelect from '../components/CustomSelect';
+import RoomSyncLoader, { useRoomSyncLoader } from '../components/RoomSyncLoader';
 
 const formatNumber = (value) => Number(value || 0).toLocaleString();
 const percentage = (part, total) => total ? Math.max(0, Math.min(100, Math.round((Number(part || 0) / Number(total)) * 100))) : 0;
@@ -40,6 +41,7 @@ const EVENT_LABELS = {
 const AdminDashboard = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const showInitialLoader = useRoomSyncLoader(loading && !data);
   const [exporting, setExporting] = useState('');
   const [exportError, setExportError] = useState('');
   const [error, setError] = useState('');
@@ -131,9 +133,7 @@ const AdminDashboard = () => {
     return [...rows.entries()].map(([period, values]) => ({ period, ...values }));
   }, [data]);
 
-  if (loading && !data) {
-    return <div className="admin-page"><div className="admin-container admin-loading">Loading platform intelligence…</div></div>;
-  }
+  if (showInitialLoader) return <RoomSyncLoader label="Loading RoomSync analytics…" />;
   if (error && !data) {
     return (
       <div className="admin-page"><div className="admin-container">
