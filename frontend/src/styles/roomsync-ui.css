@@ -1911,3 +1911,18 @@ select option { background: var(--bg-surface); color: var(--text-page); }
   font-size: 10px;
   line-height: 1.6;
 }
+
+
+/* Accessible export error feedback for the admin report centre. */
+.admin-export-error {
+  margin: -13px 0 22px;
+  padding: 12px 14px;
+  display: grid;
+  gap: 4px;
+  border: 1px solid color-mix(in srgb, #D56C6C 45%, var(--border-subtle));
+  border-radius: 10px;
+  background: color-mix(in srgb, #D56C6C 9%, var(--bg-surface));
+  color: var(--text-page);
+}
+.admin-export-error strong { color: #E18A8A; font-size: 10px; }
+.admin-export-error span { color: var(--text-muted); font-size: 10px; line-height: 1.6; overflow-wrap: anywhere; }
