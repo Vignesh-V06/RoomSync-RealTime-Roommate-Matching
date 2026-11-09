@@ -5,8 +5,6 @@ import {
   FiPhone, FiSend, FiSmile, FiUser, FiX
 } from 'react-icons/fi';
 import api from '../api';
-import RoomSyncLoader from '../components/RoomSyncLoader';
-import useRoomSyncLoader from '../hooks/useRoomSyncLoader';
 import { initSocket } from '../socket';
 import toast from 'react-hot-toast';
 
@@ -58,7 +56,6 @@ const ChatDashboard = () => {
   const [newMessage, setNewMessage] = useState('');
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const showInitialLoader = useRoomSyncLoader(loading);
   const [roomsError, setRoomsError] = useState('');
   const [messagesError, setMessagesError] = useState('');
   const [sending, setSending] = useState(false);
@@ -293,7 +290,9 @@ const ChatDashboard = () => {
     }
   };
 
-  if (showInitialLoader) return <RoomSyncLoader label="Loading your conversations…" />;
+  if (loading) {
+    return <div className="chat-page"><div className="chat-loading">Loading your conversations…</div></div>;
+  }
 
   return (
     <div className="chat-page">
