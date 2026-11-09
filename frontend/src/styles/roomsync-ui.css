@@ -2370,6 +2370,7 @@ select option { background: var(--bg-surface); color: var(--text-page); }
 }
 .roomsync-loader-artwork {
   position: relative;
+  display: block;
   width: min(100%, 1120px);
   aspect-ratio: 3 / 1;
   isolation: isolate;
