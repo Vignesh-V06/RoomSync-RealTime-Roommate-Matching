@@ -24,7 +24,7 @@ const getScore = (room) => {
 const FindRooms = () => {
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
-  const showInitialLoader = useRoomSyncLoader(loading);
+  const showInitialLoader = useRoomSyncLoader(loading && rooms.length === 0);
   const [error, setError] = useState('');
   const [query, setQuery] = useState('');
   const [blockFilter, setBlockFilter] = useState('all');
