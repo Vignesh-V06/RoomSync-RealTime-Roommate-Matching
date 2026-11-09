@@ -67,7 +67,7 @@ const createGmailTransporter = () => {
     requireTLS: !secure,
     auth: {
       user: process.env.SMTP_USER,
-      pass: String(process.env.SMTP_APP_PASSWORD || '').replace(/\\s+/g, '')
+      pass: String(process.env.SMTP_APP_PASSWORD || '').replace(/\s+/g, '')
     },
     connectionTimeout: 10000,
     greetingTimeout: 10000,
