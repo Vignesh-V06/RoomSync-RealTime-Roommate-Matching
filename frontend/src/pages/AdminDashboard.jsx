@@ -6,7 +6,8 @@ import {
 } from 'react-icons/fi';
 import api from '../api';
 import CustomSelect from '../components/CustomSelect';
-import RoomSyncLoader, { useRoomSyncLoader } from '../components/RoomSyncLoader';
+import RoomSyncLoader from '../components/RoomSyncLoader';
+import useRoomSyncLoader from '../hooks/useRoomSyncLoader';
 
 const formatNumber = (value) => Number(value || 0).toLocaleString();
 const percentage = (part, total) => total ? Math.max(0, Math.min(100, Math.round((Number(part || 0) / Number(total)) * 100))) : 0;
