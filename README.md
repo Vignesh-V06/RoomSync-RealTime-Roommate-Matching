@@ -143,7 +143,7 @@ CSV datasets: `overview`, `users`, `rooms`, `applications`, `monthly`, `top_room
 
 ### Verified email OTP password reset
 
-The password-reset flow sends a six-digit code through Resend. Codes are stored only as keyed hashes, expire after 10 minutes, are single-use, and are locked after five incorrect attempts. Requests are throttled per account and by source IP.
+RoomSync sends six-digit password-reset codes through a selectable email provider. Codes are stored only as keyed hashes, expire after 10 minutes, are single-use, and are locked after five incorrect attempts. Requests are throttled per account and by source IP.
 
 For an existing database, take a backup and run this migration once:
 
@@ -153,23 +153,47 @@ mysql -u YOUR_DB_USER -p roomsync < backend/migrations/2026-11-08-password-reset
 
 For a new database, the latest `backend/schema.sql` already includes the OTP table.
 
-Configure these values in your private `backend/.env` file (never commit them):
+#### Local development with Gmail SMTP
+
+Use a dedicated development Gmail account where practical. Enable Google 2-Step Verification, then create an App Password for RoomSync. App Passwords are only available for eligible Google Accounts with 2-Step Verification enabled; some managed, Advanced Protection, or security-key-only configurations may not offer them.
+
+Configure the following in your private `backend/.env` file. Do not commit or share this file:
 
 ```env
-RESEND_API_KEY=re_your_private_api_key
-RESEND_FROM_EMAIL=RoomSync <auth@your-verified-domain.com>
-PASSWORD_RESET_OTP_SECRET=generate-a-separate-random-32-byte-secret
+EMAIL_PROVIDER=gmail
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your-development-account@gmail.com
+SMTP_APP_PASSWORD=your-16-character-google-app-password
+SMTP_FROM_EMAIL=
+PASSWORD_RESET_OTP_SECRET=your-separate-random-32-byte-secret
 ```
 
-Create a Resend account, generate an API key, add a domain you own, and verify its DNS records before using that domain in `RESEND_FROM_EMAIL`. Resend requires at least one verified domain for sending. The API call uses Bearer authentication and the transactional email endpoint.
+Leave `SMTP_FROM_EMAIL` blank to send from the authenticated Gmail account. The app password is not your normal Google account password. RoomSync removes spaces from the 16-character app password before SMTP authentication. Gmail SMTP uses `smtp.gmail.com:587` with STARTTLS; port 465 with implicit TLS is also supported by setting `SMTP_PORT=465` and `SMTP_SECURE=true`.
 
-Generate a separate OTP secret from the backend folder with Node.js:
+Generate the OTP secret from the backend folder with Node.js:
 
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
-Restart the backend after updating `.env`. Existing sample/test accounts are not changed by this feature; password reset will only deliver to a real mailbox when that exact email exists on the account and the Resend sender is configured correctly. Check the backend logs and Resend email logs when delivery fails.
+Restart the backend after editing `.env`. The local Forgot Password page's **Check email setup** action verifies the MySQL table and, when Gmail credentials are present, checks the SMTP connection/authentication without sending an email.
+
+#### Optional Resend provider
+
+Resend remains supported for later production use. Verify a domain you own in Resend, then configure:
+
+```env
+EMAIL_PROVIDER=resend
+RESEND_API_KEY=re_your_private_api_key
+RESEND_FROM_EMAIL=RoomSync <auth@your-verified-domain.com>
+PASSWORD_RESET_OTP_SECRET=your-separate-random-32-byte-secret
+```
+
+Resend's `onboarding@resend.dev` sender is for restricted testing to the email address associated with the Resend account. A verified sender domain is required to deliver to other recipients. See the provider's current sending-domain documentation before production.
+
+The same OTP routes and database table are used by both providers. Existing sample/test accounts are unchanged; password reset delivers only to the email address stored on the account. Never log or export OTP values, app passwords, API keys, or message contents.
 
 ### Photo storage note
 
