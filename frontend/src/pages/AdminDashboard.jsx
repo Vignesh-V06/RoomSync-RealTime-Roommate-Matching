@@ -41,6 +41,7 @@ const AdminDashboard = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState('');
+  const [exportError, setExportError] = useState('');
   const [error, setError] = useState('');
   const [range, setRange] = useState('12m');
   const [csvDataset, setCsvDataset] = useState('users');
@@ -67,10 +68,12 @@ const AdminDashboard = () => {
   const downloadReport = async (format, dataset) => {
     const key = format === 'xlsx' ? 'xlsx' : 'csv';
     setExporting(key);
+    setExportError('');
     try {
       const response = await api.get('/admin/reports/export', {
         params: { format, range, ...(dataset ? { dataset } : {}) },
-        responseType: 'blob'
+        responseType: 'blob',
+        timeout: 120000
       });
       const mimeType = format === 'xlsx'
         ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -82,23 +85,38 @@ const AdminDashboard = () => {
       anchor.download = format === 'xlsx'
         ? `roomsync-${range}-admin-report.xlsx`
         : `roomsync-${dataset}-${range}-report.csv`;
+      anchor.style.display = 'none';
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
-      window.URL.revokeObjectURL(url);
+      // Keep the object URL alive briefly so the browser can begin the download.
+      window.setTimeout(() => window.URL.revokeObjectURL(url), 1500);
     } catch (err) {
-      const message = err.response?.data?.message || 'Report export failed. Please try again.';
-      // Blob responses can contain a JSON error body.
+      let message = 'Report export failed. Please try again.';
+      const status = err.response?.status;
       if (err.response?.data instanceof Blob) {
         try {
           const body = JSON.parse(await err.response.data.text());
-          window.alert(body.message || message);
+          message = body.message || message;
         } catch {
-          window.alert(message);
+          // Keep the fallback message when the server returned a non-JSON response.
         }
-      } else {
-        window.alert(message);
+      } else if (err.response?.data?.message) {
+        message = err.response.data.message;
       }
+
+      if (status === 404) {
+        message = 'The report export route was not found (HTTP 404). Stop the old backend, pull the latest branch, and restart the backend from the RoomSync backend folder.';
+      } else if (status === 401) {
+        message = 'Your session has expired. Sign in again with your administrator account.';
+      } else if (status === 403) {
+        message = 'The backend did not recognize this account as an administrator.';
+      } else if (status === 500) {
+        message += ' Check the backend terminal for the detailed SQL or workbook error.';
+      } else if (err.code === 'ECONNABORTED') {
+        message = 'The report took longer than two minutes. Check the backend terminal and database connection, then try a smaller CSV dataset.';
+      }
+      setExportError(message);
     } finally {
       setExporting('');
     }
@@ -206,6 +224,12 @@ const AdminDashboard = () => {
             </div>
           </div>
         </section>
+        {exportError && (
+          <div className="admin-export-error" role="alert">
+            <strong>Download unsuccessful</strong>
+            <span>{exportError}</span>
+          </div>
+        )}
 
         <section className="admin-section">
           <div className="admin-section-heading">
