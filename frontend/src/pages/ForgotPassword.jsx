@@ -4,6 +4,7 @@ import { FiArrowRight, FiCheckCircle, FiAlertCircle, FiLock, FiMail, FiRefreshCw
 import toast from 'react-hot-toast';
 import api from '../api';
 import AuthLayout from '../components/AuthLayout';
+import RoomSyncLoader from '../components/RoomSyncLoader';
 
 const getResetErrorMessage = (error, fallback) => {
   if (!error.response) {
@@ -283,10 +284,9 @@ const ForgotPassword = () => {
           className="auth-submit"
           disabled={loading || !email.trim() || (step === 'verify' && (otp.length !== 6 || newPassword.length < 8))}
         >
-          <span>{loading
-            ? (step === 'request' ? 'Sending code…' : 'Verifying code…')
-            : (step === 'request' ? 'Send verification code' : 'Reset password')}</span>
-          {!loading && <FiArrowRight aria-hidden="true" />}
+          {loading
+            ? <RoomSyncLoader mode="button" label={step === 'request' ? 'Sending code…' : 'Verifying code…'} />
+            : <><span>{step === 'request' ? 'Send verification code' : 'Reset password'}</span><FiArrowRight aria-hidden="true" /></>}
         </button>
       </form>
     </AuthLayout>
