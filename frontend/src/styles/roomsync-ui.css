@@ -2425,6 +2425,7 @@ select option { background: var(--bg-surface); color: var(--text-page); }
   transform-box: fill-box;
   transform-origin: center;
 }
+.roomsync-loader-static-star { display: none; }
 .roomsync-loader-label {
   display: block;
   color: rgba(205, 233, 255, .76);
@@ -2459,4 +2460,6 @@ select option { background: var(--bg-surface); color: var(--text-page); }
   .roomsync-loader-ring,
   .roomsync-loader-ring-highlight { stroke-dashoffset: 0; opacity: 1; }
   .roomsync-loader-star-trail { stroke-dashoffset: 0; opacity: .9; }
+  .roomsync-loader-moving-star { display: none !important; }
+  .roomsync-loader-static-star { display: inline; }
 }
