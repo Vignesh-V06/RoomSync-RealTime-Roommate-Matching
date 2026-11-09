@@ -4,7 +4,7 @@ import { FiArrowRight, FiEye, FiEyeOff, FiLock, FiMail } from 'react-icons/fi';
 import api from '../api';
 import AuthLayout from '../components/AuthLayout';
 
-const Login = () => {
+const Login = ({ onLoginSuccess }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -20,7 +20,8 @@ const Login = () => {
       const { data } = await api.post('/auth/login', { email: email.trim(), password });
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
-      navigate(data.user.role === 'admin' ? '/admin' : '/find-rooms', { replace: true, state: { roomsyncEntry: true } });
+      onLoginSuccess?.();
+      navigate(data.user.role === 'admin' ? '/admin' : '/find-rooms', { replace: true });
     } catch (err) {
       setError(err.response?.data?.message || 'We could not sign you in. Check your details and try again.');
     } finally {
