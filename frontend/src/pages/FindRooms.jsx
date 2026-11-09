@@ -5,8 +5,6 @@ import {
 } from 'react-icons/fi';
 import api from '../api';
 import CustomSelect from '../components/CustomSelect';
-import RoomSyncLoader from '../components/RoomSyncLoader';
-import useRoomSyncLoader from '../hooks/useRoomSyncLoader';
 
 const readUserId = () => {
   try {
@@ -24,7 +22,6 @@ const getScore = (room) => {
 const FindRooms = () => {
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
-  const showInitialLoader = useRoomSyncLoader(loading && rooms.length === 0);
   const [error, setError] = useState('');
   const [query, setQuery] = useState('');
   const [blockFilter, setBlockFilter] = useState('all');
@@ -163,8 +160,22 @@ const FindRooms = () => {
     }
   };
 
-  if (showInitialLoader) {
-    return <RoomSyncLoader label="Finding rooms that fit your lifestyle…" />;
+  if (loading) {
+    return (
+      <div className="find-rooms-page">
+        <div className="discover-container">
+          <div className="discover-heading">
+            <div className="discover-skeleton-line discover-skeleton-title" />
+            <div className="discover-skeleton-line discover-skeleton-subtitle" />
+          </div>
+          <div className="discover-skeleton-toolbar" />
+          <div className="room-card-grid">
+            {[1, 2, 3].map((item) => <div className="room-card-skeleton" key={item} />)}
+          </div>
+          <p className="discover-loading-label">Finding rooms that fit your lifestyle…</p>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
@@ -385,11 +396,7 @@ const FindRooms = () => {
           </div>
         )}
 
-        {previewLoading && (
-          <div className="room-preview-loading">
-            <RoomSyncLoader mode="compact" label="Loading room details…" />
-          </div>
-        )}
+        {previewLoading && <div className="room-preview-loading" role="status">Loading room details…</div>}
         {previewRoom && (
           <div className="room-preview-backdrop" role="presentation" onClick={() => setPreviewRoom(null)}>
             <section className="room-preview-modal" role="dialog" aria-modal="true" aria-label="Room details" onClick={(event) => event.stopPropagation()}>
