@@ -5,7 +5,8 @@ import {
   FiPhone, FiSend, FiSmile, FiUser, FiX
 } from 'react-icons/fi';
 import api from '../api';
-import RoomSyncLoader, { useRoomSyncLoader } from '../components/RoomSyncLoader';
+import RoomSyncLoader from '../components/RoomSyncLoader';
+import useRoomSyncLoader from '../hooks/useRoomSyncLoader';
 import { initSocket } from '../socket';
 import toast from 'react-hot-toast';
 
