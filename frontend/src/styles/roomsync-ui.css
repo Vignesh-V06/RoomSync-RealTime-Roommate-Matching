@@ -2448,6 +2448,33 @@ select option { background: var(--bg-surface); color: var(--text-page); }
   font-size: 9px;
   letter-spacing: .12em;
 }
+.roomsync-loader-button {
+  width: auto;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  vertical-align: middle;
+  color: inherit;
+  text-align: left;
+}
+.roomsync-loader-button .roomsync-loader-artwork {
+  width: 68px;
+  flex: 0 0 68px;
+}
+.roomsync-loader-button .roomsync-loader-label {
+  color: currentColor;
+  font-size: 8px;
+  letter-spacing: .045em;
+  line-height: 1.2;
+  text-shadow: none;
+  white-space: nowrap;
+}
+
 @media (max-width: 680px) {
   .roomsync-loader-fullscreen { padding: 14px; }
   .roomsync-loader-artwork { width: 100%; }
