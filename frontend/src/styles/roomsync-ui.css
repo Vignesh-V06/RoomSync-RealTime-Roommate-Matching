@@ -2345,149 +2345,120 @@ select option { background: var(--bg-surface); color: var(--text-page); }
 }
 
 
-/* RoomSync signature loader — traced ring draw + travelling sparkle. */
-.roomsync-loader {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  gap: clamp(10px, 2vh, 18px);
-  color: #DDFBFF;
-  text-align: center;
-}
-.roomsync-loader-fullscreen {
+
+/* Compact post-login RoomSync house animation. */
+.roomsync-entry-loader {
   position: fixed;
-  z-index: 3000;
+  z-index: 5000;
   inset: 0;
-  width: 100%;
-  min-height: 100vh;
-  min-height: 100dvh;
+  display: grid;
+  place-items: center;
   overflow: hidden;
-  padding: clamp(18px, 4vw, 56px);
   background:
-    radial-gradient(ellipse at 50% 43%, rgba(5, 42, 94, 0.42) 0%, rgba(3, 18, 43, 0.24) 38%, transparent 67%),
-    linear-gradient(145deg, #02091A 0%, #04142D 50%, #010611 100%);
+    radial-gradient(circle at 50% 48%, rgba(0, 139, 255, .11), transparent 26%),
+    rgba(5, 14, 30, .30);
+  -webkit-backdrop-filter: blur(11px) saturate(1.18);
+  backdrop-filter: blur(11px) saturate(1.18);
+  animation: roomsync-entry-exit 2.35s ease-in-out both;
 }
-.roomsync-loader-artwork {
-  position: relative;
-  display: block;
-  width: min(100%, 1120px);
-  aspect-ratio: 3 / 1;
-  isolation: isolate;
-}
-.roomsync-loader-start-frame,
-.roomsync-loader-animation {
+.roomsync-entry-glow {
   position: absolute;
-  inset: 0;
+  width: 164px;
+  height: 164px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 178, 255, .2) 0%, rgba(0, 125, 255, .09) 38%, transparent 72%);
+  filter: blur(13px);
+  animation: roomsync-entry-glow 2.35s ease-in-out both;
+  pointer-events: none;
+}
+.roomsync-entry-mark {
+  position: relative;
+  z-index: 1;
   display: block;
-  width: 100%;
-  height: 100%;
+  width: min(25vw, 106px);
+  min-width: 82px;
+  height: auto;
+  overflow: visible;
+  filter:
+    drop-shadow(0 5px 15px rgba(0, 119, 255, .22))
+    drop-shadow(0 0 22px rgba(0, 189, 255, .13));
+  animation: roomsync-mark-arrive .42s cubic-bezier(.2,.75,.25,1) both;
 }
-.roomsync-loader-start-frame {
-  object-fit: contain;
-  user-select: none;
-  -webkit-user-drag: none;
+.roomsync-entry-house {
+  opacity: 0;
+  transform: scale(.92);
+  transform-origin: 109px 103px;
+  animation: roomsync-house-arrive .5s .03s cubic-bezier(.2,.75,.25,1) forwards;
 }
-.roomsync-loader-animation { overflow: visible; pointer-events: none; }
-.roomsync-loader-ring {
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-  opacity: 0.08;
-  animation: roomsync-ring-draw 2.45s cubic-bezier(.55,.04,.25,1) infinite;
-}
-.roomsync-loader-ring-back { animation-delay: 0s; }
-.roomsync-loader-ring-front { animation-delay: .06s; }
-.roomsync-loader-ring-highlight {
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-  animation: roomsync-ring-draw 2.45s cubic-bezier(.55,.04,.25,1) .09s infinite;
-}
-@keyframes roomsync-ring-draw {
-  0% { stroke-dashoffset: 1; opacity: .12; }
-  8% { opacity: 1; }
-  78% { stroke-dashoffset: 0; opacity: 1; }
-  91% { stroke-dashoffset: 0; opacity: 1; }
-  100% { stroke-dashoffset: 1; opacity: .12; }
-}
-.roomsync-loader-star-trail {
+.roomsync-orbit-back,
+.roomsync-orbit-front,
+.roomsync-orbit-front-highlight {
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
   opacity: 0;
-  animation: roomsync-star-trail 2.45s ease-in-out infinite;
+  fill: none;
+  animation-duration: 2.15s;
+  animation-timing-function: cubic-bezier(.48,.02,.24,1);
+  animation-fill-mode: forwards;
 }
-@keyframes roomsync-star-trail {
-  0%, 12% { stroke-dashoffset: 1; opacity: 0; }
-  20% { opacity: .9; }
-  84% { stroke-dashoffset: 0; opacity: 1; }
-  93% { stroke-dashoffset: 0; opacity: .95; }
-  100% { stroke-dashoffset: 1; opacity: 0; }
+.roomsync-orbit-back {
+  animation-name: roomsync-orbit-back-draw;
 }
-.roomsync-loader-moving-star {
-  transform-box: fill-box;
-  transform-origin: center;
+.roomsync-orbit-front {
+  animation-name: roomsync-orbit-front-draw;
 }
-.roomsync-loader-static-star { display: none; }
-.roomsync-loader-label {
-  display: block;
-  color: rgba(205, 233, 255, .76);
-  font: 600 11px/1.5 "Plus Jakarta Sans", sans-serif;
-  letter-spacing: .16em;
-  text-transform: uppercase;
-  text-shadow: 0 0 18px rgba(0, 182, 255, .24);
+.roomsync-orbit-front-highlight {
+  animation-name: roomsync-orbit-front-highlight;
 }
-.roomsync-loader-compact {
-  width: min(100%, 430px);
-  margin: 0 auto;
-  padding: 12px;
-  gap: 8px;
-  border: 1px solid rgba(55, 177, 255, .16);
-  border-radius: 16px;
-  background: radial-gradient(ellipse at 50% 42%, #092653 0%, #04152E 65%, #020A1A 100%);
+@keyframes roomsync-orbit-front-draw {
+  0% { stroke-dashoffset: 1; opacity: 0; }
+  5% { opacity: 1; }
+  43% { stroke-dashoffset: 0; opacity: 1; }
+  100% { stroke-dashoffset: 0; opacity: 1; }
 }
-.roomsync-loader-compact .roomsync-loader-artwork { width: 100%; }
-.roomsync-loader-compact .roomsync-loader-label {
-  font-size: 9px;
-  letter-spacing: .12em;
+@keyframes roomsync-orbit-front-highlight {
+  0% { stroke-dashoffset: 1; opacity: 0; }
+  7% { opacity: .75; }
+  44% { stroke-dashoffset: 0; opacity: .78; }
+  100% { stroke-dashoffset: 0; opacity: .78; }
 }
-.roomsync-loader-button {
-  width: auto;
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  display: inline-flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  vertical-align: middle;
-  color: inherit;
-  text-align: left;
+@keyframes roomsync-orbit-back-draw {
+  0%, 41% { stroke-dashoffset: 1; opacity: 0; }
+  47% { opacity: .9; }
+  94% { stroke-dashoffset: 0; opacity: .94; }
+  100% { stroke-dashoffset: 0; opacity: .94; }
 }
-.roomsync-loader-button .roomsync-loader-artwork {
-  width: 68px;
-  flex: 0 0 68px;
+@keyframes roomsync-house-arrive {
+  to { opacity: 1; transform: scale(1); }
 }
-.roomsync-loader-button .roomsync-loader-label {
-  color: currentColor;
-  font-size: 8px;
-  letter-spacing: .045em;
-  line-height: 1.2;
-  text-shadow: none;
-  white-space: nowrap;
+@keyframes roomsync-mark-arrive {
+  from { opacity: 0; transform: translateY(4px) scale(.94); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
-
-@media (max-width: 680px) {
-  .roomsync-loader-fullscreen { padding: 14px; }
-  .roomsync-loader-artwork { width: 100%; }
-  .roomsync-loader-label { font-size: 9px; letter-spacing: .12em; }
+@keyframes roomsync-entry-glow {
+  0% { opacity: 0; transform: scale(.82); }
+  24% { opacity: .9; transform: scale(1); }
+  85% { opacity: .72; transform: scale(1.04); }
+  100% { opacity: 0; transform: scale(1.1); }
+}
+@keyframes roomsync-entry-exit {
+  0%, 87% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@media (max-width: 520px) {
+  .roomsync-entry-mark { width: 94px; min-width: 78px; }
+  .roomsync-entry-glow { width: 146px; height: 146px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .roomsync-loader-ring,
-  .roomsync-loader-ring-highlight,
-  .roomsync-loader-star-trail { animation: none !important; }
-  .roomsync-loader-ring,
-  .roomsync-loader-ring-highlight { stroke-dashoffset: 0; opacity: 1; }
-  .roomsync-loader-star-trail { stroke-dashoffset: 0; opacity: .9; }
-  .roomsync-loader-moving-star { display: none !important; }
-  .roomsync-loader-static-star { display: inline; }
+  .roomsync-entry-loader,
+  .roomsync-entry-glow,
+  .roomsync-entry-mark,
+  .roomsync-entry-house,
+  .roomsync-orbit-back,
+  .roomsync-orbit-front,
+  .roomsync-orbit-front-highlight {
+    animation-duration: .55s;
+  }
+  .roomsync-entry-mark { animation-delay: 0s; }
+  .roomsync-entry-house { animation-delay: 0s; }
 }
