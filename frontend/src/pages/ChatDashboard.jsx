@@ -6,6 +6,7 @@ import {
 } from 'react-icons/fi';
 import api from '../api';
 import { initSocket } from '../socket';
+import toast from 'react-hot-toast';
 
 const getStoredUser = () => {
   try {
@@ -171,8 +172,26 @@ const ChatDashboard = () => {
       });
     };
 
+    const handleRoomMembershipRemoved = ({ room_id: removedRoomId }) => {
+      if (!removedRoomId) return;
+      setRooms((previous) => previous.filter((room) => String(room.room_id) !== String(removedRoomId)));
+
+      if (String(activeRoomRef.current?.room_id) === String(removedRoomId)) {
+        activeRoomRef.current = null;
+        setActiveRoom(null);
+        setMessages([]);
+        setRoomDetails(null);
+        setMobileChatOpen(false);
+      }
+      toast.error('The room owner removed your membership. Your room chat access has ended.');
+    };
+
     socket.on('receive_message', handleReceiveMessage);
-    return () => socket.off('receive_message', handleReceiveMessage);
+    socket.on('room_membership_removed', handleRoomMembershipRemoved);
+    return () => {
+      socket.off('receive_message', handleReceiveMessage);
+      socket.off('room_membership_removed', handleRoomMembershipRemoved);
+    };
   }, [socket, user?.id]);
 
   useEffect(() => {
