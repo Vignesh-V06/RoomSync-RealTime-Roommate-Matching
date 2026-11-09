@@ -64,7 +64,12 @@ const Register = () => {
     try {
       await requestVerificationCode();
     } catch (err) {
-      setError(err.response?.data?.message || 'We could not send your verification code. Please try again.');
+      const status = err.response?.status;
+      setError(
+        status === 404
+          ? 'The RoomSync backend running on port 5000 is outdated. Pull the latest branch and restart the backend server.'
+          : err.response?.data?.message || 'We could not send your verification code. Please try again.'
+      );
     } finally {
       setLoading(false);
     }
@@ -88,7 +93,12 @@ const Register = () => {
       localStorage.setItem('user', JSON.stringify(data.user));
       navigate('/profile', { replace: true });
     } catch (err) {
-      setError(err.response?.data?.message || 'We could not verify that code. Please try again.');
+      const status = err.response?.status;
+      setError(
+        status === 404
+          ? 'The RoomSync backend running on port 5000 is outdated. Restart it from the latest project branch.'
+          : err.response?.data?.message || 'We could not verify that code. Please try again.'
+      );
     } finally {
       setLoading(false);
     }
