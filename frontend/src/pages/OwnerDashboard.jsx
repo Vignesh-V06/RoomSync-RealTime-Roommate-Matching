@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { FiArrowRight, FiCheck, FiEye, FiHome, FiMail, FiRefreshCw, FiUsers, FiUserMinus, FiTrash2, FiX, FiEdit2 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import api from '../api';
-import RoomSyncLoader, { useRoomSyncLoader } from '../components/RoomSyncLoader';
+import RoomSyncLoader from '../components/RoomSyncLoader';
+import useRoomSyncLoader from '../hooks/useRoomSyncLoader';
 
 const API_VERSION = 'roomsync-owner-room-management-2';
 
