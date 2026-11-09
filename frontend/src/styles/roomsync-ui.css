@@ -1926,3 +1926,63 @@ select option { background: var(--bg-surface); color: var(--text-page); }
 }
 .admin-export-error strong { color: #E18A8A; font-size: 10px; }
 .admin-export-error span { color: var(--text-muted); font-size: 10px; line-height: 1.6; overflow-wrap: anywhere; }
+
+
+/* Owner controls for current joined roommates. */
+.owner-member-list { margin: 0 0 26px; display: grid; gap: 13px; }
+.owner-member-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 12px; }
+.owner-member-card {
+  min-width: 0;
+  padding: 15px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 13px;
+  background: var(--bg-surface);
+  box-shadow: 0 5px 20px rgba(20,38,55,.035);
+}
+.owner-member-avatar {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--brand-blue) 22%, var(--border-subtle));
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--brand-blue) 10%, var(--bg-surface));
+  color: var(--brand-blue);
+  font-size: 14px;
+  font-weight: 850;
+}
+.owner-member-copy { min-width: 0; flex: 1; display: grid; gap: 3px; }
+.owner-member-copy strong { overflow: hidden; color: var(--text-page); font-size: 12px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+.owner-member-copy a { overflow: hidden; color: var(--text-muted); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; text-decoration: none; }
+.owner-member-copy a:hover { color: var(--brand-blue); text-decoration: underline; }
+.owner-member-copy small { color: var(--text-muted); font-size: 8px; }
+.owner-member-remove {
+  min-height: 36px;
+  padding: 0 11px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  flex: 0 0 auto;
+  border: 1px solid color-mix(in srgb, #D56C6C 42%, var(--border-subtle));
+  border-radius: 8px;
+  background: color-mix(in srgb, #D56C6C 7%, var(--bg-surface));
+  color: #B85F67;
+  font-size: 9px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.owner-member-remove:hover:not(:disabled) { background: color-mix(in srgb, #D56C6C 13%, var(--bg-surface)); }
+.owner-member-remove:disabled { opacity: .55; cursor: wait; }
+.owner-member-remove svg { width: 13px; height: 13px; }
+.dark .owner-member-remove { color: #E2A1A7; }
+@media (max-width: 680px) {
+  .owner-member-grid { grid-template-columns: 1fr; }
+  .owner-member-card { align-items: flex-start; flex-wrap: wrap; }
+  .owner-member-copy { padding-top: 2px; }
+  .owner-member-remove { width: 100%; min-height: 40px; }
+}
