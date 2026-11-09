@@ -76,13 +76,13 @@ const RoomSyncLoader = ({
               <feMerge><feMergeNode in="blueGlow" /><feMergeNode in="SourceGraphic" /></feMerge>
             </filter>
             <clipPath id={`${id}-restore-s`} clipPathUnits="userSpaceOnUse">
-              <rect x="1320" y="220" width="122" height="152" />
+              <rect x="1220" y="210" width="265" height="180" />
             </clipPath>
             <path id={`${id}-star-motion`} d={starPath} />
           </defs>
 
           {/* Clear the sparkle baked into the opening reference, then restore the exact S glyph. */}
-          <circle cx="1377" cy="236" r="51" fill={`url(#${id}-cleanup-gradient)`} />
+          <circle cx="1377" cy="236" r="120" fill={`url(#${id}-cleanup-gradient)`} />
           <image
             href={brandLogo}
             x="0"
