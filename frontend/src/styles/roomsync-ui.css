@@ -225,7 +225,7 @@
   border-bottom: 1px solid var(--border-subtle);
 }
 .home-brand { width: 232px; height: 64px; display: flex; align-items: center; overflow: hidden; text-decoration: none; }
-.home-logo { width: 100%; height: 60px; object-fit: contain; object-position: left center; }
+.home-logo { width: 100%; height: 250px; object-fit: contain; object-position: left center; }
 .home-wordmark { color: var(--brand-blue); font: 800 28px/1 "Plus Jakarta Sans", sans-serif; letter-spacing: -0.06em; }
 .home-header-actions { display: flex; align-items: center; gap: 26px; }
 .home-signin { color: var(--text-page); font-size: 13px; font-weight: 700; text-decoration: none; }
@@ -467,7 +467,7 @@
   border-bottom: 1px solid var(--border-subtle);
 }
 .auth-brand { width: 220px; height: 62px; display: flex; align-items: center; overflow: hidden; }
-.auth-brand img { width: 100%; height: 58px; object-fit: contain; object-position: left center; }
+.auth-brand img { width: 100%; height: 250px; object-fit: contain; object-position: left center; }
 .auth-topbar-actions { display: flex; align-items: center; gap: 18px; }
 .auth-theme-toggle {
   width: 40px;
