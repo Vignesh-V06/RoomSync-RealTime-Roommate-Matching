@@ -212,6 +212,20 @@ Resend's `onboarding@resend.dev` sender is for restricted testing to the email a
 
 The same OTP routes and database table are used by both providers. Existing sample/test accounts are unchanged; password reset delivers only to the email address stored on the account. Never log or export OTP values, app passwords, API keys, or message contents.
 
+### Email OTP verification for new account registration
+
+New student accounts are created only after the email address is verified with a six-digit OTP. The code expires after 10 minutes, is stored as a keyed hash, is single-use, and is invalidated after five incorrect attempts. Registration requests are throttled per email and source IP. The old direct `POST /api/auth/register` endpoint is deliberately disabled; the frontend uses `POST /api/auth/register/request-otp` followed by `POST /api/auth/register/verify-otp`.
+
+For an existing database, back up the database and run this migration once:
+
+```bash
+mysql -u YOUR_DB_USER -p roomsync < backend/migrations/2026-11-09-registration-otp.sql
+```
+
+For a new database, the current `backend/schema.sql` already creates the `registration_otps` table.
+
+Registration reuses the email provider and `PASSWORD_RESET_OTP_SECRET` already configured for password-reset OTP. Keep the SMTP/Resend credentials and OTP secret in the private `backend/.env`; never commit them. Restart the backend after applying the migration or changing environment values. Existing accounts are unaffected and can continue signing in.
+
 ### Photo storage note
 
 Room photos are currently stored in MySQL with a five-photo limit and a 4 MB per-image limit. This keeps local setup simple. Before a high-traffic production launch, move image binaries to S3 or another object store and keep only their metadata and storage keys in MySQL.
