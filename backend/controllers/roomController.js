@@ -282,7 +282,7 @@ exports.getOwnerRoomMembers = async (req, res) => {
     if (!rooms.length) return res.status(404).json({ message: 'Your room listing was not found.' });
 
     const [members] = await pool.query(
-      "SELECT rq.request_id, rq.room_id, rq.user_id, rq.created_at, u.name AS applicant_name, u.username AS applicant_username, u.email AS applicant_email FROM room_requests rq JOIN users u ON u.id = rq.user_id WHERE rq.room_id = ? AND rq.status = 'accepted' ORDER BY rq.request_id ASC",
+      "SELECT rq.request_id, rq.room_id, rq.user_id, rq.created_at, u.id IS NOT NULL AS account_available, u.name AS applicant_name, u.username AS applicant_username, u.email AS applicant_email FROM room_requests rq LEFT JOIN users u ON u.id = rq.user_id WHERE rq.room_id = ? AND rq.status = 'accepted' ORDER BY rq.request_id ASC",
       [roomId]
     );
     res.json(members);
