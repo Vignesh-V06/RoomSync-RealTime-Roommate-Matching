@@ -58,26 +58,18 @@ const RoomSyncLoader = () => {
             />
             <feMerge><feMergeNode in="blueGlow" /><feMergeNode in="SourceGraphic" /></feMerge>
           </filter>
-          <mask id={`${id}-home-occlusion`} maskUnits="userSpaceOnUse" x="0" y="0" width="218" height="205">
-            <rect width="218" height="205" fill="white" />
-            <path
-              d="M 23 94 L 101 23 Q 108 16 116 24 L 195 94 L 181 174 Q 180 180 166 180 H 64 Q 50 180 49 165 V 112 Z"
-              fill="black"
-            />
-          </mask>
         </defs>
 
         {/* The rear half of the orbit is drawn first, so it passes behind the house. */}
         <path
           className="roomsync-orbit-back"
-          d="M 43 94 C 61 82 79 71 104 65 C 126 61 142 60 153 47 C 174 43 196 53 205 69 C 213 86 194 108 174 126"
+          d="M 153 47 C 174 43 196 53 205 69 C 213 86 194 108 174 126"
           pathLength="1"
           fill="none"
           stroke={`url(#${id}-orbit)`}
           strokeWidth="8"
           strokeLinecap="round"
           strokeLinejoin="round"
-          mask={`url(#${id}-home-occlusion)`}
           filter={`url(#${id}-orbit-glow)`}
         />
 
