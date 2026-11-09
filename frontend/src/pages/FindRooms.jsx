@@ -384,7 +384,11 @@ const FindRooms = () => {
           </div>
         )}
 
-        {previewLoading && <div className="room-preview-loading" role="status">Loading room details…</div>}
+        {previewLoading && (
+          <div className="room-preview-loading">
+            <RoomSyncLoader mode="compact" label="Loading room details…" />
+          </div>
+        )}
         {previewRoom && (
           <div className="room-preview-backdrop" role="presentation" onClick={() => setPreviewRoom(null)}>
             <section className="room-preview-modal" role="dialog" aria-modal="true" aria-label="Room details" onClick={(event) => event.stopPropagation()}>
