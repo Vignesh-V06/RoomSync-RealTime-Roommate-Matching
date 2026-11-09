@@ -1,34 +1,6 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import startFrame from '../assets/roomsync-loader-start.webp';
 import brandLogo from '../assets/RoomSync_ Find, Match, Share-Photoroom.png';
-
-const CYCLE_MS = 2450;
-
-export const useRoomSyncLoader = (isLoading) => {
-  const [visible, setVisible] = useState(Boolean(isLoading));
-  const cycleStartedAt = useRef(Date.now());
-  const wasLoading = useRef(Boolean(isLoading));
-
-  useEffect(() => {
-    let finishTimer;
-
-    if (isLoading) {
-      if (!wasLoading.current) cycleStartedAt.current = Date.now();
-      setVisible(true);
-    } else if (wasLoading.current && visible) {
-      const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-      const duration = reducedMotion ? 180 : CYCLE_MS;
-      const elapsed = Date.now() - cycleStartedAt.current;
-      const remaining = reducedMotion ? duration : duration - (elapsed % duration);
-      finishTimer = window.setTimeout(() => setVisible(false), remaining);
-    }
-
-    wasLoading.current = Boolean(isLoading);
-    return () => window.clearTimeout(finishTimer);
-  }, [isLoading, visible]);
-
-  return visible;
-};
 
 const RoomSyncLoader = ({
   mode = 'fullscreen',
