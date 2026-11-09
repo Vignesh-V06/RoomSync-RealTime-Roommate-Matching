@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from 'react';
+import { useId } from 'react';
 import startFrame from '../assets/roomsync-loader-start.webp';
 import brandLogo from '../assets/RoomSync_ Find, Match, Share-Photoroom.png';
 
@@ -7,17 +7,7 @@ const RoomSyncLoader = ({
   label = 'Loading RoomSync…',
   className = ''
 }) => {
-  const id = useId().replace(/:/g, '');
-  const [reducedMotion, setReducedMotion] = useState(false);
-
-  useEffect(() => {
-    const query = window.matchMedia?.('(prefers-reduced-motion: reduce)');
-    if (!query) return undefined;
-    const update = () => setReducedMotion(query.matches);
-    update();
-    query.addEventListener?.('change', update);
-    return () => query.removeEventListener?.('change', update);
-  }, []);
+  const id = useId().replace(/[^a-zA-Z0-9_-]/g, '');
 
   const starPath = 'M 1377 236 C 1440 173 1580 154 1682 203';
   const starTransform = 'translate(1682 203)';
@@ -140,28 +130,25 @@ const RoomSyncLoader = ({
             strokeLinecap="round"
           />
 
-          {reducedMotion ? (
-            <g transform={starTransform} filter={`url(#${id}-star-glow)`}>
-              <circle r="25" fill="#00CFFF" opacity="0.16" />
-              <path d="M 0 -23 C 3 -5 5 -3 23 0 C 5 3 3 5 0 23 C -3 5 -5 3 -23 0 C -5 -3 -3 -5 0 -23 Z" fill={`url(#${id}-star-gradient)`} />
-            </g>
-          ) : (
-            <g className="roomsync-loader-moving-star" filter={`url(#${id}-star-glow)`}>
-              <animateMotion
-                dur="2.45s"
-                repeatCount="indefinite"
-                rotate="0"
-                calcMode="spline"
-                keyTimes="0;1"
-                keySplines="0.42 0 0.24 1"
-              >
-                <mpath href={`#${id}-star-motion`} />
-              </animateMotion>
-              <circle r="27" fill="#00CFFF" opacity="0.18" />
-              <path d="M 0 -23 C 3 -5 5 -3 23 0 C 5 3 3 5 0 23 C -3 5 -5 3 -23 0 C -5 -3 -3 -5 0 -23 Z" fill={`url(#${id}-star-gradient)`} />
-              <path d="M -34 0 H 34 M 0 -34 V 34" stroke="#47E9FF" strokeWidth="1.8" opacity="0.58" />
-            </g>
-          )}
+          <g className="roomsync-loader-static-star" transform={starTransform} filter={`url(#${id}-star-glow)`}>
+            <circle r="25" fill="#00CFFF" opacity="0.16" />
+            <path d="M 0 -23 C 3 -5 5 -3 23 0 C 5 3 3 5 0 23 C -3 5 -5 3 -23 0 C -5 -3 -3 -5 0 -23 Z" fill={`url(#${id}-star-gradient)`} />
+          </g>
+          <g className="roomsync-loader-moving-star" filter={`url(#${id}-star-glow)`}>
+            <animateMotion
+              dur="2.45s"
+              repeatCount="indefinite"
+              rotate="0"
+              calcMode="spline"
+              keyTimes="0;1"
+              keySplines="0.42 0 0.24 1"
+            >
+              <mpath href={`#${id}-star-motion`} />
+            </animateMotion>
+            <circle r="27" fill="#00CFFF" opacity="0.18" />
+            <path d="M 0 -23 C 3 -5 5 -3 23 0 C 5 3 3 5 0 23 C -3 5 -5 3 -23 0 C -5 -3 -3 -5 0 -23 Z" fill={`url(#${id}-star-gradient)`} />
+            <path d="M -34 0 H 34 M 0 -34 V 34" stroke="#47E9FF" strokeWidth="1.8" opacity="0.58" />
+          </g>
         </svg>
       </div>
       <span className="roomsync-loader-label">{label}</span>
