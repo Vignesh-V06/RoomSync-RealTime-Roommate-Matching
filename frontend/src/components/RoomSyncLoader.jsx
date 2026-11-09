@@ -11,15 +11,18 @@ const RoomSyncLoader = ({
 
   const starPath = 'M 1377 236 C 1440 173 1580 154 1682 203';
   const starTransform = 'translate(1682 203)';
+  const isButton = mode === 'button';
+  const Container = isButton ? 'span' : 'div';
+  const Artwork = isButton ? 'span' : 'div';
 
   return (
-    <div
+    <Container
       className={`roomsync-loader roomsync-loader-${mode} ${className}`.trim()}
       role="status"
       aria-live="polite"
       aria-label={label}
     >
-      <div className="roomsync-loader-artwork">
+      <Artwork className="roomsync-loader-artwork">
         <img
           className="roomsync-loader-start-frame"
           src={startFrame}
@@ -150,9 +153,9 @@ const RoomSyncLoader = ({
             <path d="M -34 0 H 34 M 0 -34 V 34" stroke="#47E9FF" strokeWidth="1.8" opacity="0.58" />
           </g>
         </svg>
-      </div>
+      </Artwork>
       <span className="roomsync-loader-label">{label}</span>
-    </div>
+    </Container>
   );
 };
 
