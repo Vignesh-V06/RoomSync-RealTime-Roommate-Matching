@@ -14,6 +14,7 @@ router.get('/requests/:ownerId', authMiddleware, requestController.getOwnerReque
 router.post('/apply', authMiddleware, requestController.applyRoom);
 router.post('/requests/accept', authMiddleware, requestController.acceptRequest);
 router.post('/requests/reject', authMiddleware, requestController.rejectRequest);
+router.post('/requests/remove', authMiddleware, requestController.removeRoommate);
 
 router.get('/:roomId/details', authMiddleware, roomController.getRoomDetails);
 router.post('/:roomId/images', authMiddleware, roomController.uploadRoomImage);
