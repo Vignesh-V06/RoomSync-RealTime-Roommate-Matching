@@ -136,7 +136,11 @@ exports.acceptRequest = async (req, res) => {
       return res.status(409).json({ message: 'This application has already been processed.' });
     }
     await connection.commit();
-    await recordActivity({ actorUserId: ownerId, subjectUserId: request.user_id, eventType: 'room_application_accepted', entityType: 'room', entityId: request.room_id, metadata: { request_id: request.request_id } });
+    try {
+      await recordActivity({ actorUserId: ownerId, subjectUserId: request.user_id, eventType: 'room_application_accepted', entityType: 'room', entityId: request.room_id, metadata: { request_id: request.request_id } });
+    } catch (activityError) {
+      console.error('Application acceptance activity logging failed:', activityError);
+    }
 
     notificationUserId = request.user_id;
     notificationMessage = 'Your request to join ' + request.block + ' (' + request.room_type + ') has been accepted.';
