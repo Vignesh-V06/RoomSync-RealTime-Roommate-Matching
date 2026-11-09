@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 const CYCLE_MS = 2450;
 
 const useRoomSyncLoader = (isLoading) => {
-  const [cycleComplete, setCycleComplete] = useState(false);
+  const [cyclePending, setCyclePending] = useState(Boolean(isLoading));
   const cycleStartedAt = useRef(null);
 
   useEffect(() => {
@@ -13,18 +13,18 @@ const useRoomSyncLoader = (isLoading) => {
       cycleStartedAt.current = Date.now();
     }
 
-    if (!isLoading && cycleStartedAt.current !== null && !cycleComplete) {
+    if (!isLoading && cycleStartedAt.current !== null && cyclePending) {
       const reducedMotion = Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
       const duration = reducedMotion ? 180 : CYCLE_MS;
       const elapsed = Date.now() - cycleStartedAt.current;
       const remaining = reducedMotion ? duration : duration - (elapsed % duration);
-      finishTimer = window.setTimeout(() => setCycleComplete(true), remaining);
+      finishTimer = window.setTimeout(() => setCyclePending(false), remaining);
     }
 
     return () => window.clearTimeout(finishTimer);
-  }, [isLoading, cycleComplete]);
+  }, [isLoading, cyclePending]);
 
-  return Boolean(isLoading || (cycleStartedAt.current !== null && !cycleComplete));
+  return Boolean(isLoading || cyclePending);
 };
 
 export default useRoomSyncLoader;
