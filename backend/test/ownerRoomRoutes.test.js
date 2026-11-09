@@ -23,7 +23,9 @@ test('owner room management routes are registered with the expected methods', ()
     ['/:roomId/room-number', 'patch'],
     ['/:roomId/members', 'get'],
     ['/requests/:ownerId', 'get'],
-    ['/requests/remove', 'post']
+    ['/requests/remove', 'post'],
+    ['/register/request-otp', 'post'],
+    ['/register/verify-otp', 'post']
   ];
 
   for (const [path, method] of expected) {
