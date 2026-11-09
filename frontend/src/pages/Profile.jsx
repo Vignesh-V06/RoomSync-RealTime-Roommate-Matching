@@ -321,7 +321,7 @@ const Profile = () => {
                     <div className="grid gap-4">
                       {applications.map(app => (
                         <div key={app.request_id} className="glass-panel p-5 flex flex-col sm:flex-row justify-between sm:items-center gap-4 border-l-4" style={{
-                          borderLeftColor: app.status === 'accepted' ? '#10b981' : app.status === 'rejected' ? '#ef4444' : '#f59e0b'
+                          borderLeftColor: app.status === 'accepted' ? '#10b981' : app.status === 'rejected' ? '#ef4444' : app.status === 'removed' ? '#94a3b8' : '#f59e0b'
                         }}>
                           <div>
                             <div className="flex items-center gap-2 mb-1">
@@ -339,9 +339,10 @@ const Profile = () => {
                             <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
                               app.status === 'accepted' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
                               app.status === 'rejected' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                              app.status === 'removed' ? 'bg-slate-100 text-slate-600 dark:bg-slate-700/60 dark:text-slate-300' :
                               'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
                             }`}>
-                              {app.status === 'applied' ? 'Pending' : app.status}
+                              {app.status === 'applied' ? 'Pending' : app.status === 'removed' ? 'Removed from room' : app.status}
                             </span>
                           </div>
                         </div>
