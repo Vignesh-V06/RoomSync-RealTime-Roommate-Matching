@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS rooms (
   room_id INT AUTO_INCREMENT PRIMARY KEY,
   owner_id INT NOT NULL UNIQUE,
   block VARCHAR(50) NOT NULL,
+  room_number VARCHAR(20) NULL,
   room_type VARCHAR(50) NOT NULL,
   bed_type VARCHAR(50) NOT NULL DEFAULT 'Normal Bed',
   total_capacity INT NOT NULL,
@@ -45,6 +46,7 @@ CREATE TABLE IF NOT EXISTS rooms (
   custom_options JSON NULL,
   status ENUM('open','closed') NOT NULL DEFAULT 'open',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_rooms_block_room_number (block, room_number),
   FOREIGN KEY (owner_id) REFERENCES users(id)
 );
 

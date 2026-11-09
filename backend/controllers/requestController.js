@@ -66,7 +66,7 @@ exports.applyRoom = async (req, res) => {
 exports.getOwnerRequests = async (req, res) => {
   try {
     const [requests] = await pool.query(
-      "SELECT rq.*, r.block, r.room_type, r.current_occupancy, r.total_capacity, r.status AS room_status, u.name AS applicant_name, u.username AS applicant_username, u.email AS applicant_email, p.language, p.branch, p.cgpa_range, p.sleep_pref, p.study_pref, p.food_pref, p.cleanliness, p.bed_pref FROM room_requests rq JOIN rooms r ON rq.room_id = r.room_id JOIN users u ON rq.user_id = u.id LEFT JOIN profiles p ON rq.user_id = p.user_id WHERE r.owner_id = ? AND rq.status IN ('applied','accepted') ORDER BY CASE WHEN rq.status = 'applied' THEN 0 ELSE 1 END, rq.request_id DESC",
+      "SELECT rq.*, r.block, r.room_number, r.room_type, r.current_occupancy, r.total_capacity, r.status AS room_status, u.name AS applicant_name, u.username AS applicant_username, u.email AS applicant_email, p.language, p.branch, p.cgpa_range, p.sleep_pref, p.study_pref, p.food_pref, p.cleanliness, p.bed_pref FROM room_requests rq JOIN rooms r ON rq.room_id = r.room_id JOIN users u ON rq.user_id = u.id LEFT JOIN profiles p ON rq.user_id = p.user_id WHERE r.owner_id = ? AND rq.status IN ('applied','accepted') ORDER BY CASE WHEN rq.status = 'applied' THEN 0 ELSE 1 END, rq.request_id DESC",
       [req.user.id]
     );
     res.json(requests);
@@ -86,7 +86,7 @@ exports.acceptRequest = async (req, res) => {
   try {
     await connection.beginTransaction();
     const [requests] = await connection.query(
-      'SELECT rq.*, r.owner_id, r.current_occupancy, r.total_capacity, r.status AS room_status, r.block, r.room_type FROM room_requests rq JOIN rooms r ON r.room_id = rq.room_id WHERE rq.request_id = ? FOR UPDATE',
+      'SELECT rq.*, r.owner_id, r.current_occupancy, r.total_capacity, r.status AS room_status, r.block, r.room_number, r.room_type FROM room_requests rq JOIN rooms r ON r.room_id = rq.room_id WHERE rq.request_id = ? FOR UPDATE',
       [requestId]
     );
     if (!requests.length) {
@@ -143,7 +143,7 @@ exports.acceptRequest = async (req, res) => {
     }
 
     notificationUserId = request.user_id;
-    notificationMessage = 'Your request to join ' + request.block + ' (' + request.room_type + ') has been accepted.';
+    notificationMessage = 'Your request to join ' + request.block + (request.room_number ? ' · Room ' + request.room_number : '') + ' (' + request.room_type + ') has been accepted.';
   } catch (error) {
     await connection.rollback();
     if (error.code === 'ER_DUP_ENTRY') return res.status(409).json({ message: 'This student already has an active room relationship.' });
@@ -232,7 +232,11 @@ exports.rejectRequest = async (req, res) => {
 exports.removeRoommate = async (req, res) => {
   const ownerId = req.user.id;
   const requestId = Number(req.body.request_id);
-  if (!Number.isInteger(requestId) || requestId < 1) return res.status(400).json({ message: 'Choose a valid roommate.' });
+  const roomId = Number(req.body.room_id);
+  const memberUserId = Number(req.body.user_id);
+  const hasRequestId = Number.isInteger(requestId) && requestId > 0;
+  const hasRoomMember = Number.isInteger(roomId) && roomId > 0 && Number.isInteger(memberUserId) && memberUserId > 0;
+  if (!hasRequestId && !hasRoomMember) return res.status(400).json({ message: 'Choose a valid roommate.' });
 
   const connection = await pool.getConnection();
   let removedMemberUserId = null;
@@ -241,10 +245,10 @@ exports.removeRoommate = async (req, res) => {
 
   try {
     await connection.beginTransaction();
-    const [requests] = await connection.query(
-      'SELECT rq.*, r.owner_id, r.current_occupancy, r.total_capacity, r.status AS room_status, r.block, r.room_type FROM room_requests rq JOIN rooms r ON r.room_id = rq.room_id WHERE rq.request_id = ? FOR UPDATE',
-      [requestId]
-    );
+    const lookupQuery = hasRoomMember
+      ? 'SELECT rq.*, r.owner_id, r.current_occupancy, r.total_capacity, r.status AS room_status, r.block, r.room_number, r.room_type FROM room_requests rq JOIN rooms r ON r.room_id = rq.room_id WHERE rq.room_id = ? AND rq.user_id = ? FOR UPDATE'
+      : 'SELECT rq.*, r.owner_id, r.current_occupancy, r.total_capacity, r.status AS room_status, r.block, r.room_number, r.room_type FROM room_requests rq JOIN rooms r ON r.room_id = rq.room_id WHERE rq.request_id = ? FOR UPDATE';
+    const [requests] = await connection.query(lookupQuery, hasRoomMember ? [roomId, memberUserId] : [requestId]);
     if (!requests.length) {
       await connection.rollback();
       return res.status(404).json({ message: 'Roommate record not found.' });
@@ -289,7 +293,7 @@ exports.removeRoommate = async (req, res) => {
     await connection.commit();
     removedMemberUserId = request.user_id;
     removedRoomId = request.room_id;
-    notificationMessage = 'Your membership in ' + request.block + ' (' + request.room_type + ') has been removed by the room owner.';
+    notificationMessage = 'Your membership in ' + request.block + (request.room_number ? ' · Room ' + request.room_number : '') + ' (' + request.room_type + ') has been removed by the room owner.';
   } catch (error) {
     await connection.rollback();
     console.error('Roommate removal failed:', error);

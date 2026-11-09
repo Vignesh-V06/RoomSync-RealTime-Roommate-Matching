@@ -107,6 +107,10 @@ mysql -u YOUR_DB_USER -p roomsync < backend/migrations/2026-11-09-room-capacity-
 
 For a new database, the latest `backend/schema.sql` already includes the `removed` application status. A room automatically closes when its final bed is occupied. Owners can remove accepted roommates from the owner dashboard; the membership record is retained as `removed`, the freed bed becomes available again, and the former member's room-chat access is revoked. A manually closed, non-full listing stays closed.
 
+For an existing database, back up the database and run this migration once after the room-capacity migration:
+`mysql -u YOUR_DB_USER -p roomsync < backend/migrations/2026-11-09-room-number-and-owner-delete.sql`
+New room listings require a room number. Existing listings can be updated from the owner dashboard; duplicate room numbers within the same block are rejected. Owners can permanently delete their own listing, which cancels pending applications, ends current memberships, revokes room chat access and removes room-linked photos, views and messages. Student accounts themselves are not deleted.
+
 ### Bootstrap the administrator account
 
 The admin role is granted only by the database-backed seed script. Configure these values in the backend's private .env file or the hosting provider's secret settings. Use a unique password of at least 14 characters; do not commit .env files or share the value.

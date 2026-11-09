@@ -1,5 +1,6 @@
 const pool = require('../db/config');
 const recordActivity = require('../utils/activityLogger');
+const socket = require('../socket');
 const { getInitialRoomStatus, isRoomFull } = require('../utils/roomCapacity');
 
 const parseJson = (value, fallback) => {
@@ -81,6 +82,7 @@ const calculateCompatibility = (userProfile, ownerProfile, customOptions) => {
 exports.createRoom = async (req, res) => {
   const ownerId = req.user.id;
   const block = String(req.body.block || '').trim();
+  const roomNumber = String(req.body.room_number || '').trim();
   const roomType = String(req.body.room_type || '').trim();
   const bedType = String(req.body.bed_type || 'Normal Bed').trim();
   const capacity = Number(req.body.total_capacity);
@@ -89,6 +91,7 @@ exports.createRoom = async (req, res) => {
   const roomStatus = getInitialRoomStatus(1, capacity);
 
   if (!block || block.length > 50) return res.status(400).json({ message: 'Enter a valid hostel block.' });
+  if (!roomNumber || roomNumber.length > 20) return res.status(400).json({ message: 'Enter a valid room number (up to 20 characters).' });
   if (!/^[1-4]-sharing$/i.test(roomType)) return res.status(400).json({ message: 'Choose a valid sharing type.' });
   if (!Number.isInteger(capacity) || capacity < 1 || capacity > 4) return res.status(400).json({ message: 'Room capacity must be between 1 and 4.' });
   if (!['Normal Bed', 'Bunk Bed'].includes(bedType)) return res.status(400).json({ message: 'Choose a valid bed type.' });
@@ -111,14 +114,15 @@ exports.createRoom = async (req, res) => {
     }
 
     const [result] = await connection.query(
-      'INSERT INTO rooms (owner_id, block, room_type, bed_type, total_capacity, current_occupancy, use_custom_logic, additional_requirements, custom_options, status) VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, ?)',
-      [ownerId, block, roomType, bedType, capacity, customOptions.length > 0, notes, JSON.stringify(customOptions), roomStatus]
+      'INSERT INTO rooms (owner_id, block, room_number, room_type, bed_type, total_capacity, current_occupancy, use_custom_logic, additional_requirements, custom_options, status) VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)',
+      [ownerId, block, roomNumber, roomType, bedType, capacity, customOptions.length > 0, notes, JSON.stringify(customOptions), roomStatus]
     );
     await connection.commit();
     await recordActivity({ actorUserId: ownerId, subjectUserId: ownerId, eventType: 'room_created', entityType: 'room', entityId: result.insertId });
     res.status(201).json({ message: 'Room created successfully.', room_id: result.insertId });
   } catch (error) {
     await connection.rollback();
+    if (error.code === 'ER_DUP_ENTRY' && String(error.message || '').includes('uq_rooms_block_room_number')) return res.status(409).json({ message: 'That room number is already listed in this block.' });
     if (error.code === 'ER_DUP_ENTRY') return res.status(409).json({ message: 'Your account already owns a room.' });
     console.error('Room creation failed:', error);
     res.status(500).json({ message: 'Server error creating room.' });
@@ -221,7 +225,7 @@ exports.getMyGroups = async (req, res) => {
   try {
     const userId = req.user.id;
     const [rooms] = await pool.query(
-      "SELECT DISTINCT r.room_id, r.block, r.room_type, r.owner_id, r.status, r.bed_type, u.name AS owner_name, (SELECT MAX(m.created_at) FROM chat_messages m WHERE m.room_id = r.room_id) AS last_activity FROM rooms r JOIN users u ON u.id = r.owner_id LEFT JOIN room_requests rq ON rq.room_id = r.room_id AND rq.user_id = ? AND rq.status = 'accepted' WHERE r.owner_id = ? OR rq.user_id = ? ORDER BY last_activity DESC, r.room_id DESC LIMIT 1",
+      "SELECT DISTINCT r.room_id, r.block, r.room_number, r.room_type, r.owner_id, r.status, r.bed_type, u.name AS owner_name, (SELECT MAX(m.created_at) FROM chat_messages m WHERE m.room_id = r.room_id) AS last_activity FROM rooms r JOIN users u ON u.id = r.owner_id LEFT JOIN room_requests rq ON rq.room_id = r.room_id AND rq.user_id = ? AND rq.status = 'accepted' WHERE r.owner_id = ? OR rq.user_id = ? ORDER BY last_activity DESC, r.room_id DESC LIMIT 1",
       [userId, userId, userId]
     );
     res.json(rooms);
@@ -234,7 +238,7 @@ exports.getMyGroups = async (req, res) => {
 exports.getMyApplications = async (req, res) => {
   try {
     const [applications] = await pool.query(
-      'SELECT rq.request_id, rq.status, rq.created_at, r.room_id, r.block, r.room_type, r.status AS room_status, u.name AS owner_name, u.email AS owner_email FROM room_requests rq JOIN rooms r ON rq.room_id = r.room_id JOIN users u ON r.owner_id = u.id WHERE rq.user_id = ? ORDER BY rq.request_id DESC',
+      'SELECT rq.request_id, rq.status, rq.created_at, r.room_id, r.block, r.room_number, r.room_type, r.status AS room_status, u.name AS owner_name, u.email AS owner_email FROM room_requests rq JOIN rooms r ON rq.room_id = r.room_id JOIN users u ON r.owner_id = u.id WHERE rq.user_id = ? ORDER BY rq.request_id DESC',
       [req.user.id]
     );
     res.json(applications);
@@ -264,6 +268,170 @@ exports.getOwnerAnalytics = async (req, res) => {
     console.error('Owner analytics failed:', error);
     res.status(500).json({ message: 'Server error fetching owner analytics.' });
   }
+};
+
+exports.getOwnerRoomMembers = async (req, res) => {
+  const roomId = Number(req.params.roomId);
+  if (!Number.isInteger(roomId) || roomId < 1) return res.status(400).json({ message: 'Invalid room.' });
+
+  try {
+    const [rooms] = await pool.query(
+      'SELECT room_id FROM rooms WHERE room_id = ? AND owner_id = ? LIMIT 1',
+      [roomId, req.user.id]
+    );
+    if (!rooms.length) return res.status(404).json({ message: 'Your room listing was not found.' });
+
+    const [members] = await pool.query(
+      "SELECT rq.request_id, rq.room_id, rq.user_id, rq.created_at, u.name AS applicant_name, u.username AS applicant_username, u.email AS applicant_email FROM room_requests rq JOIN users u ON u.id = rq.user_id WHERE rq.room_id = ? AND rq.status = 'accepted' ORDER BY rq.request_id ASC",
+      [roomId]
+    );
+    res.json(members);
+  } catch (error) {
+    console.error('Owner room members failed:', error);
+    res.status(500).json({ message: 'Server error fetching current roommates.' });
+  }
+};
+
+exports.updateRoomNumber = async (req, res) => {
+  const roomId = Number(req.params.roomId);
+  const roomNumber = String(req.body.room_number || '').trim();
+  if (!Number.isInteger(roomId) || roomId < 1) return res.status(400).json({ message: 'Invalid room.' });
+  if (!roomNumber || roomNumber.length > 20) return res.status(400).json({ message: 'Enter a valid room number (up to 20 characters).' });
+
+  try {
+    const [rooms] = await pool.query(
+      'SELECT room_id FROM rooms WHERE room_id = ? AND owner_id = ? LIMIT 1',
+      [roomId, req.user.id]
+    );
+    if (!rooms.length) return res.status(404).json({ message: 'Your room listing was not found.' });
+
+    await pool.query('UPDATE rooms SET room_number = ? WHERE room_id = ?', [roomNumber, roomId]);
+    try {
+      await recordActivity({
+        actorUserId: req.user.id,
+        subjectUserId: req.user.id,
+        eventType: 'room_number_updated',
+        entityType: 'room',
+        entityId: roomId
+      });
+    } catch (activityError) {
+      console.error('Room number activity logging failed:', activityError);
+    }
+    res.json({ message: 'Room number updated.', room_number: roomNumber });
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') return res.status(409).json({ message: 'That room number is already listed in this block.' });
+    console.error('Room number update failed:', error);
+    res.status(500).json({ message: 'Server error updating the room number.' });
+  }
+};
+
+exports.deleteRoom = async (req, res) => {
+  const roomId = Number(req.params.roomId);
+  if (!Number.isInteger(roomId) || roomId < 1) return res.status(400).json({ message: 'Invalid room.' });
+
+  const ownerId = req.user.id;
+  const connection = await pool.getConnection();
+  let room = null;
+  let affectedMembers = [];
+
+  try {
+    await connection.beginTransaction();
+    const [rooms] = await connection.query(
+      'SELECT room_id, owner_id, block, room_number FROM rooms WHERE room_id = ? FOR UPDATE',
+      [roomId]
+    );
+    if (!rooms.length) {
+      await connection.rollback();
+      return res.status(404).json({ message: 'Room listing not found.' });
+    }
+    room = rooms[0];
+    if (String(room.owner_id) !== String(ownerId)) {
+      await connection.rollback();
+      return res.status(403).json({ message: 'You can only delete your own room listing.' });
+    }
+
+    const [members] = await connection.query(
+      "SELECT user_id, status FROM room_requests WHERE room_id = ? AND status IN ('applied', 'accepted') FOR UPDATE",
+      [roomId]
+    );
+    affectedMembers = members;
+    await connection.query('DELETE FROM room_requests WHERE room_id = ?', [roomId]);
+
+    const [deleted] = await connection.query(
+      'DELETE FROM rooms WHERE room_id = ? AND owner_id = ?',
+      [roomId, ownerId]
+    );
+    if (deleted.affectedRows !== 1) {
+      await connection.rollback();
+      return res.status(409).json({ message: 'The room changed before it could be deleted. Refresh and try again.' });
+    }
+    await connection.commit();
+  } catch (error) {
+    await connection.rollback();
+    console.error('Room deletion failed:', error);
+    return res.status(500).json({ message: 'Server error deleting this room.' });
+  } finally {
+    connection.release();
+  }
+
+  const roomLabel = String(room.block) + (room.room_number ? ' · Room ' + room.room_number : '');
+  try {
+    await recordActivity({
+      actorUserId: ownerId,
+      subjectUserId: ownerId,
+      eventType: 'room_deleted',
+      entityType: 'room',
+      entityId: roomId,
+      metadata: { block: room.block, room_number: room.room_number, affected_members: affectedMembers.length }
+    });
+  } catch (activityError) {
+    console.error('Room deletion activity logging failed:', activityError);
+  }
+
+  const io = socket.getIo();
+  if (io) {
+    try {
+      const affectedUserIds = new Set(affectedMembers.map((member) => String(member.user_id)));
+      const roomSockets = await io.in('room_' + roomId).fetchSockets();
+      await Promise.all(roomSockets
+        .filter((connectedSocket) => affectedUserIds.has(String(connectedSocket.data?.userId)))
+        .map((connectedSocket) => connectedSocket.leave('room_' + roomId)));
+    } catch (socketError) {
+      console.error('Room deletion socket cleanup failed:', socketError);
+    }
+  }
+
+  for (const member of affectedMembers) {
+    const isJoined = member.status === 'accepted';
+    const message = isJoined
+      ? 'The listing ' + roomLabel + ' was deleted by the owner. Your room membership has ended.'
+      : 'The listing ' + roomLabel + ' was deleted by the owner. Your pending application was cancelled.';
+    try {
+      const [result] = await pool.query(
+        'INSERT INTO notifications (user_id, message) VALUES (?, ?)',
+        [member.user_id, message]
+      );
+      if (io) {
+        io.to('user_' + member.user_id).emit('new_notification', {
+          id: result.insertId,
+          user_id: member.user_id,
+          message,
+          is_read: 0,
+          created_at: new Date()
+        });
+        if (isJoined) {
+          io.to('user_' + member.user_id).emit('room_membership_removed', { room_id: roomId, message });
+        }
+      }
+    } catch (notificationError) {
+      console.error('Room deletion notification failed:', notificationError);
+    }
+  }
+
+  return res.json({
+    message: 'Room deleted. Current roommates lost access and applicants were notified.',
+    affected_members: affectedMembers.length
+  });
 };
 
 exports.setRoomStatus = async (req, res) => {
