@@ -2288,3 +2288,58 @@ select option { background: var(--bg-surface); color: var(--text-page); }
   .home-get-started { padding-inline: 7px; }
   .home-get-started svg { display: none; }
 }
+
+
+/* Registration email OTP step. */
+.register-otp-panel {
+  width: 100%;
+  display: grid;
+  gap: 18px;
+}
+.register-otp-icon {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--brand-blue) 24%, var(--border-subtle));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--brand-blue) 9%, var(--bg-surface));
+  color: var(--brand-blue);
+}
+.register-otp-icon svg { width: 22px; height: 22px; }
+.register-otp-copy { display: grid; gap: 4px; }
+.register-otp-copy strong { color: var(--text-page); font: 750 16px "Plus Jakarta Sans",sans-serif; }
+.register-otp-copy span { color: var(--text-muted); font-size: 11px; }
+.register-otp-copy b { color: var(--brand-blue); font-size: 12px; overflow-wrap: anywhere; }
+.register-otp-input-wrap input {
+  letter-spacing: .28em;
+  font-size: 18px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.register-otp-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.register-otp-back,
+.register-otp-resend {
+  min-height: 36px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  background: transparent;
+  color: var(--brand-blue);
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.register-otp-back svg { width: 13px; height: 13px; }
+.register-otp-back:disabled,
+.register-otp-resend:disabled { color: var(--text-muted); opacity: .65; cursor: not-allowed; }
+@media (max-width: 420px) {
+  .register-otp-actions { align-items: flex-start; flex-direction: column; gap: 2px; }
+}
