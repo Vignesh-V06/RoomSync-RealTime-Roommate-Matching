@@ -171,7 +171,7 @@ const OwnerDashboard = () => {
                           <span className="section-kicker">JOINED ROOMMATE</span>
                           <strong>{member.applicant_name || 'Student'}</strong>
                           <a href={'mailto:' + member.applicant_email}>{member.applicant_email || 'Email not available'}</a>
-                          <small>{member.created_at ? 'Joined ' + new Date(member.created_at).toLocaleDateString() : 'Membership active'}</small>
+                          <small>{member.created_at ? 'Applied ' + new Date(member.created_at).toLocaleDateString() : 'Membership active'}</small>
                         </div>
                         <button
                           type="button"
