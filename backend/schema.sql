@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS room_requests (
   request_id INT AUTO_INCREMENT PRIMARY KEY,
   room_id INT NOT NULL,
   user_id INT NOT NULL,
-  status ENUM('applied','accepted','rejected') DEFAULT 'applied',
+  status ENUM('applied','accepted','rejected','removed') DEFAULT 'applied',
   active_user_id INT GENERATED ALWAYS AS (CASE WHEN status IN ('applied','accepted') THEN user_id ELSE NULL END) STORED,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY uq_room_requests_room_user (room_id, user_id),
