@@ -70,7 +70,7 @@ const RoomSyncLoader = () => {
         {/* The rear half of the orbit is drawn first, so it passes behind the house. */}
         <path
           className="roomsync-orbit-back"
-          d="M 43 94 C 61 75 80 58 103 50 C 122 43 139 43 153 47 C 174 43 196 53 205 69 C 213 86 194 108 174 126"
+          d="M 43 94 C 61 82 79 71 104 65 C 126 61 142 60 153 47 C 174 43 196 53 205 69 C 213 86 194 108 174 126"
           pathLength="1"
           fill="none"
           stroke={`url(#${id}-orbit)`}
