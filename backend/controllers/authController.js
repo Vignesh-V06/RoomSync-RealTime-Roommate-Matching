@@ -10,58 +10,9 @@ const normalizeUsername = (value) => String(value || '')
   .slice(0, 30);
 
 exports.register = async (req, res) => {
-  const name = String(req.body.name || '').trim();
-  const email = String(req.body.email || '').trim().toLowerCase();
-  const password = String(req.body.password || '');
-  const phone = String(req.body.phone || '').trim() || null;
-  let username = normalizeUsername(req.body.username || name.replace(/\s+/g, '.'));
-
-  if (!name || name.length > 100) return res.status(400).json({ message: 'Enter a valid name.' });
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 100) {
-    return res.status(400).json({ message: 'Enter a valid email address.' });
-  }
-  if (password.length < 8 || password.length > 128) {
-    return res.status(400).json({ message: 'Password must contain 8 to 128 characters.' });
-  }
-  if (phone && !/^[+0-9() .-]{7,30}$/.test(phone)) {
-    return res.status(400).json({ message: 'Enter a valid phone number.' });
-  }
-  if (username.length < 3) return res.status(400).json({ message: 'Username must contain at least 3 letters or numbers.' });
-
-  try {
-    const [existing] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);
-    if (existing.length) return res.status(409).json({ message: 'An account with this email already exists.' });
-
-    if (req.body.username) {
-      const [taken] = await pool.query('SELECT id FROM users WHERE username = ?', [username]);
-      if (taken.length) return res.status(409).json({ message: 'That username is already taken.' });
-    } else {
-      const baseUsername = username.slice(0, 24);
-      let suffix = 1;
-      while (true) {
-        const candidate = suffix === 1 ? baseUsername : baseUsername + '.' + suffix;
-        const [taken] = await pool.query('SELECT id FROM users WHERE username = ? LIMIT 1', [candidate]);
-        if (!taken.length) { username = candidate; break; }
-        suffix += 1;
-        if (suffix > 9999) throw new Error('Could not create a unique username.');
-      }
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 12);
-    const [result] = await pool.query(
-      'INSERT INTO users (name, username, email, phone, password, role) VALUES (?, ?, ?, ?, ?, ?)',
-      [name, username, email, phone, hashedPassword, 'student']
-    );
-
-    const user = { id: result.insertId, name, username, email, phone, role: 'student' };
-    await recordActivity({ actorUserId: user.id, subjectUserId: user.id, eventType: 'user_registered', entityType: 'user', entityId: user.id });
-    const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
-    res.status(201).json({ token, user });
-  } catch (error) {
-    if (error.code === 'ER_DUP_ENTRY') return res.status(409).json({ message: 'Email or username is already in use.' });
-    console.error('Registration failed:', error);
-    res.status(500).json({ message: 'Server error during registration.' });
-  }
+  return res.status(410).json({
+    message: 'Direct registration is disabled. Request and verify your email OTP to create your RoomSync account.'
+  });
 };
 
 exports.login = async (req, res) => {
