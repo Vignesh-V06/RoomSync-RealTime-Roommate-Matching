@@ -66,7 +66,7 @@ exports.applyRoom = async (req, res) => {
 exports.getOwnerRequests = async (req, res) => {
   try {
     const [requests] = await pool.query(
-      "SELECT rq.*, r.block, r.room_number, r.room_type, r.current_occupancy, r.total_capacity, r.status AS room_status, u.name AS applicant_name, u.username AS applicant_username, u.email AS applicant_email, p.language, p.branch, p.cgpa_range, p.sleep_pref, p.study_pref, p.food_pref, p.cleanliness, p.bed_pref FROM room_requests rq JOIN rooms r ON rq.room_id = r.room_id JOIN users u ON rq.user_id = u.id LEFT JOIN profiles p ON rq.user_id = p.user_id WHERE r.owner_id = ? AND rq.status IN ('applied','accepted') ORDER BY CASE WHEN rq.status = 'applied' THEN 0 ELSE 1 END, rq.request_id DESC",
+      "SELECT rq.*, r.block, r.room_number, r.room_type, r.current_occupancy, r.total_capacity, r.status AS room_status, u.name AS applicant_name, u.username AS applicant_username, u.email AS applicant_email, p.language, p.branch, p.cgpa_range, p.sleep_pref, p.study_pref, p.food_pref, p.cleanliness, p.bed_pref FROM room_requests rq JOIN rooms r ON rq.room_id = r.room_id LEFT JOIN users u ON rq.user_id = u.id LEFT JOIN profiles p ON rq.user_id = p.user_id WHERE r.owner_id = ? AND rq.status IN ('applied','accepted') ORDER BY CASE WHEN rq.status = 'applied' THEN 0 ELSE 1 END, rq.request_id DESC",
       [req.user.id]
     );
     res.json(requests);
