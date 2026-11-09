@@ -29,7 +29,7 @@ const OwnerDashboard = () => {
   const [roomNumberDraft, setRoomNumberDraft] = useState('');
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
-  const showInitialLoader = useRoomSyncLoader(loading);
+  const showInitialLoader = useRoomSyncLoader(loading && !analytics);
   const [error, setError] = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
   const [actingRequestId, setActingRequestId] = useState(null);
