@@ -8,7 +8,7 @@ router.get('/health', (req, res) => {
     service: 'RoomSync API',
     status: 'ok',
     apiVersion: API_VERSION,
-    features: ['owner-room-number-update', 'owner-roommate-management']
+    features: ['owner-room-number-update', 'owner-roommate-management', 'registration-email-otp']
   });
 });
 
