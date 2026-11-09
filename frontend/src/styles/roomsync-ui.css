@@ -1879,3 +1879,35 @@ select option { background: var(--bg-surface); color: var(--text-page); }
   font-size: 44px;
   line-height: 1.2;
 }
+
+
+/* Clear two-step progress for the password-reset form. */
+.reset-step-indicator {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 9px;
+}
+.reset-step-indicator > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+  font-size: 9px;
+  font-weight: 800;
+}
+.reset-step-indicator > span::first-letter { color: var(--text-muted); }
+.reset-step-indicator > span.is-current { color: var(--brand-blue); }
+.reset-step-indicator > span.is-complete { color: #62B99B; }
+.reset-step-indicator > span > span { font-weight: 750; }
+.reset-step-indicator > i {
+  width: 32px;
+  height: 1px;
+  background: var(--border-subtle);
+}
+.reset-step-explainer {
+  margin: 0 0 16px;
+  color: var(--text-muted);
+  font-size: 10px;
+  line-height: 1.6;
+}
