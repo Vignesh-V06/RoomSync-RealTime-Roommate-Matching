@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FiArrowRight, FiCheck, FiEye, FiHome, FiMail, FiRefreshCw, FiUsers, FiX } from 'react-icons/fi';
+import { FiArrowRight, FiCheck, FiEye, FiHome, FiMail, FiRefreshCw, FiUsers, FiUserMinus, FiX } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import api from '../api';
 
@@ -60,6 +60,25 @@ const OwnerDashboard = () => {
     }
   };
 
+  const handleRemoveRoommate = async (request) => {
+    const roommateName = request.applicant_name || 'this roommate';
+    const confirmed = window.confirm(
+      `Remove ${roommateName} from Block ${request.block}? Their room access will end and their bed will become available.`
+    );
+    if (!confirmed) return;
+
+    setActingRequestId(request.request_id);
+    try {
+      await api.post('/rooms/requests/remove', { request_id: request.request_id });
+      toast.success('Roommate removed. Their bed is available again.');
+      setRefreshKey((value) => value + 1);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'The roommate could not be removed.');
+    } finally {
+      setActingRequestId(null);
+    }
+  };
+
   const toggleRoomStatus = async () => {
     if (!analytics?.room) return;
     setChangingStatus(true);
@@ -79,6 +98,9 @@ const OwnerDashboard = () => {
 
   const room = analytics?.room;
   const isOpen = room?.status === 'open';
+  const isFull = Boolean(room) && Number(room.current_occupancy) >= Number(room.total_capacity);
+  const pendingRequests = requests.filter((request) => request.status === 'applied');
+  const joinedMembers = requests.filter((request) => request.status === 'accepted');
 
   return (
     <div className="owner-page">
@@ -106,9 +128,9 @@ const OwnerDashboard = () => {
                 <p>{room.bed_type || 'Bed details not set'} · {room.current_occupancy} of {room.total_capacity} occupants</p>
               </div>
               <div className="owner-room-status-control">
-                <span className={'room-status-pill ' + (isOpen ? 'room-status-open' : 'room-status-closed')}>{isOpen ? 'Open to applications' : 'Closed to applications'}</span>
-                <button type="button" className="btn-secondary" disabled={changingStatus || (isOpen && Number(room.current_occupancy) >= Number(room.total_capacity))} onClick={toggleRoomStatus}>
-                  {changingStatus ? 'Updating…' : isOpen ? 'Close listing' : 'Reopen listing'}
+                <span className={'room-status-pill ' + (isOpen ? 'room-status-open' : 'room-status-closed')}>{isFull ? 'Full · closed to applications' : isOpen ? 'Open to applications' : 'Closed to applications'}</span>
+                <button type="button" className="btn-secondary" disabled={changingStatus || isFull} onClick={toggleRoomStatus}>
+                  {changingStatus ? 'Updating…' : isFull ? 'Full capacity' : isOpen ? 'Close listing' : 'Reopen listing'}
                 </button>
               </div>
             </section>
@@ -124,14 +146,56 @@ const OwnerDashboard = () => {
               <div><span className="section-kicker">LISTING DISCOVERY</span><h2>{analytics.rank ? 'Ranked #' + analytics.rank : 'Not currently ranked'}</h2><p>Among {analytics.total_open_rooms || 0} open RoomSync listings. Ranking is based on unique room visitors and application interest.</p></div>
               <div className="owner-ranking-number">{analytics.rank ? '#' + analytics.rank : '—'}</div>
             </section>
+
+            <section className="owner-member-list">
+              <div className="owner-list-heading">
+                <div>
+                  <h2>Current roommates</h2>
+                  <p>{joinedMembers.length} {joinedMembers.length === 1 ? 'student has' : 'students have'} joined your room</p>
+                </div>
+              </div>
+              {joinedMembers.length === 0 ? (
+                <div className="owner-state-card owner-state-card-compact">
+                  <span className="owner-empty-icon"><FiUsers /></span>
+                  <h2>No roommates have joined yet</h2>
+                  <p>Accepted students will appear here, where you can manage their room membership.</p>
+                </div>
+              ) : (
+                <div className="owner-member-grid">
+                  {joinedMembers.map((member) => {
+                    const isActing = actingRequestId === member.request_id;
+                    return (
+                      <article className="owner-member-card" key={member.request_id}>
+                        <div className="owner-member-avatar">{(member.applicant_name || 'S').charAt(0).toUpperCase()}</div>
+                        <div className="owner-member-copy">
+                          <span className="section-kicker">JOINED ROOMMATE</span>
+                          <strong>{member.applicant_name || 'Student'}</strong>
+                          <a href={'mailto:' + member.applicant_email}>{member.applicant_email || 'Email not available'}</a>
+                          <small>{member.created_at ? 'Joined ' + new Date(member.created_at).toLocaleDateString() : 'Membership active'}</small>
+                        </div>
+                        <button
+                          type="button"
+                          className="owner-member-remove"
+                          onClick={() => handleRemoveRoommate(member)}
+                          disabled={isActing}
+                          aria-label={'Remove ' + (member.applicant_name || 'roommate')}
+                        >
+                          <FiUserMinus /> {isActing ? 'Removing…' : 'Remove roommate'}
+                        </button>
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
           </>
         )}
 
         <section className="owner-application-list">
-          <div className="owner-list-heading"><div><h2>Incoming applications</h2><p>{requests.length} pending {requests.length === 1 ? 'application' : 'applications'} to review</p></div></div>
-          {requests.length === 0 ? (
+          <div className="owner-list-heading"><div><h2>Incoming applications</h2><p>{pendingRequests.length} pending {pendingRequests.length === 1 ? 'application' : 'applications'} to review</p></div></div>
+          {pendingRequests.length === 0 ? (
             <div className="owner-state-card owner-state-card-compact"><span className="owner-empty-icon"><FiUsers /></span><h2>No pending applications</h2><p>New student requests will appear here.</p></div>
-          ) : requests.map((request) => {
+          ) : pendingRequests.map((request) => {
             const isActing = actingRequestId === request.request_id;
             return (
               <article className="owner-application-card" key={request.request_id}>
