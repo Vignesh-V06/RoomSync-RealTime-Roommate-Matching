@@ -97,6 +97,16 @@ mysql -u YOUR_DB_USER -p < backend/schema.sql
 
 Do not run the migration after importing the updated schema; choose the path that matches your database.
 
+### Full-room closure and roommate removal
+
+For an existing database, back up the database and run this migration once after the platform-features migration:
+
+```bash
+mysql -u YOUR_DB_USER -p roomsync < backend/migrations/2026-11-09-room-capacity-membership.sql
+```
+
+For a new database, the latest `backend/schema.sql` already includes the `removed` application status. A room automatically closes when its final bed is occupied. Owners can remove accepted roommates from the owner dashboard; the membership record is retained as `removed`, the freed bed becomes available again, and the former member's room-chat access is revoked. A manually closed, non-full listing stays closed.
+
 ### Bootstrap the administrator account
 
 The admin role is granted only by the database-backed seed script. Configure these values in the backend's private .env file or the hosting provider's secret settings. Use a unique password of at least 14 characters; do not commit .env files or share the value.
