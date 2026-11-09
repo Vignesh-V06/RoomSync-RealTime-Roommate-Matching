@@ -37,3 +37,18 @@ test('registration OTP validation requires exactly six digits', () => {
   assert.equal(isValidOtp('1234567'), false);
   assert.equal(isValidOtp('12a456'), false);
 });
+
+const authController = require('../controllers/authController');
+
+test('legacy direct registration endpoint cannot create an account without OTP', async () => {
+  let statusCode = 200;
+  let responseBody = null;
+  const response = {
+    status(code) { statusCode = code; return this; },
+    json(body) { responseBody = body; return this; }
+  };
+
+  await authController.register({ body: {} }, response);
+  assert.equal(statusCode, 410);
+  assert.match(responseBody.message, /verify your email OTP/i);
+});
