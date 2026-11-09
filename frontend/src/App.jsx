@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import RoomSyncEntryOverlay from './components/RoomSyncEntryOverlay';
@@ -23,6 +23,7 @@ const HomeRoute = () => {
 
 function App() {
   const [showEntryLoader, setShowEntryLoader] = useState(false);
+  const handleEntryLoaderComplete = useCallback(() => setShowEntryLoader(false), []);
 
   return (
     <ThemeProvider>
@@ -74,7 +75,7 @@ function App() {
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </main>
-          {showEntryLoader && <RoomSyncEntryOverlay onComplete={() => setShowEntryLoader(false)} />}
+          {showEntryLoader && <RoomSyncEntryOverlay onComplete={handleEntryLoaderComplete} />}
         </div>
       </Router>
     </ThemeProvider>
