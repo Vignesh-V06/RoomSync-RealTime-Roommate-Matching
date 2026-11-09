@@ -3,8 +3,6 @@ import { Link } from 'react-router-dom';
 import { FiArrowRight, FiCheck, FiEye, FiHome, FiMail, FiRefreshCw, FiUsers, FiUserMinus, FiTrash2, FiX, FiEdit2 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import api from '../api';
-import RoomSyncLoader from '../components/RoomSyncLoader';
-import useRoomSyncLoader from '../hooks/useRoomSyncLoader';
 
 const API_VERSION = 'roomsync-owner-room-management-2';
 
@@ -29,7 +27,6 @@ const OwnerDashboard = () => {
   const [roomNumberDraft, setRoomNumberDraft] = useState('');
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
-  const showInitialLoader = useRoomSyncLoader(loading && !analytics);
   const [error, setError] = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
   const [actingRequestId, setActingRequestId] = useState(null);
@@ -168,7 +165,7 @@ const OwnerDashboard = () => {
     }
   };
 
-  if (showInitialLoader) return <RoomSyncLoader label="Loading your room dashboard…" />;
+  if (loading) return <div className="owner-page"><div className="owner-container"><div className="owner-skeleton-heading" /><div className="owner-skeleton-card" /><div className="owner-skeleton-card" /></div></div>;
 
   const room = analytics?.room;
   const isOpen = room?.status === 'open';
