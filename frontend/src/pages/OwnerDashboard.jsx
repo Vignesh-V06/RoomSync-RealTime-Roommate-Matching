@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FiArrowRight, FiCheck, FiEye, FiHome, FiMail, FiRefreshCw, FiUsers, FiUserMinus, FiTrash2, FiX } from 'react-icons/fi';
+import { FiArrowRight, FiCheck, FiEye, FiHome, FiMail, FiRefreshCw, FiUsers, FiUserMinus, FiTrash2, FiX, FiEdit2 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import api from '../api';
 
@@ -32,6 +32,7 @@ const OwnerDashboard = () => {
   const [actingRequestId, setActingRequestId] = useState(null);
   const [changingStatus, setChangingStatus] = useState(false);
   const [savingRoomNumber, setSavingRoomNumber] = useState(false);
+  const [editingRoomNumber, setEditingRoomNumber] = useState(false);
   const [deletingRoom, setDeletingRoom] = useState(false);
   const [backendOutdated, setBackendOutdated] = useState(false);
 
@@ -114,6 +115,7 @@ const OwnerDashboard = () => {
     try {
       await api.patch('/rooms/' + room.room_id + '/room-number', { room_number: roomNumber });
       toast.success('Room number updated.');
+      setEditingRoomNumber(false);
       setRefreshKey((value) => value + 1);
     } catch (err) {
       const serverMessage = err.response?.data?.message;
@@ -201,14 +203,65 @@ const OwnerDashboard = () => {
             <section className="owner-room-overview surface-card">
               <div className="owner-room-overview-copy">
                 <span className="section-kicker">YOUR LISTING</span>
-                <h2>{room.block} <span>Room {room.room_number || 'number not set'} · {room.room_type}</span></h2>
+                <div className="owner-room-title">
+                  <h2>{room.block}</h2>
+                  <div className="owner-room-title-meta">
+                    <span className="owner-room-number-chip">Room {room.room_number || 'number not set'}</span>
+                    <span className="owner-room-type-chip">{room.room_type}</span>
+                  </div>
+                </div>
                 <p>{room.bed_type || 'Bed details not set'} · {room.current_occupancy} of {room.total_capacity} occupants</p>
                 <div className="owner-room-number-editor">
-                  <label htmlFor="owner-room-number">Room number</label>
-                  <div className="owner-room-number-fields">
-                    <input id="owner-room-number" type="text" maxLength={20} value={roomNumberDraft} onChange={(event) => setRoomNumberDraft(event.target.value)} placeholder="e.g. 204" />
-                    <button type="button" onClick={handleSaveRoomNumber} disabled={savingRoomNumber || !roomNumberDraft.trim()}>{savingRoomNumber ? 'Saving…' : 'Save number'}</button>
-                  </div>
+                  {!editingRoomNumber ? (
+                    <div className="owner-room-number-current">
+                      <div>
+                        <span className="owner-room-number-label">ROOM NUMBER</span>
+                        <strong>{room.room_number || 'Not set'}</strong>
+                      </div>
+                      <button
+                        type="button"
+                        className="owner-room-number-edit"
+                        onClick={() => {
+                          setRoomNumberDraft(room.room_number || '');
+                          setEditingRoomNumber(true);
+                        }}
+                        aria-label="Edit room number"
+                        title="Edit room number"
+                        disabled={savingRoomNumber}
+                      >
+                        <FiEdit2 />
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <label htmlFor="owner-room-number">Edit room number</label>
+                      <div className="owner-room-number-fields">
+                        <input
+                          id="owner-room-number"
+                          type="text"
+                          maxLength={20}
+                          value={roomNumberDraft}
+                          onChange={(event) => setRoomNumberDraft(event.target.value)}
+                          placeholder="e.g. 204"
+                          autoFocus
+                        />
+                        <button type="button" onClick={handleSaveRoomNumber} disabled={savingRoomNumber || !roomNumberDraft.trim()}>
+                          {savingRoomNumber ? 'Saving…' : 'Save'}
+                        </button>
+                        <button
+                          type="button"
+                          className="owner-room-number-cancel"
+                          onClick={() => {
+                            setRoomNumberDraft(room.room_number || '');
+                            setEditingRoomNumber(false);
+                          }}
+                          disabled={savingRoomNumber}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
               <div className="owner-room-status-control">
