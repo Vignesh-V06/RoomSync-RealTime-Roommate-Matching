@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import logo from '../assets/RoomSync_ Find, Match, Share-Photoroom.png';
 import {
-  FiArrowUpRight, FiCheck, FiCompass, FiMessageCircle, FiUsers
+  FiArrowUpRight, FiCheck, FiCompass, FiMessageCircle, FiUsers, FiMoon, FiSun
 } from 'react-icons/fi';
+import { useTheme } from '../context/useTheme';
 
 const factors = [
   { title: 'Sleep routine', detail: 'Early bird, night owl or somewhere in between.' },
@@ -16,6 +17,7 @@ const factors = [
 
 const Home = () => {
   const [logoFailed, setLogoFailed] = useState(false);
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <div className="home-page">
@@ -33,6 +35,15 @@ const Home = () => {
           )}
         </Link>
         <nav className="home-header-actions" aria-label="Account navigation">
+          <button
+            type="button"
+            className="home-theme-toggle"
+            onClick={toggleTheme}
+            aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+            title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+          >
+            {theme === 'light' ? <FiMoon aria-hidden="true" /> : <FiSun aria-hidden="true" />}
+          </button>
           <Link to="/login" className="home-signin">Sign in</Link>
           <Link to="/register" className="home-get-started">Create account <FiArrowUpRight aria-hidden="true" /></Link>
         </nav>
