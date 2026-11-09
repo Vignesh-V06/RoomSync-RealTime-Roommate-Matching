@@ -1986,3 +1986,68 @@ select option { background: var(--bg-surface); color: var(--text-page); }
   .owner-member-copy { padding-top: 2px; }
   .owner-member-remove { width: 100%; min-height: 40px; }
 }
+
+/* Room number identity, owner room actions and roster consistency. */
+.owner-room-number-editor { margin-top: 13px; max-width: 360px; display: grid; gap: 5px; }
+.owner-room-number-editor > label { color: var(--text-muted); font-size: 9px; font-weight: 800; }
+.owner-room-number-fields { display: flex; gap: 7px; }
+.owner-room-number-fields input {
+  min-width: 0;
+  width: 100%;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--bg-page);
+  color: var(--text-page);
+  font: inherit;
+  font-size: 10px;
+}
+.owner-room-number-fields button {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--brand-blue);
+  border-radius: 8px;
+  background: var(--brand-blue);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.owner-room-number-fields button:disabled { opacity: .55; cursor: not-allowed; }
+.owner-delete-room-button {
+  min-height: 36px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid color-mix(in srgb, #D56C6C 48%, var(--border-subtle));
+  border-radius: 8px;
+  background: color-mix(in srgb, #D56C6C 8%, var(--bg-surface));
+  color: #B85F67;
+  font-size: 9px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.owner-delete-room-button:hover:not(:disabled) { background: color-mix(in srgb, #D56C6C 15%, var(--bg-surface)); }
+.owner-delete-room-button:disabled { opacity: .55; cursor: wait; }
+.owner-delete-room-button svg { width: 13px; height: 13px; }
+.dark .owner-delete-room-button { color: #E2A1A7; }
+.owner-member-sync-warning {
+  padding: 12px 14px;
+  display: grid;
+  gap: 4px;
+  border: 1px solid color-mix(in srgb, #D49B35 44%, var(--border-subtle));
+  border-radius: 10px;
+  background: color-mix(in srgb, #D49B35 9%, var(--bg-surface));
+}
+.owner-member-sync-warning strong { color: var(--text-page); font-size: 10px; }
+.owner-member-sync-warning span { color: var(--text-muted); font-size: 9px; line-height: 1.6; }
+.room-card-room-number { margin-top: 3px; display: block; color: var(--text-muted); font-size: 9px; font-weight: 700; }
+@media (max-width: 680px) {
+  .owner-room-number-editor { max-width: none; }
+  .owner-room-number-fields { flex-wrap: wrap; }
+  .owner-room-number-fields button { width: 100%; }
+}

@@ -95,7 +95,7 @@ const FindRooms = () => {
   const visibleRooms = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     const filtered = rooms.filter((room) => {
-      const searchable = [room.block, room.room_type, room.owner_name]
+      const searchable = [room.block, room.room_number, room.room_type, room.owner_name]
         .filter(Boolean)
         .join(' ')
         .toLowerCase();
@@ -326,6 +326,7 @@ const FindRooms = () => {
                       <div>
                         <span className="room-card-kicker">AVAILABLE ROOM</span>
                         <button type="button" className="room-card-title-button" onClick={() => handlePreview(room.room_id)}>{room.block || 'Room listing'}</button>
+                        <small className="room-card-room-number">Room {room.room_number || 'number not set'}</small>
                       </div>
                       <span className="room-type-chip">{room.room_type || 'Room'}</span>
                     </div>
@@ -400,12 +401,13 @@ const FindRooms = () => {
           <div className="room-preview-backdrop" role="presentation" onClick={() => setPreviewRoom(null)}>
             <section className="room-preview-modal" role="dialog" aria-modal="true" aria-label="Room details" onClick={(event) => event.stopPropagation()}>
               <header className="room-preview-modal-header">
-                <div><span className="section-kicker">ROOM DETAILS</span><h2>{previewRoom.room.block} · {previewRoom.room.room_type}</h2><p>Hosted by {previewRoom.room.owner_name}</p></div>
+                <div><span className="section-kicker">ROOM DETAILS</span><h2>{previewRoom.room.block} · Room {previewRoom.room.room_number || 'number not set'} · {previewRoom.room.room_type}</h2><p>Hosted by {previewRoom.room.owner_name}</p></div>
                 <button type="button" aria-label="Close room details" onClick={() => setPreviewRoom(null)}><FiX /></button>
               </header>
               <div className="room-preview-modal-body">
                 {(previewRoom.images || []).length > 0 ? <div className="room-preview-gallery">{previewRoom.images.map((photo) => <img key={photo.id} src={(api.defaults.baseURL || '/api') + '/rooms/' + previewRoom.room.room_id + '/images/' + photo.id} alt={photo.original_name || 'Room photo'} />)}</div> : <div className="room-preview-no-image"><FiHome /><span>No room photos uploaded yet</span></div>}
                 <div className="room-preview-detail-grid">
+                  <div><span>Room number</span><strong>{previewRoom.room.room_number || 'Not set'}</strong></div>
                   <div><span>Bed type</span><strong>{previewRoom.room.bed_type || 'Not specified'}</strong></div>
                   <div><span>Occupancy</span><strong>{previewRoom.room.current_occupancy} / {previewRoom.room.total_capacity}</strong></div>
                   <div><span>Availability</span><strong>{Math.max(0, Number(previewRoom.room.total_capacity) - Number(previewRoom.room.current_occupancy))} spaces</strong></div>

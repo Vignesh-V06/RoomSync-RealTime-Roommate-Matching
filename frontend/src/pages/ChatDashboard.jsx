@@ -331,6 +331,7 @@ const ChatDashboard = () => {
                     <span className="chat-room-item-copy">
                       <strong>{room.block || 'Room conversation'}</strong>
                       <small>{room.owner_id === user.id ? 'Your room' : 'Hosted by ' + (room.owner_name || 'room owner')}</small>
+                      <small>Room {room.room_number || 'number not set'}</small>
                     </span>
                     <span className="chat-room-type">{room.room_type}</span>
                   </button>
@@ -353,7 +354,7 @@ const ChatDashboard = () => {
                 <button type="button" className="chat-mobile-back" onClick={() => setMobileChatOpen(false)} aria-label="Back to conversations"><FiArrowLeft /></button>
                 <span className="chat-room-avatar">{(activeRoom.block || 'R').charAt(0).toUpperCase()}</span>
                 <button type="button" className="chat-room-title-button" onClick={() => { setSelectedMember(null); setRoomPanelOpen(true); }}>
-                  <h2>{activeRoom.block || 'Room conversation'}</h2><p>{activeRoom.room_type} · Room details</p>
+                  <h2>{activeRoom.block || 'Room conversation'}</h2><p>Room {activeRoom.room_number || 'number not set'} · {activeRoom.room_type} · Room details</p>
                 </button>
               </header>
 
@@ -460,6 +461,7 @@ const ChatDashboard = () => {
                     <>
                       <div className="chat-room-detail-grid">
                         <div><span>Hostel block</span><strong>{roomDetails.room.block}</strong></div>
+                        <div><span>Room number</span><strong>{roomDetails.room.room_number || 'Not set'}</strong></div>
                         <div><span>Sharing type</span><strong>{roomDetails.room.room_type}</strong></div>
                         <div><span>Bed type</span><strong>{roomDetails.room.bed_type || 'Not specified'}</strong></div>
                         <div><span>Occupancy</span><strong>{roomDetails.room.current_occupancy} / {roomDetails.room.total_capacity}</strong></div>

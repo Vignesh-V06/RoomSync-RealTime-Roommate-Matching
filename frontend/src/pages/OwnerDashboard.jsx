@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FiArrowRight, FiCheck, FiEye, FiHome, FiMail, FiRefreshCw, FiUsers, FiUserMinus, FiX } from 'react-icons/fi';
+import { FiArrowRight, FiCheck, FiEye, FiHome, FiMail, FiRefreshCw, FiUsers, FiUserMinus, FiTrash2, FiX } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import api from '../api';
 
@@ -21,12 +21,16 @@ const Stat = ({ label, value, detail, icon }) => (
 
 const OwnerDashboard = () => {
   const [requests, setRequests] = useState([]);
+  const [members, setMembers] = useState([]);
+  const [roomNumberDraft, setRoomNumberDraft] = useState('');
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
   const [actingRequestId, setActingRequestId] = useState(null);
   const [changingStatus, setChangingStatus] = useState(false);
+  const [savingRoomNumber, setSavingRoomNumber] = useState(false);
+  const [deletingRoom, setDeletingRoom] = useState(false);
 
   const fetchDashboard = useCallback(async () => {
     setLoading(true);
@@ -36,8 +40,23 @@ const OwnerDashboard = () => {
         api.get('/rooms/requests/current'),
         api.get('/rooms/owner/analytics')
       ]);
-      setRequests(Array.isArray(requestResult.data) ? requestResult.data : []);
-      setAnalytics(analyticsResult.data || null);
+      const requestData = Array.isArray(requestResult.data) ? requestResult.data : [];
+      const nextAnalytics = analyticsResult.data || null;
+      let memberData = requestData.filter((request) => request.status === 'accepted');
+
+      if (nextAnalytics?.room?.room_id) {
+        try {
+          const memberResult = await api.get('/rooms/' + nextAnalytics.room.room_id + '/members');
+          if (Array.isArray(memberResult.data)) memberData = memberResult.data;
+        } catch {
+          // Keep the accepted rows from the applications endpoint as a compatibility fallback.
+        }
+      }
+
+      setRequests(requestData);
+      setMembers(memberData);
+      setAnalytics(nextAnalytics);
+      setRoomNumberDraft(nextAnalytics?.room?.room_number || '');
     } catch (err) {
       setError(err.response?.data?.message || 'We could not load your room dashboard.');
     } finally {
@@ -60,22 +79,67 @@ const OwnerDashboard = () => {
     }
   };
 
-  const handleRemoveRoommate = async (request) => {
-    const roommateName = request.applicant_name || 'this roommate';
+  const handleRemoveRoommate = async (member) => {
+    const roommateName = member.applicant_name || 'this roommate';
+    const roomLabel = (room?.block || 'your room') + (room?.room_number ? ' · Room ' + room.room_number : '');
     const confirmed = window.confirm(
-      `Remove ${roommateName} from Block ${request.block}? Their room access will end and their bed will become available.`
+      `Remove ${roommateName} from ${roomLabel}? Their room access will end and their bed will become available.`
     );
     if (!confirmed) return;
 
-    setActingRequestId(request.request_id);
+    const memberKey = member.user_id || member.request_id;
+    setActingRequestId(memberKey);
     try {
-      await api.post('/rooms/requests/remove', { request_id: request.request_id });
+      await api.post('/rooms/requests/remove', {
+        room_id: member.room_id || room?.room_id,
+        user_id: member.user_id,
+        request_id: member.request_id
+      });
       toast.success('Roommate removed. Their bed is available again.');
       setRefreshKey((value) => value + 1);
     } catch (err) {
       toast.error(err.response?.data?.message || 'The roommate could not be removed.');
     } finally {
       setActingRequestId(null);
+    }
+  };
+
+  const handleSaveRoomNumber = async () => {
+    if (!room?.room_id) return;
+    const roomNumber = roomNumberDraft.trim();
+    if (!roomNumber || roomNumber.length > 20) {
+      toast.error('Enter a room number up to 20 characters.');
+      return;
+    }
+    setSavingRoomNumber(true);
+    try {
+      await api.patch('/rooms/' + room.room_id + '/room-number', { room_number: roomNumber });
+      toast.success('Room number updated.');
+      setRefreshKey((value) => value + 1);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Room number could not be updated.');
+    } finally {
+      setSavingRoomNumber(false);
+    }
+  };
+
+  const handleDeleteRoom = async () => {
+    if (!room?.room_id) return;
+    const roomLabel = room.block + (room.room_number ? ' · Room ' + room.room_number : '');
+    const confirmed = window.confirm(
+      `Permanently delete ${roomLabel}? This removes the listing, its photos and chat history, cancels pending applications, and ends all current memberships. Student accounts will not be deleted.`
+    );
+    if (!confirmed) return;
+
+    setDeletingRoom(true);
+    try {
+      await api.delete('/rooms/' + room.room_id);
+      toast.success('Room listing deleted. Current members and applicants have been notified.');
+      setRefreshKey((value) => value + 1);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'The room could not be deleted.');
+    } finally {
+      setDeletingRoom(false);
     }
   };
 
@@ -100,7 +164,9 @@ const OwnerDashboard = () => {
   const isOpen = room?.status === 'open';
   const isFull = Boolean(room) && Number(room.current_occupancy) >= Number(room.total_capacity);
   const pendingRequests = requests.filter((request) => request.status === 'applied');
-  const joinedMembers = requests.filter((request) => request.status === 'accepted');
+  const joinedMembers = members;
+  const expectedMemberCount = Number(room?.accepted_count || 0);
+  const membershipCountMismatch = Boolean(room) && expectedMemberCount !== joinedMembers.length;
 
   return (
     <div className="owner-page">
@@ -124,13 +190,23 @@ const OwnerDashboard = () => {
             <section className="owner-room-overview surface-card">
               <div className="owner-room-overview-copy">
                 <span className="section-kicker">YOUR LISTING</span>
-                <h2>{room.block} <span>{room.room_type}</span></h2>
+                <h2>{room.block} <span>Room {room.room_number || 'number not set'} · {room.room_type}</span></h2>
                 <p>{room.bed_type || 'Bed details not set'} · {room.current_occupancy} of {room.total_capacity} occupants</p>
+                <div className="owner-room-number-editor">
+                  <label htmlFor="owner-room-number">Room number</label>
+                  <div className="owner-room-number-fields">
+                    <input id="owner-room-number" type="text" maxLength={20} value={roomNumberDraft} onChange={(event) => setRoomNumberDraft(event.target.value)} placeholder="e.g. 204" />
+                    <button type="button" onClick={handleSaveRoomNumber} disabled={savingRoomNumber || !roomNumberDraft.trim()}>{savingRoomNumber ? 'Saving…' : 'Save number'}</button>
+                  </div>
+                </div>
               </div>
               <div className="owner-room-status-control">
                 <span className={'room-status-pill ' + (isOpen ? 'room-status-open' : 'room-status-closed')}>{isFull ? 'Full · closed to applications' : isOpen ? 'Open to applications' : 'Closed to applications'}</span>
-                <button type="button" className="btn-secondary" disabled={changingStatus || isFull} onClick={toggleRoomStatus}>
+                <button type="button" className="btn-secondary" disabled={changingStatus || isFull || deletingRoom} onClick={toggleRoomStatus}>
                   {changingStatus ? 'Updating…' : isFull ? 'Full capacity' : isOpen ? 'Close listing' : 'Reopen listing'}
+                </button>
+                <button type="button" className="owner-delete-room-button" disabled={deletingRoom} onClick={handleDeleteRoom}>
+                  <FiTrash2 /> {deletingRoom ? 'Deleting…' : 'Delete room'}
                 </button>
               </div>
             </section>
@@ -154,7 +230,12 @@ const OwnerDashboard = () => {
                   <p>{joinedMembers.length} {joinedMembers.length === 1 ? 'student has' : 'students have'} joined your room</p>
                 </div>
               </div>
-              {joinedMembers.length === 0 ? (
+              {membershipCountMismatch ? (
+                <div className="owner-member-sync-warning" role="status">
+                  <strong>Roommate records need to be synchronized.</strong>
+                  <span>Analytics reports {expectedMemberCount} accepted student accounts, but {joinedMembers.length} loaded in the current roster. Refresh the dashboard after the latest backend deployment and database migration are applied.</span>
+                </div>
+              ) : joinedMembers.length === 0 ? (
                 <div className="owner-state-card owner-state-card-compact">
                   <span className="owner-empty-icon"><FiUsers /></span>
                   <h2>No roommates have joined yet</h2>
@@ -163,9 +244,10 @@ const OwnerDashboard = () => {
               ) : (
                 <div className="owner-member-grid">
                   {joinedMembers.map((member) => {
-                    const isActing = actingRequestId === member.request_id;
+                    const memberKey = member.user_id || member.request_id;
+                    const isActing = actingRequestId === memberKey;
                     return (
-                      <article className="owner-member-card" key={member.request_id}>
+                      <article className="owner-member-card" key={memberKey}>
                         <div className="owner-member-avatar">{(member.applicant_name || 'S').charAt(0).toUpperCase()}</div>
                         <div className="owner-member-copy">
                           <span className="section-kicker">JOINED ROOMMATE</span>

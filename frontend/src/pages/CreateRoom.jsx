@@ -7,6 +7,7 @@ import CustomSelect from '../components/CustomSelect';
 
 const initialForm = {
   block: '',
+  room_number: '',
   room_type: '2-sharing',
   bed_type: 'Normal Bed',
   total_capacity: 2,
@@ -40,8 +41,13 @@ const CreateRoom = () => {
     setError('');
 
     const block = formData.block.trim();
+    const roomNumber = formData.room_number.trim();
     if (!block) {
       setError('Enter the hostel block so students can identify the room.');
+      return;
+    }
+    if (!roomNumber || roomNumber.length > 20) {
+      setError('Enter the room number shown on the hostel room.');
       return;
     }
     if (!Number.isInteger(Number(formData.total_capacity)) || Number(formData.total_capacity) < 1 || Number(formData.total_capacity) > 4) {
@@ -54,6 +60,7 @@ const CreateRoom = () => {
       const payload = {
         ...formData,
         block,
+        room_number: roomNumber,
         total_capacity: Number(formData.total_capacity),
         additional_requirements: formData.additional_requirements.trim(),
         custom_options: customOptions.filter((option) => option.label.trim() && option.value.trim())
@@ -96,20 +103,37 @@ const CreateRoom = () => {
                 </div>
               </div>
 
-              <div className="create-form-field">
-                <label htmlFor="room-block">Hostel block <span>Required</span></label>
-                <input
-                  id="room-block"
-                  className="input-field"
-                  type="text"
-                  maxLength={50}
-                  required
-                  autoComplete="off"
-                  value={formData.block}
-                  onChange={(event) => updateField('block', event.target.value)}
-                  placeholder="e.g. Men's Hostel · Block A"
-                />
-                <small>Use the block name students will recognize.</small>
+              <div className="create-form-grid">
+                <div className="create-form-field">
+                  <label htmlFor="room-block">Hostel block <span>Required</span></label>
+                  <input
+                    id="room-block"
+                    className="input-field"
+                    type="text"
+                    maxLength={50}
+                    required
+                    autoComplete="off"
+                    value={formData.block}
+                    onChange={(event) => updateField('block', event.target.value)}
+                    placeholder="e.g. Men's Hostel · Block K"
+                  />
+                  <small>Use the block name students will recognize.</small>
+                </div>
+                <div className="create-form-field">
+                  <label htmlFor="room-number">Room number <span>Required</span></label>
+                  <input
+                    id="room-number"
+                    className="input-field"
+                    type="text"
+                    maxLength={20}
+                    required
+                    autoComplete="off"
+                    value={formData.room_number}
+                    onChange={(event) => updateField('room_number', event.target.value)}
+                    placeholder="e.g. 204"
+                  />
+                  <small>Enter the individual room number within the block.</small>
+                </div>
               </div>
 
               <div className="create-form-grid">

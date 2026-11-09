@@ -325,7 +325,7 @@ const Profile = () => {
                         }}>
                           <div>
                             <div className="flex items-center gap-2 mb-1">
-                              <h4 className="text-lg font-bold text-slate-800 dark:text-slate-100">Block {app.block}</h4>
+                              <h4 className="text-lg font-bold text-slate-800 dark:text-slate-100">Block {app.block} · Room {app.room_number || 'not set'}</h4>
                               <span className="text-xs font-semibold px-2 py-0.5 bg-slate-100 dark:bg-slate-700 rounded-full text-slate-600 dark:text-slate-300">
                                 {app.room_type}
                               </span>
