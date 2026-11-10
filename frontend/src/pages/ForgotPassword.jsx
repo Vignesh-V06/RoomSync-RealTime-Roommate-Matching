@@ -283,10 +283,9 @@ const ForgotPassword = () => {
           className="auth-submit"
           disabled={loading || !email.trim() || (step === 'verify' && (otp.length !== 6 || newPassword.length < 8))}
         >
-          <span>{loading
-            ? (step === 'request' ? 'Sending code…' : 'Verifying code…')
-            : (step === 'request' ? 'Send verification code' : 'Reset password')}</span>
-          {!loading && <FiArrowRight aria-hidden="true" />}
+          {loading
+            ? <span>{step === 'request' ? 'Sending code…' : 'Verifying code…'}</span>
+            : <><span>{step === 'request' ? 'Send verification code' : 'Reset password'}</span><FiArrowRight aria-hidden="true" /></>}
         </button>
       </form>
     </AuthLayout>

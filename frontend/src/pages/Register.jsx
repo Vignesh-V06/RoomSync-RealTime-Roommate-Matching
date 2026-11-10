@@ -247,8 +247,9 @@ const Register = () => {
               className="auth-submit"
               disabled={loading || !formData.name.trim() || !formData.email.trim() || !formData.password || !formData.confirmPassword}
             >
-              <span>{loading ? 'Sending verification code…' : 'Continue to email verification'}</span>
-              {!loading && <FiArrowRight aria-hidden="true" />}
+              {loading
+                ? <span>Sending verification code…</span>
+                : <><span>Continue to email verification</span><FiArrowRight aria-hidden="true" /></>}
             </button>
             <p className="auth-consent">We will email you a one-time code. Your account is created only after the code is verified.</p>
           </>
@@ -285,15 +286,18 @@ const Register = () => {
               <small className="auth-field-hint" id="register-otp-hint">The code expires in 10 minutes and can only be used once.</small>
             </div>
             <button type="submit" className="auth-submit" disabled={loading || otp.length !== 6}>
-              <span>{loading ? 'Verifying…' : 'Verify email & create account'}</span>
-              {!loading && <FiArrowRight aria-hidden="true" />}
+              {loading
+                ? <span>Verifying email…</span>
+                : <><span>Verify email & create account</span><FiArrowRight aria-hidden="true" /></>}
             </button>
             <div className="register-otp-actions">
               <button type="button" className="register-otp-back" onClick={returnToDetails} disabled={loading || resending}>
                 <FiArrowLeft aria-hidden="true" /> Edit details
               </button>
               <button type="button" className="register-otp-resend" onClick={handleResendOtp} disabled={loading || resending || resendCountdown > 0}>
-                {resending ? 'Sending…' : resendCountdown > 0 ? 'Resend in ' + resendCountdown + 's' : 'Resend code'}
+                {resending
+                  ? 'Sending…'
+                  : resendCountdown > 0 ? 'Resend in ' + resendCountdown + 's' : 'Resend code'}
               </button>
             </div>
           </div>
