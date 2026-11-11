@@ -28,9 +28,9 @@ const nativePool = new Pool({
   max: Number(process.env.DB_POOL_MAX || 10),
   idleTimeoutMillis: Number(process.env.DB_IDLE_TIMEOUT_MS || 30000),
   connectionTimeoutMillis: Number(process.env.DB_CONNECTION_TIMEOUT_MS || 10000),
-  // Startup options apply the schema search path on every acquired connection,
-  // including connections routed through Neon pooler / PgBouncer.
-  options: '-c search_path=' + schema + ',public',
+  // Do not pass search_path as a startup option: Neon pooled endpoints use
+  // PgBouncer and may reject unsupported startup parameters. Configure the
+  // Neon role's search_path once with ALTER ROLE ... IN DATABASE ... SET.
   application_name: 'RoomSync API'
 });
 
