@@ -1,5 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+require('dotenv').config();
 
 const enabled = process.env.RUN_POSTGRES_INTEGRATION_TESTS === 'true';
 
