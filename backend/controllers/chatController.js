@@ -20,7 +20,7 @@ exports.getRoomMessages = async (req, res) => {
     if (access.error) return res.status(access.error).json({ message: access.message });
 
     const [messages] = await pool.query(
-      'SELECT m.id, m.room_id, m.sender_id, m.message, m.created_at, u.name AS sender_name, COALESCE(u.username, SUBSTRING_INDEX(u.email, \"@\", 1)) AS sender_username FROM chat_messages m JOIN users u ON u.id = m.sender_id WHERE m.room_id = ? ORDER BY m.created_at ASC, m.id ASC',
+      'SELECT m.id, m.room_id, m.sender_id, m.message, m.created_at, u.name AS sender_name, COALESCE(u.username, split_part(u.email, '@', 1)) AS sender_username FROM chat_messages m JOIN users u ON u.id = m.sender_id WHERE m.room_id = ? ORDER BY m.created_at ASC, m.id ASC',
       [req.params.roomId]
     );
     res.json(messages);
@@ -43,7 +43,7 @@ exports.sendMessage = async (req, res) => {
       [req.params.roomId, req.user.id, message]
     );
     const [senders] = await pool.query(
-      'SELECT name, COALESCE(username, SUBSTRING_INDEX(email, \"@\", 1)) AS username FROM users WHERE id = ? LIMIT 1',
+      'SELECT name, COALESCE(username, split_part(email, '@', 1)) AS username FROM users WHERE id = ? LIMIT 1',
       [req.user.id]
     );
     await recordActivity({ actorUserId: req.user.id, subjectUserId: req.user.id, eventType: 'chat_message_sent', entityType: 'room', entityId: req.params.roomId });
