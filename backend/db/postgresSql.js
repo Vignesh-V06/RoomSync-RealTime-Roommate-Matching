@@ -20,18 +20,9 @@ const MYSQL_TO_POSTGRES_ERRORS = Object.freeze({
 });
 
 const FORMAT_TOKENS = Object.freeze({
-  '%Y': 'YYYY',
-  '%y': 'YY',
-  '%m': 'MM',
-  '%d': 'DD',
-  '%H': 'HH24',
-  '%h': 'HH12',
-  '%i': 'MI',
-  '%s': 'SS',
-  '%M': 'Month',
-  '%b': 'Mon',
-  '%W': 'Day',
-  '%a': 'Dy'
+  '%Y': 'YYYY', '%y': 'YY', '%m': 'MM', '%d': 'DD',
+  '%H': 'HH24', '%h': 'HH12', '%i': 'MI', '%s': 'SS',
+  '%M': 'Month', '%b': 'Mon', '%W': 'Day', '%a': 'Dy'
 });
 
 const convertDateFormat = (format) => Object.entries(FORMAT_TOKENS)
@@ -55,7 +46,7 @@ const replaceIfFunctions = (sql) => {
           continue;
         }
         quote = null;
-      } else if (char === '\\\\' && quote === "'" && index + 1 < sql.length) {
+      } else if (char === '\\' && quote === "'" && index + 1 < sql.length) {
         output += sql[index + 1];
         index += 2;
         continue;
@@ -71,7 +62,7 @@ const replaceIfFunctions = (sql) => {
       continue;
     }
 
-    const match = sql.slice(index).match(/^IF\\s*\\(/i);
+    const match = sql.slice(index).match(/^IF\s*\(/i);
     if (!match) {
       output += char;
       index += 1;
@@ -95,7 +86,7 @@ const replaceIfFunctions = (sql) => {
             continue;
           }
           innerQuote = null;
-        } else if (current === '\\\\' && innerQuote === "'" && cursor + 1 < sql.length) {
+        } else if (current === '\\' && innerQuote === "'" && cursor + 1 < sql.length) {
           cursor += 2;
           continue;
         }
@@ -123,7 +114,7 @@ const replaceIfFunctions = (sql) => {
       continue;
     }
 
-    output += `(CASE WHEN ${args[0]} THEN ${args[1]} ELSE ${args[2]} END)`;
+    output += '(CASE WHEN ' + args[0] + ' THEN ' + args[1] + ' ELSE ' + args[2] + ' END)';
     index = cursor + 1;
   }
 
@@ -143,10 +134,9 @@ const replaceQuestionPlaceholders = (sql) => {
 
     if (lineComment) {
       output += char;
-      if (char === '\\n') lineComment = false;
+      if (char === '\n') lineComment = false;
       continue;
     }
-
     if (blockComment) {
       output += char;
       if (char === '*' && next === '/') {
@@ -156,7 +146,6 @@ const replaceQuestionPlaceholders = (sql) => {
       }
       continue;
     }
-
     if (quote) {
       output += char;
       if (char === quote) {
@@ -166,13 +155,12 @@ const replaceQuestionPlaceholders = (sql) => {
         } else {
           quote = null;
         }
-      } else if (char === '\\\\' && quote === "'" && next) {
+      } else if (char === '\\' && quote === "'" && next) {
         output += next;
         index += 1;
       }
       continue;
     }
-
     if (char === '-' && next === '-') {
       output += char + next;
       index += 1;
@@ -192,10 +180,9 @@ const replaceQuestionPlaceholders = (sql) => {
     }
     if (char === '?') {
       placeholder += 1;
-      output += `$${placeholder}`;
+      output += '$' + placeholder;
       continue;
     }
-
     output += char;
   }
 
@@ -207,59 +194,59 @@ const translateMySqlSql = (input) => {
     throw new TypeError('A non-empty SQL statement is required.');
   }
 
-  let sql = input.trim().replace(/;\\s*$/, '');
+  let sql = input.trim().replace(/;\s*$/, '');
 
-  const showColumns = sql.match(/^SHOW\\s+COLUMNS\\s+FROM\\s+([a-zA-Z_][a-zA-Z0-9_]*)$/i);
+  const showColumns = sql.match(/^SHOW\s+COLUMNS\s+FROM\s+([a-zA-Z_][a-zA-Z0-9_]*)$/i);
   if (showColumns) {
     const tableName = showColumns[1].toLowerCase();
-    return `SELECT column_name AS "Field", data_type AS "Type", is_nullable AS "Null", column_default AS "Default" FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = '${tableName}' ORDER BY ordinal_position`;
+    return "SELECT column_name AS \\"Field\\", data_type AS \\"Type\\", is_nullable AS \\"Null\\", column_default AS \\"Default\\" FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = '" + tableName + "' ORDER BY ordinal_position";
   }
 
   sql = sql.replace(
-    /DATE_SUB\\s*\\(\\s*NOW\\(\\)\\s*,\\s*INTERVAL\\s+(\\d+)\\s+(DAY|HOUR|MINUTE|SECOND)\\s*\\)/gi,
-    (_match, amount, unit) => `(CURRENT_TIMESTAMP - INTERVAL '${amount} ${unit.toLowerCase()}')`
+    /DATE_SUB\s*\(\s*NOW\(\)\s*,\s*INTERVAL\s+(\d+)\s+(DAY|HOUR|MINUTE|SECOND)\s*\)/gi,
+    (_match, amount, unit) => "(CURRENT_TIMESTAMP - INTERVAL '" + amount + ' ' + unit.toLowerCase() + "')"
   );
   sql = sql.replace(
-    /DATE_ADD\\s*\\(\\s*NOW\\(\\)\\s*,\\s*INTERVAL\\s+(\\d+)\\s+(DAY|HOUR|MINUTE|SECOND)\\s*\\)/gi,
-    (_match, amount, unit) => `(CURRENT_TIMESTAMP + INTERVAL '${amount} ${unit.toLowerCase()}')`
+    /DATE_ADD\s*\(\s*NOW\(\)\s*,\s*INTERVAL\s+(\d+)\s+(DAY|HOUR|MINUTE|SECOND)\s*\)/gi,
+    (_match, amount, unit) => "(CURRENT_TIMESTAMP + INTERVAL '" + amount + ' ' + unit.toLowerCase() + "')"
   );
   sql = sql.replace(
-    /\\bINTERVAL\\s+(\\d+)\\s+(DAY|HOUR|MINUTE|SECOND)\\b/gi,
-    (_match, amount, unit) => `INTERVAL '${amount} ${unit.toLowerCase()}'`
+    /\bINTERVAL\s+(\d+)\s+(DAY|HOUR|MINUTE|SECOND)\b/gi,
+    (_match, amount, unit) => "INTERVAL '" + amount + ' ' + unit.toLowerCase() + "'"
   );
   sql = sql.replace(
-    /DATE_FORMAT\\s*\\(\\s*([^,()]+?)\\s*,\\s*'([^']+)'\\s*\\)/gi,
-    (_match, expression, format) => `TO_CHAR(${expression.trim()}, '${convertDateFormat(format)}')`
+    /DATE_FORMAT\s*\(\s*([^,()]+?)\s*,\s*'([^']+)'\s*\)/gi,
+    (_match, expression, format) => "TO_CHAR(" + expression.trim() + ", '" + convertDateFormat(format) + "')"
   );
   sql = sql.replace(
-    /SUBSTRING_INDEX\\s*\\(\\s*([a-zA-Z_][a-zA-Z0-9_.]*)\\s*,\\s*(['"])(.*?)\\2\\s*,\\s*1\\s*\\)/gi,
-    (_match, expression, _quote, delimiter) => `SPLIT_PART(${expression}, '${delimiter.replace(/'/g, "''")}', 1)`
+    /SUBSTRING_INDEX\s*\(\s*([a-zA-Z_][a-zA-Z0-9_.]*)\s*,\s*(['"])(.*?)\2\s*,\s*1\s*\)/gi,
+    (_match, expression, _quote, delimiter) => "SPLIT_PART(" + expression + ", '" + delimiter.replace(/'/g, "''") + "', 1)"
   );
   sql = sql.replace(
-    /ON\\s+DUPLICATE\\s+KEY\\s+UPDATE\\s+view_count\\s*=\\s*view_count\\s*\\+\\s*1\\s*,\\s*last_viewed_at\\s*=\\s*CURRENT_TIMESTAMP/gi,
+    /ON\s+DUPLICATE\s+KEY\s+UPDATE\s+view_count\s*=\s*view_count\s*\+\s*1\s*,\s*last_viewed_at\s*=\s*CURRENT_TIMESTAMP/gi,
     'ON CONFLICT (room_id, viewer_id) DO UPDATE SET view_count = room_views.view_count + 1, last_viewed_at = CURRENT_TIMESTAMP'
   );
 
   sql = replaceIfFunctions(sql);
   sql = sql.replace(
-    /\\bSUM\\s*\\(\\s*([^()]*?(?:>=|<=|<>|!=|=|>|<)[^()]*)\\s*\\)/gi,
-    (_match, expression) => `COUNT(*) FILTER (WHERE ${expression.trim()})`
+    /\bSUM\s*\(\s*([^()]*?(?:>=|<=|<>|!=|=|>|<)[^()]*)\s*\)/gi,
+    (_match, expression) => 'COUNT(*) FILTER (WHERE ' + expression.trim() + ')'
   );
 
   return replaceQuestionPlaceholders(sql);
 };
 
 const getInsertPrimaryKey = (sql) => {
-  const match = sql.match(/^\\s*INSERT\\s+INTO\\s+(?:[a-zA-Z_][a-zA-Z0-9_]*\\.)?([a-zA-Z_][a-zA-Z0-9_]*)/i);
+  const match = sql.match(/^\s*INSERT\s+INTO\s+(?:[a-zA-Z_][a-zA-Z0-9_]*\.)?([a-zA-Z_][a-zA-Z0-9_]*)/i);
   if (!match) return null;
   return PRIMARY_KEYS[match[1].toLowerCase()] || null;
 };
 
 const addReturningClause = (sql) => {
-  if (!/^\\s*INSERT\\b/i.test(sql) || /\\bRETURNING\\b/i.test(sql)) return { sql, primaryKey: null };
+  if (!/^\s*INSERT\b/i.test(sql) || /\bRETURNING\b/i.test(sql)) return { sql, primaryKey: null };
   const primaryKey = getInsertPrimaryKey(sql);
   if (!primaryKey) return { sql, primaryKey: null };
-  return { sql: `${sql} RETURNING ${primaryKey}`, primaryKey };
+  return { sql: sql + ' RETURNING ' + primaryKey, primaryKey };
 };
 
 const normalizePostgresError = (error) => {
