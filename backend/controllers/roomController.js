@@ -517,7 +517,7 @@ exports.getRoomDetails = async (req, res) => {
       [room.room_id]
     );
     const [members] = await pool.query(
-      "SELECT u.id, u.name, COALESCE(u.username, SUBSTRING_INDEX(u.email, '@', 1)) AS username, u.email, u.phone, u.role, CASE WHEN u.id = ? THEN 1 ELSE 0 END AS is_owner FROM users u WHERE u.id = ? OR u.id IN (SELECT user_id FROM room_requests WHERE room_id = ? AND status = 'accepted') ORDER BY is_owner DESC, u.name ASC",
+      "SELECT u.id, u.name, COALESCE(u.username, split_part(u.email, chr(64), 1)) AS username, u.email, u.phone, u.role, CASE WHEN u.id = ? THEN 1 ELSE 0 END AS is_owner FROM users u WHERE u.id = ? OR u.id IN (SELECT user_id FROM room_requests WHERE room_id = ? AND status = 'accepted') ORDER BY is_owner DESC, u.name ASC",
       [room.owner_id, room.owner_id, room.room_id]
     );
     const [images] = await pool.query(
