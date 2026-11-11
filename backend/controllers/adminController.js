@@ -9,7 +9,7 @@ const EXPORT_LIMIT = 20000;
 const normalizeRange = (value) => Object.prototype.hasOwnProperty.call(RANGE_DAYS, value) ? value : '12m';
 const dateClause = (column, range) => {
   const days = RANGE_DAYS[range];
-  return days ? ` AND ${column} >= DATE_SUB(NOW(), INTERVAL ${days} DAY)` : '';
+  return days ? ' AND ' + column + " >= CURRENT_TIMESTAMP - INTERVAL '" + days + " days'" : '';
 };
 const safeJson = (value) => {
   if (value && typeof value === 'object') return value;
@@ -46,11 +46,11 @@ const getAnalyticsData = async (range) => {
     [recentActivity],
     [activeUsers]
   ] = await Promise.all([
-    pool.query("SELECT COUNT(*) AS total_users, SUM(created_at >= NOW() - INTERVAL 30 DAY) AS new_users_30d, SUM(last_login_at >= NOW() - INTERVAL 30 DAY) AS active_users_30d FROM users WHERE role <> 'admin'"),
+    pool.query("SELECT COUNT(*) AS total_users, COUNT(*) FILTER (WHERE created_at >= CURRENT_TIMESTAMP - INTERVAL '30 days') AS new_users_30d, COUNT(*) FILTER (WHERE last_login_at >= CURRENT_TIMESTAMP - INTERVAL '30 days') AS active_users_30d FROM users WHERE role <> 'admin'"),
     pool.query(`SELECT COUNT(*) AS users_in_range FROM users WHERE role <> 'admin' AND 1=1${dateClause('created_at', range)}`),
     pool.query("SELECT COUNT(*) AS completed_profiles FROM profiles p JOIN users u ON u.id = p.user_id WHERE u.role <> 'admin'"),
-    pool.query("SELECT COUNT(*) AS total_rooms, SUM(status = 'open') AS open_rooms, SUM(status = 'closed') AS closed_rooms, SUM(current_occupancy >= total_capacity) AS full_rooms, COALESCE(SUM(current_occupancy), 0) AS occupied_beds, COALESCE(SUM(total_capacity), 0) AS total_beds FROM rooms"),
-    pool.query(`SELECT COUNT(*) AS total_applications, SUM(status = 'applied') AS pending_applications, SUM(status = 'accepted') AS accepted_applications, SUM(status = 'rejected') AS rejected_applications FROM room_requests WHERE 1=1${dateClause('created_at', range)}`),
+    pool.query("SELECT COUNT(*) AS total_rooms, COUNT(*) FILTER (WHERE status = 'open') AS open_rooms, COUNT(*) FILTER (WHERE status = 'closed') AS closed_rooms, COUNT(*) FILTER (WHERE current_occupancy >= total_capacity) AS full_rooms, COALESCE(SUM(current_occupancy), 0) AS occupied_beds, COALESCE(SUM(total_capacity), 0) AS total_beds FROM rooms"),
+    pool.query(`SELECT COUNT(*) AS total_applications, COUNT(*) FILTER (WHERE status = 'applied') AS pending_applications, COUNT(*) FILTER (WHERE status = 'accepted') AS accepted_applications, COUNT(*) FILTER (WHERE status = 'rejected') AS rejected_applications FROM room_requests WHERE 1=1${dateClause('created_at', range)}`),
     pool.query(`SELECT
       (SELECT COUNT(DISTINCT viewer_id) FROM room_views WHERE 1=1${dateClause('last_viewed_at', range)}) AS unique_room_visitors,
       (SELECT COUNT(*) FROM activity_events WHERE event_type = 'room_viewed'${dateClause('occurred_at', range)}) AS room_impressions,
@@ -66,17 +66,17 @@ const getAnalyticsData = async (range) => {
       (SELECT COUNT(*) FROM room_requests WHERE status = 'accepted') AS accepted_applications,
       (SELECT COUNT(DISTINCT sender_id) FROM chat_messages) AS chat_participants`),
     pool.query(`SELECT period, metric, amount FROM (
-      SELECT DATE_FORMAT(created_at, '%Y-%m') AS period, 'Sign-ups' AS metric, COUNT(*) AS amount FROM users WHERE role <> 'admin'${dateClause('created_at', range)} GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+      SELECT TO_CHAR(created_at, 'YYYY-MM') AS period, 'Sign-ups' AS metric, COUNT(*) AS amount FROM users WHERE role <> 'admin'${dateClause('created_at', range)} GROUP BY TO_CHAR(created_at, 'YYYY-MM')
       UNION ALL
-      SELECT DATE_FORMAT(created_at, '%Y-%m'), 'Rooms created', COUNT(*) FROM rooms WHERE 1=1${dateClause('created_at', range)} GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+      SELECT TO_CHAR(created_at, 'YYYY-MM'), 'Rooms created', COUNT(*) FROM rooms WHERE 1=1${dateClause('created_at', range)} GROUP BY TO_CHAR(created_at, 'YYYY-MM')
       UNION ALL
-      SELECT DATE_FORMAT(created_at, '%Y-%m'), 'Applications', COUNT(*) FROM room_requests WHERE 1=1${dateClause('created_at', range)} GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+      SELECT TO_CHAR(created_at, 'YYYY-MM'), 'Applications', COUNT(*) FROM room_requests WHERE 1=1${dateClause('created_at', range)} GROUP BY TO_CHAR(created_at, 'YYYY-MM')
       UNION ALL
-      SELECT DATE_FORMAT(created_at, '%Y-%m'), 'Messages', COUNT(*) FROM chat_messages WHERE 1=1${dateClause('created_at', range)} GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+      SELECT TO_CHAR(created_at, 'YYYY-MM'), 'Messages', COUNT(*) FROM chat_messages WHERE 1=1${dateClause('created_at', range)} GROUP BY TO_CHAR(created_at, 'YYYY-MM')
       UNION ALL
-      SELECT DATE_FORMAT(e.occurred_at, '%Y-%m'), 'Logins (tracked)', COUNT(*) FROM activity_events e JOIN users u ON u.id = e.actor_user_id WHERE e.event_type = 'user_logged_in' AND u.role <> 'admin'${dateClause('e.occurred_at', range)} GROUP BY DATE_FORMAT(e.occurred_at, '%Y-%m')
+      SELECT TO_CHAR(e.occurred_at, 'YYYY-MM'), 'Logins (tracked)', COUNT(*) FROM activity_events e JOIN users u ON u.id = e.actor_user_id WHERE e.event_type = 'user_logged_in' AND u.role <> 'admin'${dateClause('e.occurred_at', range)} GROUP BY TO_CHAR(e.occurred_at, 'YYYY-MM')
       UNION ALL
-      SELECT DATE_FORMAT(occurred_at, '%Y-%m'), 'Room views (tracked)', COUNT(*) FROM activity_events WHERE event_type = 'room_viewed'${dateClause('occurred_at', range)} GROUP BY DATE_FORMAT(occurred_at, '%Y-%m')
+      SELECT TO_CHAR(occurred_at, 'YYYY-MM'), 'Room views (tracked)', COUNT(*) FROM activity_events WHERE event_type = 'room_viewed'${dateClause('occurred_at', range)} GROUP BY TO_CHAR(occurred_at, 'YYYY-MM')
     ) AS monthly_activity ORDER BY period ASC, metric ASC`),
     pool.query(`SELECT r.room_id, r.block, r.room_type, r.status, r.current_occupancy, r.total_capacity, u.name AS owner_name,
       (SELECT COUNT(DISTINCT v.viewer_id) FROM room_views v WHERE v.room_id = r.room_id) AS unique_visitors,
@@ -88,8 +88,8 @@ const getAnalyticsData = async (range) => {
         + (SELECT COUNT(*) FROM chat_messages m WHERE m.room_id = r.room_id) * 0.25) AS engagement_score
       FROM rooms r JOIN users u ON u.id = r.owner_id
       ORDER BY engagement_score DESC, r.created_at DESC LIMIT 10`),
-    pool.query(`SELECT r.block, COUNT(*) AS room_count, SUM(r.status = 'open') AS open_rooms,
-      SUM(r.status = 'closed') AS closed_rooms, COALESCE(SUM(r.current_occupancy), 0) AS occupied_beds,
+    pool.query(`SELECT r.block, COUNT(*) AS room_count, COUNT(*) FILTER (WHERE r.status = 'open') AS open_rooms,
+      COUNT(*) FILTER (WHERE r.status = 'closed') AS closed_rooms, COALESCE(SUM(r.current_occupancy), 0) AS occupied_beds,
       COALESCE(SUM(r.total_capacity), 0) AS total_beds,
       (SELECT COUNT(*) FROM room_requests q JOIN rooms rr ON rr.room_id = q.room_id WHERE rr.block = r.block) AS applications
       FROM rooms r GROUP BY r.block ORDER BY room_count DESC, r.block ASC`),
