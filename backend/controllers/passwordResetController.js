@@ -159,7 +159,7 @@ exports.requestOtp = async (req, res) => {
   let otpRecordId = null;
 
   try {
-    // Acquire the connection inside the try block so refused MySQL connections
+    // Acquire the connection inside the try block so refused PostgreSQL connections
     // return a useful API response instead of falling through Express.
     connection = await pool.getConnection();
     await connection.beginTransaction();
