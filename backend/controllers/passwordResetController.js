@@ -183,7 +183,7 @@ exports.requestOtp = async (req, res) => {
     user = users[0];
 
     const [ipRate] = await connection.query(
-      'SELECT COUNT(*) AS request_count FROM password_reset_otps WHERE request_ip = ? AND created_at > DATE_SUB(NOW(), INTERVAL 10 MINUTE)',
+      'SELECT COUNT(*) AS request_count FROM password_reset_otps WHERE request_ip = ? AND created_at > CURRENT_TIMESTAMP - INTERVAL '10 minutes'',
       [requestIp]
     );
     if (requestIp && Number(ipRate[0]?.request_count || 0) >= 10) {
@@ -195,7 +195,7 @@ exports.requestOtp = async (req, res) => {
     }
 
     const [recent] = await connection.query(
-      'SELECT id FROM password_reset_otps WHERE user_id = ? AND created_at > DATE_SUB(NOW(), INTERVAL 60 SECOND) ORDER BY id DESC LIMIT 1',
+      'SELECT id FROM password_reset_otps WHERE user_id = ? AND created_at > CURRENT_TIMESTAMP - INTERVAL '60 seconds' ORDER BY id DESC LIMIT 1',
       [user.id]
     );
     if (recent.length) {
@@ -215,7 +215,7 @@ exports.requestOtp = async (req, res) => {
     );
 
     const [inserted] = await connection.query(
-      'INSERT INTO password_reset_otps (user_id, otp_hash, request_ip, expires_at) VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 10 MINUTE))',
+      'INSERT INTO password_reset_otps (user_id, otp_hash, request_ip, expires_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP + INTERVAL '10 minutes')',
       [user.id, otpHash, requestIp]
     );
     otpRecordId = inserted.insertId;
@@ -317,7 +317,7 @@ exports.verifyOtpAndReset = async (req, res) => {
     connection = await pool.getConnection();
     await connection.beginTransaction();
     const [records] = await connection.query(
-      'SELECT pr.id, pr.user_id, pr.otp_hash, pr.attempts FROM password_reset_otps pr JOIN users u ON u.id = pr.user_id WHERE u.email = ? AND pr.used_at IS NULL AND pr.expires_at > NOW() ORDER BY pr.id DESC LIMIT 1 FOR UPDATE',
+      'SELECT pr.id, pr.user_id, pr.otp_hash, pr.attempts FROM password_reset_otps pr JOIN users u ON u.id = pr.user_id WHERE u.email = ? AND pr.used_at IS NULL AND pr.expires_at > CURRENT_TIMESTAMP ORDER BY pr.id DESC LIMIT 1 FOR UPDATE',
       [email]
     );
 
@@ -344,7 +344,7 @@ exports.verifyOtpAndReset = async (req, res) => {
     if (!matches) {
       const nextAttempts = Number(record.attempts) + 1;
       await connection.query(
-        'UPDATE password_reset_otps SET attempts = ?, used_at = IF(? >= 5, CURRENT_TIMESTAMP, used_at) WHERE id = ?',
+        'UPDATE password_reset_otps SET attempts = ?, used_at = CASE WHEN ? >= 5 THEN CURRENT_TIMESTAMP ELSE used_at END WHERE id = ?',
         [nextAttempts, nextAttempts, record.id]
       );
       await connection.commit();
