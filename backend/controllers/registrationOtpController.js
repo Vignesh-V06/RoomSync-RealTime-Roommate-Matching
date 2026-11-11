@@ -127,10 +127,10 @@ exports.requestOtp = async (req, res) => {
     }
     console.error('Registration OTP request failed:', { code: error.code, errno: error.errno, message: error.message });
     if (error.code === 'ER_NO_SUCH_TABLE' || Number(error.errno) === 1146) {
-      return res.status(503).json({ message: 'The registration verification table is missing. Run backend/migrations/2026-11-09-registration-otp.sql against the roomsync database, then restart the backend.' });
+      return res.status(503).json({ message: 'The registration verification table is missing from PostgreSQL. Check DB_SCHEMA and apply backend/schema.postgres.sql to a new database if it has not been initialized.' });
     }
     if (['ECONNREFUSED', 'PROTOCOL_CONNECTION_LOST', 'ER_ACCESS_DENIED_ERROR', 'ETIMEDOUT'].includes(error.code)) {
-      return res.status(503).json({ message: 'RoomSync cannot connect to MySQL. Check that MySQL is running and the DB settings in backend/.env are correct.' });
+      return res.status(503).json({ message: 'RoomSync cannot connect to PostgreSQL. Check DATABASE_URL and DB_SCHEMA in the backend environment.' });
     }
     return res.status(500).json({
       message: isDevelopment
