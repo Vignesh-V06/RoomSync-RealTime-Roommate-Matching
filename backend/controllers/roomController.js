@@ -305,7 +305,7 @@ exports.updateRoomNumber = async (req, res) => {
     );
     if (!rooms.length) return res.status(404).json({ message: 'This room does not belong to your account. Refresh the dashboard and try again.' });
 
-    // Treat saving the current value as success (MySQL can report zero changed rows).
+    // Treat saving the current value as success; PostgreSQL reports matched rows for UPDATE.
     if (String(rooms[0].room_number || '').trim() === roomNumber) {
       return res.json({ message: 'Room number is already up to date.', room_number: roomNumber });
     }
