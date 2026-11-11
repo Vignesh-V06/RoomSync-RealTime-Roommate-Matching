@@ -20,7 +20,7 @@ exports.getRoomMessages = async (req, res) => {
     if (access.error) return res.status(access.error).json({ message: access.message });
 
     const [messages] = await pool.query(
-      'SELECT m.id, m.room_id, m.sender_id, m.message, m.created_at, u.name AS sender_name, COALESCE(u.username, split_part(u.email, '@', 1)) AS sender_username FROM chat_messages m JOIN users u ON u.id = m.sender_id WHERE m.room_id = ? ORDER BY m.created_at ASC, m.id ASC',
+      'SELECT m.id, m.room_id, m.sender_id, m.message, m.created_at, u.name AS sender_name, COALESCE(u.username, split_part(u.email, chr(64), 1)) AS sender_username FROM chat_messages m JOIN users u ON u.id = m.sender_id WHERE m.room_id = ? ORDER BY m.created_at ASC, m.id ASC',
       [req.params.roomId]
     );
     res.json(messages);
