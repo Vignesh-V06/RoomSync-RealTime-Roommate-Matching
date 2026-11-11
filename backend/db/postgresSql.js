@@ -199,7 +199,7 @@ const translateMySqlSql = (input) => {
   const showColumns = sql.match(/^SHOW\s+COLUMNS\s+FROM\s+([a-zA-Z_][a-zA-Z0-9_]*)$/i);
   if (showColumns) {
     const tableName = showColumns[1].toLowerCase();
-    return "SELECT column_name AS \\"Field\\", data_type AS \\"Type\\", is_nullable AS \\"Null\\", column_default AS \\"Default\\" FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = '" + tableName + "' ORDER BY ordinal_position";
+    return 'SELECT column_name AS "Field", data_type AS "Type", is_nullable AS "Null", column_default AS "Default" FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = ' + "'" + tableName + "'" + ' ORDER BY ordinal_position';
   }
 
   sql = sql.replace(
