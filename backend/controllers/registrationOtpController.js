@@ -81,7 +81,7 @@ exports.requestOtp = async (req, res) => {
     await connection.beginTransaction();
 
     await connection.query(
-      "DELETE FROM registration_otps WHERE expires_at < CURRENT_TIMESTAMP - INTERVAL '1 day' OR (used_at IS NOT NULL AND created_at < DATE_SUB(NOW(), INTERVAL 1 DAY))"
+      "DELETE FROM registration_otps WHERE expires_at < CURRENT_TIMESTAMP - INTERVAL '1 day' OR (used_at IS NOT NULL AND created_at < CURRENT_TIMESTAMP - INTERVAL '1 day')"
     );
 
     const [existing] = await connection.query('SELECT id FROM users WHERE email = ? LIMIT 1', [email]);
