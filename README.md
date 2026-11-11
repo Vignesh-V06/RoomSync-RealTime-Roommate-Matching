@@ -52,6 +52,16 @@ For an already-migrated Neon database:
 3. Set `DATABASE_URL` to the Neon pooled connection string for runtime use.
 4. Do not rerun schema creation or the old MySQL migration scripts over the migrated data.
 
+For Neon pooled connections, set the schema on the database role (not with a session-level `SET search_path` or a connection startup option). In the Neon SQL Editor, replace the role/database names with the values shown by your Connect panel:
+
+```sql
+ALTER ROLE neondb_owner
+IN DATABASE "RoomSync"
+SET search_path TO roomsync, public;
+```
+
+Restart the backend after changing the role setting. The API checks `current_schema()` at startup and refuses to listen if it is not the configured `DB_SCHEMA`. Neon uses PgBouncer in transaction mode for pooled URLs, where session-level settings do not persist across transactions; role-level settings are the supported approach.
+
 For a **new, empty PostgreSQL database only**, apply the reference schema:
 
 ```bash
