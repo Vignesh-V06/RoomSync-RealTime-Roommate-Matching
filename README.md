@@ -23,7 +23,7 @@ RoomSync is a modern, real-time web application designed to help university stud
 ### Backend
 - **Node.js & Express.js** (REST API framework)
 - **Socket.io** (Websocket server for real-time events)
-- **MySQL2** (Relational database management)
+- **PostgreSQL** (via node-postgres `pg`, Neon-compatible relational database)
 - **JWT & Bcrypt** (Secure authentication and password hashing)
 
 ## 🚀 Getting Started
@@ -42,18 +42,46 @@ cd ../frontend
 npm install
 ```
 
-### 2. Database Setup
-1. Make sure you have **MySQL** installed and running on your machine.
-2. In the `backend/` folder, open or create a `.env` file and insert your MySQL credentials:
-   ```env
-   PORT=5000
-   JWT_SECRET=roomsync_super_secret_key
-   DB_HOST=localhost
-   DB_USER=root
-   DB_PASSWORD=your_mysql_password
-   DB_NAME=roomsync
-   ```
-3. Run the provided database initialization scripts (`schema.sql` and `seed.sql`) in your MySQL workbench or CLI to build the tables and populate mock data.
+### 2. Database Setup (PostgreSQL)
+
+The active backend in this branch uses PostgreSQL through the `pg` driver. Neon is supported through `DATABASE_URL`.
+
+For an already-migrated Neon database:
+1. Keep the Neon schema containing the 11 RoomSync tables in the `roomsync` schema.
+2. Set `DB_SCHEMA=roomsync`.
+3. Set `DATABASE_URL` to the Neon pooled connection string for runtime use.
+4. Do not rerun schema creation or the old MySQL migration scripts over the migrated data.
+
+For a **new, empty PostgreSQL database only**, apply the reference schema:
+
+```bash
+psql "$DATABASE_URL" -f backend/schema.postgres.sql
+```
+
+The `backend/schema.sql` and files in `backend/migrations/` are retained as historical MySQL source/reference files. Do not execute them against Neon/PostgreSQL.
+
+Configure the backend's private `.env` file with:
+
+```env
+PORT=5000
+NODE_ENV=development
+DATABASE_URL=postgresql://USER:PASSWORD@HOST/DATABASE?sslmode=require
+DB_SCHEMA=roomsync
+JWT_SECRET=replace-with-a-long-random-secret
+PASSWORD_RESET_OTP_SECRET=replace-with-a-separate-random-secret
+```
+
+Keep email-provider settings in the same private file when using registration and password-reset OTP. Never commit `.env` or paste connection strings into issues or chat.
+
+After importing/migrating a database, verify the selected schema and table set with:
+
+```bash
+cd backend
+npm ci
+npm run db:check
+```
+
+`db:check` is read-only. It verifies the configured PostgreSQL schema, all 11 required tables, and the generated `room_requests.active_user_id` column. It does not create, drop, or modify database objects.
 
 ### 3. Run the Application
 You need to run both the Frontend and the Backend servers simultaneously.
@@ -78,6 +106,8 @@ This project is currently actively tailored for local testing (simulated passwor
 
 
 ## RoomSync platform features and local setup
+
+> **PostgreSQL branch notice:** This branch uses Neon/PostgreSQL. The older `backend/schema.sql` and `backend/migrations/*.sql` instructions below are MySQL-only historical references. Do not run those MySQL commands against Neon. Use `backend/schema.postgres.sql` only when creating a brand-new empty PostgreSQL database; the already-migrated Neon database must not be initialized again.
 
 The current Harbor Blue feature branch includes weighted compatibility matching, optional owner-defined room criteria, one room listing per owner, one active application or membership per student, room-specific chat access, room detail views, owner analytics and administrator overview metrics.
 
@@ -178,7 +208,7 @@ Use a dedicated development Gmail account where practical. This is a development
 5. Enter an app name such as `RoomSync Local Development`, create the password, and copy the 16-character value immediately.
 6. If the App Password page is unavailable, the account may be using a security-key-only 2-Step Verification setup, Advanced Protection, or a managed work/school account whose administrator restricts App Passwords. Use an eligible personal Google Account for local development instead.
 
-Configure these values in your private `backend/.env` file. Keep your existing MySQL credentials, `JWT_SECRET`, and `PASSWORD_RESET_OTP_SECRET`. Do not commit or share this file:
+Configure these values in your private `backend/.env` file. Keep your existing PostgreSQL DATABASE_URL and DB_SCHEMA, `JWT_SECRET`, and `PASSWORD_RESET_OTP_SECRET`. Do not commit or share this file:
 
 ```env
 EMAIL_PROVIDER=gmail
@@ -193,7 +223,7 @@ PASSWORD_RESET_OTP_SECRET=your-existing-separate-random-secret
 
 Leave `SMTP_FROM_EMAIL` blank to send from the authenticated Gmail account. The App Password is not your normal Google account password. RoomSync strips spaces from the copied App Password before SMTP authentication. Gmail SMTP uses `smtp.gmail.com:587` with STARTTLS; port 465 with implicit TLS is also supported by setting `SMTP_PORT=465` and `SMTP_SECURE=true`.
 
-After editing `.env`, restart the backend. On the Forgot Password page, click **Check email setup**. The local check verifies MySQL and the OTP table, then checks Gmail SMTP authentication if the credentials are present. It does not send a test email. Once the SMTP check passes, request an OTP for a RoomSync account whose registered email is a real inbox you can access.
+After editing `.env`, restart the backend. On the Forgot Password page, click **Check email setup**. The local check verifies PostgreSQL and the OTP table, then checks Gmail SMTP authentication if the credentials are present. It does not send a test email. Once the SMTP check passes, request an OTP for a RoomSync account whose registered email is a real inbox you can access.
 
 Google's App Password guidance: [Create and use App Passwords](https://support.google.com/mail/answer/185833). SMTP settings: `smtp.gmail.com`, port 587 with TLS/STARTTLS. Gmail can impose account-level sending limits or block suspicious automated sign-ins, so use this only for local, low-volume testing.
 
@@ -228,4 +258,4 @@ Registration reuses the email provider and `PASSWORD_RESET_OTP_SECRET` already c
 
 ### Photo storage note
 
-Room photos are currently stored in MySQL with a five-photo limit and a 4 MB per-image limit. This keeps local setup simple. Before a high-traffic production launch, move image binaries to S3 or another object store and keep only their metadata and storage keys in MySQL.
+Room photos are currently stored in PostgreSQL with a five-photo limit and a 4 MB per-image limit. This keeps local setup simple. Before a high-traffic production launch, move image binaries to S3 or another object store and keep only their metadata and storage keys in MySQL.
