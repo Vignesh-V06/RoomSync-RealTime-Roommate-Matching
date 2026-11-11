@@ -417,7 +417,10 @@ exports.getLocalDiagnostics = async (req, res) => {
 
   if (diagnostics.postgresConnected) {
     try {
-      const [columns] = await pool.query('SHOW COLUMNS FROM password_reset_otps');
+      const [columns] = await pool.query(
+        'SELECT column_name AS "Field" FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = ? ORDER BY ordinal_position',
+        ['password_reset_otps']
+      );
       diagnostics.otpTableExists = true;
       const existing = new Set(columns.map((column) => column.Field));
       const required = ['user_id', 'otp_hash', 'request_ip', 'attempts', 'expires_at', 'used_at', 'created_at'];
