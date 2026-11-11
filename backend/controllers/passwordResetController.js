@@ -401,8 +401,7 @@ exports.getLocalDiagnostics = async (req, res) => {
     smtpConnectionVerified: null,
     otpSecretConfigured: Boolean(process.env.PASSWORD_RESET_OTP_SECRET),
     postgresConnected: false,
-    databaseConnected: false, // Legacy client diagnostics consume mysqlConnected until the matching UI copy is updated.
-    mysqlConnected: false,
+    databaseConnected: false,
     otpTableExists: false,
     otpColumnsReady: false,
     missingOtpColumns: []
@@ -412,7 +411,6 @@ exports.getLocalDiagnostics = async (req, res) => {
     await pool.query('SELECT 1 AS connected');
     diagnostics.postgresConnected = true;
     diagnostics.databaseConnected = true;
-    diagnostics.mysqlConnected = true;
   } catch (error) {
     diagnostics.databaseErrorCode = error.postgresCode || error.code || 'UNKNOWN';
   }
