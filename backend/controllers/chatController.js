@@ -43,7 +43,7 @@ exports.sendMessage = async (req, res) => {
       [req.params.roomId, req.user.id, message]
     );
     const [senders] = await pool.query(
-      'SELECT name, COALESCE(username, split_part(email, '@', 1)) AS username FROM users WHERE id = ? LIMIT 1',
+      'SELECT name, COALESCE(username, split_part(email, chr(64), 1)) AS username FROM users WHERE id = ? LIMIT 1',
       [req.user.id]
     );
     await recordActivity({ actorUserId: req.user.id, subjectUserId: req.user.id, eventType: 'chat_message_sent', entityType: 'room', entityId: req.params.roomId });
