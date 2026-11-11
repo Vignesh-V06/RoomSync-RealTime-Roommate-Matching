@@ -204,7 +204,7 @@ exports.getRoomPreview = async (req, res) => {
     room.compatibility_matches = compatibility.matches;
     if (String(room.owner_id) !== String(req.user.id)) {
       await pool.query(
-        'INSERT INTO room_views (room_id, viewer_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE view_count = view_count + 1, last_viewed_at = CURRENT_TIMESTAMP',
+        'INSERT INTO room_views (room_id, viewer_id) VALUES (?, ?) ON CONFLICT (room_id, viewer_id) DO UPDATE SET view_count = room_views.view_count + 1, last_viewed_at = CURRENT_TIMESTAMP',
         [roomId, req.user.id]
       );
       await recordActivity({ actorUserId: req.user.id, subjectUserId: room.owner_id, eventType: 'room_viewed', entityType: 'room', entityId: roomId });
