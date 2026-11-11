@@ -227,6 +227,7 @@ const translateMySqlSql = (input) => {
     'ON CONFLICT (room_id, viewer_id) DO UPDATE SET view_count = room_views.view_count + 1, last_viewed_at = CURRENT_TIMESTAMP'
   );
 
+  sql = sql.replace(/\bNOW\s*\(\s*\)/gi, 'CURRENT_TIMESTAMP');
   sql = replaceIfFunctions(sql);
   sql = sql.replace(
     /\bSUM\s*\(\s*([^()]*?(?:>=|<=|<>|!=|=|>|<)[^()]*)\s*\)/gi,
