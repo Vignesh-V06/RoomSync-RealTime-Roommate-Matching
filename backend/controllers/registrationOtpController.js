@@ -91,7 +91,7 @@ exports.requestOtp = async (req, res) => {
     }
 
     const [ipRate] = await connection.query(
-      'SELECT COUNT(*) AS request_count FROM registration_otps WHERE request_ip = ? AND created_at > CURRENT_TIMESTAMP - INTERVAL '10 minutes'',
+      `SELECT COUNT(*) AS request_count FROM registration_otps WHERE request_ip = ? AND created_at > CURRENT_TIMESTAMP - INTERVAL '10 minutes'`,
       [requestIp]
     );
     if (requestIp && Number(ipRate[0]?.request_count || 0) >= 10) {
@@ -100,7 +100,7 @@ exports.requestOtp = async (req, res) => {
     }
 
     const [recent] = await connection.query(
-      'SELECT id FROM registration_otps WHERE email = ? AND created_at > CURRENT_TIMESTAMP - INTERVAL '60 seconds' ORDER BY id DESC LIMIT 1',
+      `SELECT id FROM registration_otps WHERE email = ? AND created_at > CURRENT_TIMESTAMP - INTERVAL '60 seconds' ORDER BY id DESC LIMIT 1`,
       [email]
     );
     if (recent.length) {
@@ -114,7 +114,7 @@ exports.requestOtp = async (req, res) => {
     );
 
     const [inserted] = await connection.query(
-      'INSERT INTO registration_otps (email, name, phone, password_hash, otp_hash, request_ip, expires_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP + INTERVAL '10 minutes')',
+      `INSERT INTO registration_otps (email, name, phone, password_hash, otp_hash, request_ip, expires_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP + INTERVAL '10 minutes')`,
       [email, name, phone, passwordHash, otpHash, requestIp]
     );
     otpRecordId = inserted.insertId;
