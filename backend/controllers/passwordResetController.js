@@ -239,12 +239,12 @@ exports.requestOtp = async (req, res) => {
     }
     if (['ECONNREFUSED', 'PROTOCOL_CONNECTION_LOST', 'ER_ACCESS_DENIED_ERROR', 'ETIMEDOUT'].includes(error.code)) {
       return res.status(503).json({
-        message: 'RoomSync cannot connect to MySQL. Check that MySQL is running and DB_HOST, DB_USER, DB_PASSWORD and DB_NAME in backend/.env are correct.'
+        message: 'RoomSync cannot connect to PostgreSQL. Check DATABASE_URL and DB_SCHEMA in the backend environment.'
       });
     }
     return res.status(500).json({
       message: isDevelopment
-        ? 'The password reset request failed in MySQL (' + (error.code || 'unknown database error') + '). Check the backend terminal for the SQL error.'
+        ? 'The password reset request failed in PostgreSQL (' + (error.code || 'unknown database error') + '). Check the backend terminal for the SQL error.'
         : 'We could not start password reset. Please try again.'
     });
   } finally {
@@ -400,6 +400,8 @@ exports.getLocalDiagnostics = async (req, res) => {
     senderAddressConfigured: emailStatus.senderAddressConfigured,
     smtpConnectionVerified: null,
     otpSecretConfigured: Boolean(process.env.PASSWORD_RESET_OTP_SECRET),
+    postgresConnected: false,
+    databaseConnected: false, // Legacy client diagnostics consume mysqlConnected until the matching UI copy is updated.
     mysqlConnected: false,
     otpTableExists: false,
     otpColumnsReady: false,
@@ -408,12 +410,14 @@ exports.getLocalDiagnostics = async (req, res) => {
 
   try {
     await pool.query('SELECT 1 AS connected');
+    diagnostics.postgresConnected = true;
+    diagnostics.databaseConnected = true;
     diagnostics.mysqlConnected = true;
   } catch (error) {
-    diagnostics.databaseErrorCode = error.code || 'UNKNOWN';
+    diagnostics.databaseErrorCode = error.postgresCode || error.code || 'UNKNOWN';
   }
 
-  if (diagnostics.mysqlConnected) {
+  if (diagnostics.postgresConnected) {
     try {
       const [columns] = await pool.query('SHOW COLUMNS FROM password_reset_otps');
       diagnostics.otpTableExists = true;
