@@ -150,7 +150,7 @@ const ForgotPassword = () => {
             <div className="reset-diagnostics-panel" aria-live="polite">
               <strong>Local password-reset readiness</strong>
               {[
-                ['MySQL is reachable', diagnostics.mysqlConnected],
+                ['PostgreSQL is reachable', diagnostics.postgresConnected],
                 ['OTP table exists', diagnostics.otpTableExists],
                 ['OTP table columns are correct', diagnostics.otpColumnsReady],
                 ['OTP secret is configured', diagnostics.otpSecretConfigured],
@@ -177,13 +177,13 @@ const ForgotPassword = () => {
                 <p className="reset-diagnostics-error">Missing OTP columns: {diagnostics.missingOtpColumns.join(', ')}. Check the OTP migration.</p>
               )}
               {diagnostics.databaseErrorCode && (
-                <p className="reset-diagnostics-error">MySQL error: {diagnostics.databaseErrorCode}. Check the backend database settings.</p>
+                <p className="reset-diagnostics-error">PostgreSQL error: {diagnostics.databaseErrorCode}. Check DATABASE_URL and DB_SCHEMA.</p>
               )}
-              {!diagnostics.mysqlConnected && (
-                <p className="reset-diagnostics-error">Start MySQL and confirm DB_HOST, DB_USER, DB_PASSWORD and DB_NAME in backend/.env.</p>
+              {!diagnostics.postgresConnected && (
+                <p className="reset-diagnostics-error">Confirm DATABASE_URL and DB_SCHEMA in the backend environment, and verify the Neon database is reachable.</p>
               )}
-              {diagnostics.mysqlConnected && !diagnostics.otpTableExists && (
-                <p className="reset-diagnostics-error">Run backend/migrations/2026-11-08-password-reset-otp.sql against the roomsync database.</p>
+              {diagnostics.postgresConnected && !diagnostics.otpTableExists && (
+                <p className="reset-diagnostics-error">Check that password_reset_otps exists in the configured PostgreSQL schema. See backend/schema.postgres.sql.</p>
               )}
               {diagnostics.emailProvider && (
                 <p className="reset-diagnostics-hint">
@@ -283,10 +283,9 @@ const ForgotPassword = () => {
           className="auth-submit"
           disabled={loading || !email.trim() || (step === 'verify' && (otp.length !== 6 || newPassword.length < 8))}
         >
-          <span>{loading
-            ? (step === 'request' ? 'Sending code…' : 'Verifying code…')
-            : (step === 'request' ? 'Send verification code' : 'Reset password')}</span>
-          {!loading && <FiArrowRight aria-hidden="true" />}
+          {loading
+            ? <span>{step === 'request' ? 'Sending code…' : 'Verifying code…'}</span>
+            : <><span>{step === 'request' ? 'Send verification code' : 'Reset password'}</span><FiArrowRight aria-hidden="true" /></>}
         </button>
       </form>
     </AuthLayout>

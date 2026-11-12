@@ -1,3 +1,4 @@
+-- LEGACY MYSQL SQL: retained as a source/history reference only. Do not execute against PostgreSQL/Neon.
 CREATE DATABASE IF NOT EXISTS roomsync;
 USE roomsync;
 

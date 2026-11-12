@@ -204,7 +204,7 @@ exports.getRoomPreview = async (req, res) => {
     room.compatibility_matches = compatibility.matches;
     if (String(room.owner_id) !== String(req.user.id)) {
       await pool.query(
-        'INSERT INTO room_views (room_id, viewer_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE view_count = view_count + 1, last_viewed_at = CURRENT_TIMESTAMP',
+        'INSERT INTO room_views (room_id, viewer_id) VALUES (?, ?) ON CONFLICT (room_id, viewer_id) DO UPDATE SET view_count = room_views.view_count + 1, last_viewed_at = CURRENT_TIMESTAMP',
         [roomId, req.user.id]
       );
       await recordActivity({ actorUserId: req.user.id, subjectUserId: room.owner_id, eventType: 'room_viewed', entityType: 'room', entityId: roomId });
@@ -305,7 +305,7 @@ exports.updateRoomNumber = async (req, res) => {
     );
     if (!rooms.length) return res.status(404).json({ message: 'This room does not belong to your account. Refresh the dashboard and try again.' });
 
-    // Treat saving the current value as success (MySQL can report zero changed rows).
+    // Treat saving the current value as success; PostgreSQL reports matched rows for UPDATE.
     if (String(rooms[0].room_number || '').trim() === roomNumber) {
       return res.json({ message: 'Room number is already up to date.', room_number: roomNumber });
     }
@@ -517,7 +517,7 @@ exports.getRoomDetails = async (req, res) => {
       [room.room_id]
     );
     const [members] = await pool.query(
-      "SELECT u.id, u.name, COALESCE(u.username, SUBSTRING_INDEX(u.email, '@', 1)) AS username, u.email, u.phone, u.role, CASE WHEN u.id = ? THEN 1 ELSE 0 END AS is_owner FROM users u WHERE u.id = ? OR u.id IN (SELECT user_id FROM room_requests WHERE room_id = ? AND status = 'accepted') ORDER BY is_owner DESC, u.name ASC",
+      "SELECT u.id, u.name, COALESCE(u.username, split_part(u.email, chr(64), 1)) AS username, u.email, u.phone, u.role, CASE WHEN u.id = ? THEN 1 ELSE 0 END AS is_owner FROM users u WHERE u.id = ? OR u.id IN (SELECT user_id FROM room_requests WHERE room_id = ? AND status = 'accepted') ORDER BY is_owner DESC, u.name ASC",
       [room.owner_id, room.owner_id, room.room_id]
     );
     const [images] = await pool.query(

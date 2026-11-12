@@ -1,3 +1,4 @@
+-- LEGACY MYSQL SQL: retained as a source/history reference only. Do not execute against PostgreSQL/Neon.
 USE roomsync;
 
 -- Privacy-conscious platform activity log for analytics and admin audit reporting.

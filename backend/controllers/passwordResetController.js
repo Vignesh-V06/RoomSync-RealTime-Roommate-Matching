@@ -159,7 +159,7 @@ exports.requestOtp = async (req, res) => {
   let otpRecordId = null;
 
   try {
-    // Acquire the connection inside the try block so refused MySQL connections
+    // Acquire the connection inside the try block so refused PostgreSQL connections
     // return a useful API response instead of falling through Express.
     connection = await pool.getConnection();
     await connection.beginTransaction();
@@ -183,7 +183,7 @@ exports.requestOtp = async (req, res) => {
     user = users[0];
 
     const [ipRate] = await connection.query(
-      'SELECT COUNT(*) AS request_count FROM password_reset_otps WHERE request_ip = ? AND created_at > DATE_SUB(NOW(), INTERVAL 10 MINUTE)',
+      `SELECT COUNT(*) AS request_count FROM password_reset_otps WHERE request_ip = ? AND created_at > CURRENT_TIMESTAMP - INTERVAL '10 minutes'`,
       [requestIp]
     );
     if (requestIp && Number(ipRate[0]?.request_count || 0) >= 10) {
@@ -195,7 +195,7 @@ exports.requestOtp = async (req, res) => {
     }
 
     const [recent] = await connection.query(
-      'SELECT id FROM password_reset_otps WHERE user_id = ? AND created_at > DATE_SUB(NOW(), INTERVAL 60 SECOND) ORDER BY id DESC LIMIT 1',
+      `SELECT id FROM password_reset_otps WHERE user_id = ? AND created_at > CURRENT_TIMESTAMP - INTERVAL '60 seconds' ORDER BY id DESC LIMIT 1`,
       [user.id]
     );
     if (recent.length) {
@@ -215,7 +215,7 @@ exports.requestOtp = async (req, res) => {
     );
 
     const [inserted] = await connection.query(
-      'INSERT INTO password_reset_otps (user_id, otp_hash, request_ip, expires_at) VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 10 MINUTE))',
+      `INSERT INTO password_reset_otps (user_id, otp_hash, request_ip, expires_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP + INTERVAL '10 minutes')`,
       [user.id, otpHash, requestIp]
     );
     otpRecordId = inserted.insertId;
@@ -239,12 +239,12 @@ exports.requestOtp = async (req, res) => {
     }
     if (['ECONNREFUSED', 'PROTOCOL_CONNECTION_LOST', 'ER_ACCESS_DENIED_ERROR', 'ETIMEDOUT'].includes(error.code)) {
       return res.status(503).json({
-        message: 'RoomSync cannot connect to MySQL. Check that MySQL is running and DB_HOST, DB_USER, DB_PASSWORD and DB_NAME in backend/.env are correct.'
+        message: 'RoomSync cannot connect to PostgreSQL. Check DATABASE_URL and DB_SCHEMA in the backend environment.'
       });
     }
     return res.status(500).json({
       message: isDevelopment
-        ? 'The password reset request failed in MySQL (' + (error.code || 'unknown database error') + '). Check the backend terminal for the SQL error.'
+        ? 'The password reset request failed in PostgreSQL (' + (error.code || 'unknown database error') + '). Check the backend terminal for the SQL error.'
         : 'We could not start password reset. Please try again.'
     });
   } finally {
@@ -317,7 +317,7 @@ exports.verifyOtpAndReset = async (req, res) => {
     connection = await pool.getConnection();
     await connection.beginTransaction();
     const [records] = await connection.query(
-      'SELECT pr.id, pr.user_id, pr.otp_hash, pr.attempts FROM password_reset_otps pr JOIN users u ON u.id = pr.user_id WHERE u.email = ? AND pr.used_at IS NULL AND pr.expires_at > NOW() ORDER BY pr.id DESC LIMIT 1 FOR UPDATE',
+      'SELECT pr.id, pr.user_id, pr.otp_hash, pr.attempts FROM password_reset_otps pr JOIN users u ON u.id = pr.user_id WHERE u.email = ? AND pr.used_at IS NULL AND pr.expires_at > CURRENT_TIMESTAMP ORDER BY pr.id DESC LIMIT 1 FOR UPDATE',
       [email]
     );
 
@@ -344,7 +344,7 @@ exports.verifyOtpAndReset = async (req, res) => {
     if (!matches) {
       const nextAttempts = Number(record.attempts) + 1;
       await connection.query(
-        'UPDATE password_reset_otps SET attempts = ?, used_at = IF(? >= 5, CURRENT_TIMESTAMP, used_at) WHERE id = ?',
+        'UPDATE password_reset_otps SET attempts = ?, used_at = CASE WHEN ? >= 5 THEN CURRENT_TIMESTAMP ELSE used_at END WHERE id = ?',
         [nextAttempts, nextAttempts, record.id]
       );
       await connection.commit();
@@ -400,7 +400,8 @@ exports.getLocalDiagnostics = async (req, res) => {
     senderAddressConfigured: emailStatus.senderAddressConfigured,
     smtpConnectionVerified: null,
     otpSecretConfigured: Boolean(process.env.PASSWORD_RESET_OTP_SECRET),
-    mysqlConnected: false,
+    postgresConnected: false,
+    databaseConnected: false,
     otpTableExists: false,
     otpColumnsReady: false,
     missingOtpColumns: []
@@ -408,14 +409,18 @@ exports.getLocalDiagnostics = async (req, res) => {
 
   try {
     await pool.query('SELECT 1 AS connected');
-    diagnostics.mysqlConnected = true;
+    diagnostics.postgresConnected = true;
+    diagnostics.databaseConnected = true;
   } catch (error) {
-    diagnostics.databaseErrorCode = error.code || 'UNKNOWN';
+    diagnostics.databaseErrorCode = error.postgresCode || error.code || 'UNKNOWN';
   }
 
-  if (diagnostics.mysqlConnected) {
+  if (diagnostics.postgresConnected) {
     try {
-      const [columns] = await pool.query('SHOW COLUMNS FROM password_reset_otps');
+      const [columns] = await pool.query(
+        'SELECT column_name AS "Field" FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = ? ORDER BY ordinal_position',
+        ['password_reset_otps']
+      );
       diagnostics.otpTableExists = true;
       const existing = new Set(columns.map((column) => column.Field));
       const required = ['user_id', 'otp_hash', 'request_ip', 'attempts', 'expires_at', 'used_at', 'created_at'];

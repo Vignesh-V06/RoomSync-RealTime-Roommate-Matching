@@ -7,7 +7,9 @@
     "start": "node server.js",
     "dev": "node server.js",
     "test": "node --test",
-    "seed:admin": "node scripts/seed-admin.js"
+    "seed:admin": "node scripts/seed-admin.js",
+    "db:check": "node setupDb.js",
+    "test:postgres": "node --test test/postgresDatabase.test.js"
   },
   "keywords": [],
   "author": "",
@@ -19,8 +21,8 @@
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
-    "mysql2": "^3.20.0",
     "socket.io": "^4.8.3",
-    "nodemailer": "^7.0.13"
+    "nodemailer": "^7.0.13",
+    "pg": "^8.23.1"
   }
 }

@@ -1,3 +1,4 @@
+-- LEGACY MYSQL SQL: retained as a source/history reference only. Do not execute against PostgreSQL/Neon.
 -- Email verification for new RoomSync registrations.
 -- Run once against the existing roomsync database before deploying the new API.
 CREATE TABLE IF NOT EXISTS registration_otps (

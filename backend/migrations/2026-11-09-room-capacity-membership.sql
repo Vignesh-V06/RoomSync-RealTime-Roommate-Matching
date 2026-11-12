@@ -1,3 +1,4 @@
+-- LEGACY MYSQL SQL: retained as a source/history reference only. Do not execute against PostgreSQL/Neon.
 USE roomsync;
 
 -- Keep historical application rows when owners remove joined roommates.
