@@ -81,7 +81,7 @@ exports.requestOtp = async (req, res) => {
     await connection.beginTransaction();
 
     await connection.query(
-      "DELETE FROM registration_otps WHERE expires_at < DATE_SUB(NOW(), INTERVAL 1 DAY) OR (used_at IS NOT NULL AND created_at < DATE_SUB(NOW(), INTERVAL 1 DAY))"
+      "DELETE FROM registration_otps WHERE expires_at < CURRENT_TIMESTAMP - INTERVAL '1 day' OR (used_at IS NOT NULL AND created_at < CURRENT_TIMESTAMP - INTERVAL '1 day')"
     );
 
     const [existing] = await connection.query('SELECT id FROM users WHERE email = ? LIMIT 1', [email]);
@@ -91,7 +91,7 @@ exports.requestOtp = async (req, res) => {
     }
 
     const [ipRate] = await connection.query(
-      'SELECT COUNT(*) AS request_count FROM registration_otps WHERE request_ip = ? AND created_at > DATE_SUB(NOW(), INTERVAL 10 MINUTE)',
+      `SELECT COUNT(*) AS request_count FROM registration_otps WHERE request_ip = ? AND created_at > CURRENT_TIMESTAMP - INTERVAL '10 minutes'`,
       [requestIp]
     );
     if (requestIp && Number(ipRate[0]?.request_count || 0) >= 10) {
@@ -100,7 +100,7 @@ exports.requestOtp = async (req, res) => {
     }
 
     const [recent] = await connection.query(
-      'SELECT id FROM registration_otps WHERE email = ? AND created_at > DATE_SUB(NOW(), INTERVAL 60 SECOND) ORDER BY id DESC LIMIT 1',
+      `SELECT id FROM registration_otps WHERE email = ? AND created_at > CURRENT_TIMESTAMP - INTERVAL '60 seconds' ORDER BY id DESC LIMIT 1`,
       [email]
     );
     if (recent.length) {
@@ -114,7 +114,7 @@ exports.requestOtp = async (req, res) => {
     );
 
     const [inserted] = await connection.query(
-      'INSERT INTO registration_otps (email, name, phone, password_hash, otp_hash, request_ip, expires_at) VALUES (?, ?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 10 MINUTE))',
+      `INSERT INTO registration_otps (email, name, phone, password_hash, otp_hash, request_ip, expires_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP + INTERVAL '10 minutes')`,
       [email, name, phone, passwordHash, otpHash, requestIp]
     );
     otpRecordId = inserted.insertId;
@@ -127,10 +127,10 @@ exports.requestOtp = async (req, res) => {
     }
     console.error('Registration OTP request failed:', { code: error.code, errno: error.errno, message: error.message });
     if (error.code === 'ER_NO_SUCH_TABLE' || Number(error.errno) === 1146) {
-      return res.status(503).json({ message: 'The registration verification table is missing. Run backend/migrations/2026-11-09-registration-otp.sql against the roomsync database, then restart the backend.' });
+      return res.status(503).json({ message: 'The registration verification table is missing from PostgreSQL. Check DB_SCHEMA and apply backend/schema.postgres.sql to a new database if it has not been initialized.' });
     }
     if (['ECONNREFUSED', 'PROTOCOL_CONNECTION_LOST', 'ER_ACCESS_DENIED_ERROR', 'ETIMEDOUT'].includes(error.code)) {
-      return res.status(503).json({ message: 'RoomSync cannot connect to MySQL. Check that MySQL is running and the DB settings in backend/.env are correct.' });
+      return res.status(503).json({ message: 'RoomSync cannot connect to PostgreSQL. Check DATABASE_URL and DB_SCHEMA in the backend environment.' });
     }
     return res.status(500).json({
       message: isDevelopment
@@ -193,7 +193,7 @@ exports.verifyOtp = async (req, res) => {
     await connection.beginTransaction();
 
     const [records] = await connection.query(
-      'SELECT id, email, name, phone, password_hash, otp_hash, attempts FROM registration_otps WHERE email = ? AND used_at IS NULL AND expires_at > NOW() ORDER BY id DESC LIMIT 1 FOR UPDATE',
+      'SELECT id, email, name, phone, password_hash, otp_hash, attempts FROM registration_otps WHERE email = ? AND used_at IS NULL AND expires_at > CURRENT_TIMESTAMP ORDER BY id DESC LIMIT 1 FOR UPDATE',
       [email]
     );
     if (!records.length) {
@@ -213,7 +213,7 @@ exports.verifyOtp = async (req, res) => {
     if (!matches) {
       const nextAttempts = Number(record.attempts) + 1;
       await connection.query(
-        'UPDATE registration_otps SET attempts = ?, used_at = IF(? >= 5, CURRENT_TIMESTAMP, used_at) WHERE id = ?',
+        'UPDATE registration_otps SET attempts = ?, used_at = CASE WHEN ? >= 5 THEN CURRENT_TIMESTAMP ELSE used_at END WHERE id = ?',
         [nextAttempts, nextAttempts, record.id]
       );
       await connection.commit();
