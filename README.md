@@ -309,6 +309,6 @@ Keep credentials, private environment files, and production data out of commits.
 
 **Better matches. Better roommates. Better living.**
 
-Made with care.
+<p>💙 Built with passion. Designed to bring people together. 🏡✨</p>
 
 </div>
