@@ -60,11 +60,13 @@ exports.requestOtp = async (req, res) => {
   const emailStatus = getEmailProviderStatus();
   const emailProvider = getEmailProvider();
   if (!emailStatus.configured) {
-    const hint = emailProvider === 'gmail'
-      ? 'Set SMTP_USER and SMTP_APP_PASSWORD in backend/.env.'
-      : emailProvider === 'resend'
-        ? 'Set RESEND_API_KEY and RESEND_FROM_EMAIL in backend/.env.'
-        : 'Set EMAIL_PROVIDER to gmail or resend.';
+    const hint = emailProvider === 'apps_script'
+      ? 'Set APPS_SCRIPT_EMAIL_URL and APPS_SCRIPT_EMAIL_SECRET in backend/.env.'
+      : emailProvider === 'gmail'
+        ? 'Set SMTP_USER and SMTP_APP_PASSWORD in backend/.env.'
+        : emailProvider === 'resend'
+          ? 'Set RESEND_API_KEY and RESEND_FROM_EMAIL in backend/.env.'
+          : 'Set EMAIL_PROVIDER to apps_script, gmail or resend.';
     return res.status(503).json({ message: 'Registration email delivery is not configured. ' + hint });
   }
 
@@ -155,9 +157,11 @@ exports.requestOtp = async (req, res) => {
       console.error('Could not invalidate undelivered registration code:', invalidateError.code || invalidateError.message);
     }
     console.error('Registration OTP email delivery failed:', { code: error.status || error.code, message: error.message });
-    const providerHint = emailProvider === 'gmail'
-      ? 'Check SMTP_USER, the 16-character Google App Password in SMTP_APP_PASSWORD, and network access to smtp.gmail.com.'
-      : 'Check RESEND_API_KEY, RESEND_FROM_EMAIL and your verified sender domain.';
+    const providerHint = emailProvider === 'apps_script'
+      ? 'Check APPS_SCRIPT_EMAIL_URL, APPS_SCRIPT_EMAIL_SECRET, the active Web App deployment and the Apps Script Executions log.'
+      : emailProvider === 'gmail'
+        ? 'Check SMTP_USER, the 16-character Google App Password in SMTP_APP_PASSWORD, and network access to smtp.gmail.com.'
+        : 'Check RESEND_API_KEY, RESEND_FROM_EMAIL and your verified sender domain.';
     return res.status(503).json({
       message: isDevelopment
         ? 'RoomSync could not send the verification email: ' + error.message + '. ' + providerHint
