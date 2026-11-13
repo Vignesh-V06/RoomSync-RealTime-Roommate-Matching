@@ -5,12 +5,25 @@ const getEmailProvider = () => {
   return configured || (process.env.NODE_ENV === 'production' ? 'resend' : 'gmail');
 };
 
+const isValidAppsScriptUrl = (value) => {
+  try {
+    const url = new URL(String(value || '').trim());
+    return url.protocol === 'https:'
+      && url.hostname === 'script.google.com'
+      && /^\/macros\/s\/[^/]+\/exec$/.test(url.pathname);
+  } catch {
+    return false;
+  }
+};
+
 const getEmailProviderStatus = () => {
   const provider = getEmailProvider();
   const gmailUserConfigured = Boolean(process.env.SMTP_USER);
   const gmailAppPasswordConfigured = Boolean(process.env.SMTP_APP_PASSWORD);
   const resendApiKeyConfigured = Boolean(process.env.RESEND_API_KEY);
   const resendSenderConfigured = Boolean(process.env.RESEND_FROM_EMAIL);
+  const appsScriptUrlConfigured = isValidAppsScriptUrl(process.env.APPS_SCRIPT_EMAIL_URL);
+  const appsScriptSecretConfigured = Boolean(process.env.APPS_SCRIPT_EMAIL_SECRET);
 
   return {
     provider,
@@ -18,11 +31,22 @@ const getEmailProviderStatus = () => {
       ? gmailUserConfigured && gmailAppPasswordConfigured
       : provider === 'resend'
         ? resendApiKeyConfigured && resendSenderConfigured
-        : false,
+        : provider === 'apps_script'
+          ? appsScriptUrlConfigured && appsScriptSecretConfigured
+          : false,
     gmailUserConfigured,
     gmailAppPasswordConfigured,
     resendApiKeyConfigured,
-    resendSenderConfigured
+    resendSenderConfigured,
+    appsScriptUrlConfigured,
+    appsScriptSecretConfigured,
+    senderAddressConfigured: provider === 'gmail'
+      ? gmailUserConfigured
+      : provider === 'resend'
+        ? resendSenderConfigured
+        : provider === 'apps_script'
+          ? appsScriptUrlConfigured && appsScriptSecretConfigured
+          : false
   };
 };
 
@@ -46,8 +70,71 @@ const createGmailTransporter = () => {
   });
 };
 
+const verifyGmailConnection = async () => {
+  const transporter = createGmailTransporter();
+  try {
+    await transporter.verify();
+    return true;
+  } finally {
+    transporter.close();
+  }
+};
+
+const sendAppsScriptEmail = async ({ to, subject, text, html }) => {
+  const url = String(process.env.APPS_SCRIPT_EMAIL_URL || '').trim();
+  const secret = String(process.env.APPS_SCRIPT_EMAIL_SECRET || '');
+
+  if (!isValidAppsScriptUrl(url)) {
+    throw new Error('APPS_SCRIPT_EMAIL_URL must be the deployed Google Apps Script Web App URL ending in /exec.');
+  }
+  if (!secret) {
+    throw new Error('APPS_SCRIPT_EMAIL_SECRET is not configured.');
+  }
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'User-Agent': 'RoomSync/1.0'
+    },
+    body: JSON.stringify({
+      secret,
+      to,
+      subject,
+      text: text || '',
+      html: html || ''
+    }),
+    signal: AbortSignal.timeout(15000)
+  });
+
+  const responseText = await response.text();
+  let result;
+  try {
+    result = responseText ? JSON.parse(responseText) : {};
+  } catch {
+    throw new Error('Google Apps Script returned an unreadable response. Confirm the Web App deployment is active and accessible to anyone.');
+  }
+
+  if (!response.ok || result.ok !== true) {
+    const knownErrors = {
+      UNAUTHORIZED: 'Google Apps Script rejected the shared secret. Confirm APPS_SCRIPT_EMAIL_SECRET matches ROOMSYNC_MAIL_SECRET in Script Properties.',
+      DAILY_EMAIL_QUOTA_EXCEEDED: 'The Gmail account has reached its daily email sending quota.',
+      INVALID_RECIPIENT: 'Google Apps Script rejected the recipient email address.',
+      INVALID_EMAIL_CONTENT: 'Google Apps Script rejected the email content.',
+      EMPTY_REQUEST: 'Google Apps Script received an empty email request.',
+      MAIL_DELIVERY_FAILED: 'Google Apps Script could not send the email. Check the Apps Script Executions log.'
+    };
+    throw new Error(knownErrors[String(result.error || '')] || 'Google Apps Script email delivery failed (HTTP ' + response.status + '). Check the deployment and Apps Script Executions log.');
+  }
+};
+
 const sendEmail = async ({ to, subject, text, html, idempotencyKey }) => {
   const provider = getEmailProvider();
+
+  if (provider === 'apps_script') {
+    await sendAppsScriptEmail({ to, subject, text, html });
+    return;
+  }
 
   if (provider === 'gmail') {
     const transporter = createGmailTransporter();
@@ -87,7 +174,7 @@ const sendEmail = async ({ to, subject, text, html, idempotencyKey }) => {
     return;
   }
 
-  throw new Error('Unsupported EMAIL_PROVIDER. Choose gmail or resend.');
+  throw new Error('Unsupported EMAIL_PROVIDER. Choose apps_script, gmail or resend.');
 };
 
-module.exports = { getEmailProvider, getEmailProviderStatus, sendEmail };
+module.exports = { getEmailProvider, getEmailProviderStatus, sendEmail, verifyGmailConnection };

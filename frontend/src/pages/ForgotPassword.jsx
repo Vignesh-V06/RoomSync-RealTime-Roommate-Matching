@@ -154,7 +154,10 @@ const ForgotPassword = () => {
                 ['OTP table exists', diagnostics.otpTableExists],
                 ['OTP table columns are correct', diagnostics.otpColumnsReady],
                 ['OTP secret is configured', diagnostics.otpSecretConfigured],
-                ...(diagnostics.emailProvider === 'gmail' ? [
+                ...(diagnostics.emailProvider === 'apps_script' ? [
+                  ['Apps Script Web App URL is configured', diagnostics.appsScriptUrlConfigured],
+                  ['Apps Script shared secret is configured', diagnostics.appsScriptSecretConfigured]
+                ] : diagnostics.emailProvider === 'gmail' ? [
                   ['Gmail account is configured', diagnostics.gmailSmtpUserConfigured],
                   ['Google App Password is configured', diagnostics.gmailAppPasswordConfigured],
                   ...(diagnostics.smtpConnectionVerified === null ? [] : [
