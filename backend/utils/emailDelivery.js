@@ -70,6 +70,16 @@ const createGmailTransporter = () => {
   });
 };
 
+const verifyGmailConnection = async () => {
+  const transporter = createGmailTransporter();
+  try {
+    await transporter.verify();
+    return true;
+  } finally {
+    transporter.close();
+  }
+};
+
 const sendAppsScriptEmail = async ({ to, subject, text, html }) => {
   const url = String(process.env.APPS_SCRIPT_EMAIL_URL || '').trim();
   const secret = String(process.env.APPS_SCRIPT_EMAIL_SECRET || '');
@@ -167,4 +177,4 @@ const sendEmail = async ({ to, subject, text, html, idempotencyKey }) => {
   throw new Error('Unsupported EMAIL_PROVIDER. Choose apps_script, gmail or resend.');
 };
 
-module.exports = { getEmailProvider, getEmailProviderStatus, sendEmail };
+module.exports = { getEmailProvider, getEmailProviderStatus, sendEmail, verifyGmailConnection };
