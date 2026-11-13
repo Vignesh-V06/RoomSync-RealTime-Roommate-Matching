@@ -1,271 +1,314 @@
-# RoomSync 🏠
+ <div align="center">
 
-RoomSync is a modern, real-time web application designed to help university students find the perfect roommates and manage room applications. By leveraging a custom compatibility scoring system and real-time communication tools, it eliminates the hassle of finding compatible peers to share a dorm or apartment with...
+<img src="frontend/Friendly%20House%20Infinity%20Icon-Photoroom.png" alt="RoomSync Logo" width="145" />
 
-## ✨ Features
+# RoomSync
 
-- **Smart Compatibility Matching:** Discover vacant rooms sorted by how well your living preferences (sleep schedule, cleanliness, study habits, diet) align with the room owner's lifestyle.
-- **Application Workflow:** Apply to rooms seamlessly. Room owners get a dedicated dashboard to review applicant profiles and choose to Accept or Reject them.
-- **Application History:** Keep track of all the rooms you applied to with a live, color-coded status board (Pending, Accepted, Rejected) directly on your profile.
-- **Real-Time Group Chat:** Once accepted, applicants are automatically dropped into a WhatsApp-style real-time chat dashboard alongside the room owner to plan their move-in. 
-- **Live Notifications:** Never miss an update! Instant toast notifications pop up on your screen the exact second your room application is accepted or rejected.
-- **Dynamic Dark Mode:** A stunning, fully responsive UI that seamlessly toggles between visually rich light and dark themes...
+### Find compatible roommates. Discover rooms. Live better together.
 
-## 🛠️ Tech Stack
+A smart, real-time roommate matching and room management platform designed to make shared living simpler.
 
-### Frontend
-- **React.js** (via Vite)
-- **Tailwind CSS** (for beautiful, utility-first styling)
-- **React Router** (for SPA navigation)
-- **Socket.io-client** (for real-time messaging)
-- **React Hot Toast** (for sleek in-app notifications)
+<p>
+  <a href="https://roomsync-web.vercel.app/">🌐 Live Application</a> ·
+  <a href="https://github.com/Vignesh-V06/RoomSync-RealTime-Roommate-Matching">📦Source Code</a>
+</p>
 
-### Backend
-- **Node.js & Express.js** (REST API framework)
-- **Socket.io** (Websocket server for real-time events)
-- **PostgreSQL** (via node-postgres `pg`, Neon-compatible relational database)
-- **JWT & Bcrypt** (Secure authentication and password hashing)
+<p>
+  <img src="https://img.shields.io/github/last-commit/Vignesh-V06/RoomSync-RealTime-Roommate-Matching?style=flat-square" alt="Last commit" />
+  <img src="https://img.shields.io/github/commit-activity/m/Vignesh-V06/RoomSync-RealTime-Roommate-Matching?style=flat-square" alt="Commit activity" />
+  <img src="https://img.shields.io/github/issues/Vignesh-V06/RoomSync-RealTime-Roommate-Matching?style=flat-square" alt="Issues" />
+  <img src="https://img.shields.io/github/stars/Vignesh-V06/RoomSync-RealTime-Roommate-Matching?style=flat-square" alt="Stars" />
+  <img src="https://img.shields.io/github/forks/Vignesh-V06/RoomSync-RealTime-Roommate-Matching?style=flat-square" alt="Forks" />
+</p>
 
-## 🚀 Getting Started
+<p>
+  <img src="https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React" />
+  <img src="https://img.shields.io/badge/Vite-8-646CFF?style=flat-square&logo=vite&logoColor=white" alt="Vite" />
+  <img src="https://img.shields.io/badge/Node.js-Backend-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node.js" />
+  <img src="https://img.shields.io/badge/Express-5-000000?style=flat-square&logo=express&logoColor=white" alt="Express" />
+  <img src="https://img.shields.io/badge/PostgreSQL-Database-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL" />
+  <img src="https://img.shields.io/badge/Socket.IO-Realtime-010101?style=flat-square&logo=socket.io&logoColor=white" alt="Socket.IO" />
+</p>
 
-Follow these steps to get your local development environment up and running.
+</div>
 
-### 1. Clone & Install
-Open your terminal and install dependencies for both the frontend and backend.
+---
+
+## Overview
+
+**RoomSync** brings roommate discovery, compatibility matching, room management, and real-time communication together in one platform.
+
+Instead of choosing roommates based only on availability, RoomSync helps students discover people whose lifestyle, academic preferences, and living habits align with theirs.
+
+The platform provides dedicated experiences for students, room owners, and administrators.
+
+## Features
+
+| Module | Capabilities |
+|---|---|
+| **Smart Matching** | Weighted compatibility scoring based on lifestyle, academic and personal preferences, including custom criteria. |
+| **Room Discovery** | Explore available rooms, view details, photos and compatibility scores. |
+| **Room Management** | Create listings, manage availability, capacity, room photos and roommate memberships. |
+| **Applications** | Apply, accept, reject and manage room applications with controlled membership states. |
+| **Real-Time Chat** | Room-specific messaging powered by Socket.IO. |
+| **Notifications** | Application updates and real-time user notifications. |
+| **Secure Authentication** | JWT authentication, bcrypt password hashing, registration OTP and password reset. |
+| **Owner Analytics** | Room views, visitors, applications and listing performance. |
+| **Admin Dashboard** | Platform analytics, activity tracking, CSV and Excel exports. |
+
+## Architecture
+
+RoomSync uses a React frontend connected to a Node.js backend. PostgreSQL handles application data, while Google Apps Script provides the email delivery relay.
+
+```mermaid
+flowchart LR
+    DEV["Developer"] --> GH["GitHub Repository"]
+
+    GH -. "Frontend deployment" .-> VERCEL["Vercel"]
+    GH -. "Backend deployment" .-> RENDER["Render"]
+
+    USER["Users"] --> FE["React + Vite"]
+    VERCEL --> FE
+
+    FE <-->|"REST API + Socket.IO"| API["Node.js + Express API"]
+    RENDER --> API
+
+    API <-->|"SQL / Data"| DB[("Neon PostgreSQL")]
+
+    API --> GAS["Google Apps Script<br/>HTTPS Email Relay"]
+    GAS --> GMAIL["Gmail MailApp"]
+```
+
+## Technology Stack
+
+| Layer | Technologies |
+|---|---|
+| Frontend | React, Vite, React Router, Tailwind CSS, Axios |
+| Backend | Node.js, Express.js, REST API |
+| Real-Time | Socket.IO |
+| Database | PostgreSQL, Neon, node-postgres (`pg`) |
+| Authentication | JWT, bcrypt |
+| Email Delivery | Google Apps Script, Gmail MailApp |
+| Hosting | Vercel, Render |
+| Version Control | Git, GitHub |
+
+## Project Structure
+
+```text
+RoomSync/
+├── backend/
+│   ├── controllers/
+│   ├── db/
+│   ├── middleware/
+│   ├── routes/
+│   ├── scripts/
+│   ├── test/
+│   ├── utils/
+│   ├── schema.postgres.sql
+│   ├── server.js
+│   ├── socket.js
+│   └── package.json
+│
+├── frontend/
+│   ├── public/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── context/
+│   │   ├── pages/
+│   │   ├── api.js
+│   │   ├── socket.js
+│   │   └── App.jsx
+│   └── package.json
+│
+└── README.md
+```
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js (compatible with Vite 8)
+- npm
+- Git
+- PostgreSQL database access
+
+### 1. Clone the repository
+
 ```bash
-# Install backend dependencies
+git clone https://github.com/Vignesh-V06/RoomSync-RealTime-Roommate-Matching.git
+
+cd RoomSync-RealTime-Roommate-Matching
+```
+
+### 2. Install dependencies
+
+```bash
 cd backend
 npm install
+```
 
-# Install frontend dependencies
+```bash
 cd ../frontend
 npm install
 ```
 
-### 2. Database Setup (PostgreSQL)
+### 3. Configure environment variables
 
-The active backend in this branch uses PostgreSQL through the `pg` driver. Neon is supported through `DATABASE_URL`.
+Create the backend `.env` file using the example:
 
-For an already-migrated Neon database:
-1. Keep the Neon schema containing the 11 RoomSync tables in the `roomsync` schema.
-2. Set `DB_SCHEMA=roomsync`.
-3. Set `DATABASE_URL` to the Neon pooled connection string for runtime use.
-4. Do not rerun schema creation or the old MySQL migration scripts over the migrated data.
+**Windows PowerShell (from the repository root):**
 
-For Neon pooled connections, set the schema on the database role (not with a session-level `SET search_path` or a connection startup option). In the Neon SQL Editor, replace the role/database names with the values shown by your Connect panel:
-
-```sql
-ALTER ROLE neondb_owner
-IN DATABASE "RoomSync"
-SET search_path TO roomsync, public;
+```powershell
+Copy-Item backend/.env.example backend/.env
 ```
 
-Restart the backend after changing the role setting. The API checks `current_schema()` at startup and refuses to listen if it is not the configured `DB_SCHEMA`. Neon uses PgBouncer in transaction mode for pooled URLs, where session-level settings do not persist across transactions; role-level settings are the supported approach.
+Configure your PostgreSQL connection, authentication secrets, and email provider in `backend/.env`.
 
-For a **new, empty PostgreSQL database only**, apply the reference schema:
+Create `frontend/.env`:
+
+```env
+VITE_API_BASE_URL=http://localhost:5000/api
+VITE_SOCKET_URL=http://localhost:5000
+```
+
+### 4. Configure the database
+
+RoomSync uses PostgreSQL with the `roomsync` schema.
+
+```env
+DATABASE_URL=YOUR_POSTGRESQL_CONNECTION_STRING
+DB_SCHEMA=roomsync
+```
+
+For an existing, migrated Neon database, use its existing connection and schema. Do not run the schema initialization again.
+
+For a brand-new, empty PostgreSQL database only:
 
 ```bash
 psql "$DATABASE_URL" -f backend/schema.postgres.sql
 ```
 
-The `backend/schema.sql` and files in `backend/migrations/` are retained as historical MySQL source/reference files. Do not execute them against Neon/PostgreSQL.
-
-Configure the backend's private `.env` file with:
-
-```env
-PORT=5000
-NODE_ENV=development
-DATABASE_URL=postgresql://USER:PASSWORD@HOST/DATABASE?sslmode=require
-DB_SCHEMA=roomsync
-JWT_SECRET=replace-with-a-long-random-secret
-PASSWORD_RESET_OTP_SECRET=replace-with-a-separate-random-secret
-```
-
-Keep email-provider settings in the same private file when using registration and password-reset OTP. Never commit `.env` or paste connection strings into issues or chat.
-
-After importing/migrating a database, verify the selected schema and table set with:
+Verify database connectivity:
 
 ```bash
 cd backend
-npm ci
 npm run db:check
 ```
 
-`db:check` is read-only. It verifies the configured PostgreSQL schema, all 11 required tables, and the generated `room_requests.active_user_id` column. It does not create, drop, or modify database objects.
+### 5. Configure email delivery
 
-### 3. Run the Application
-You need to run both the Frontend and the Backend servers simultaneously.
+RoomSync uses Google Apps Script as an HTTPS email relay for registration and password-reset OTPs.
 
-**Terminal 1 (Backend):**
-```bash
-cd backend
-node server.js
-# Or use 'npm run dev' if you have nodemon installed
+Configure these variables in `backend/.env`:
+
+```env
+EMAIL_PROVIDER=apps_script
+APPS_SCRIPT_EMAIL_URL=YOUR_DEPLOYED_WEB_APP_URL
+APPS_SCRIPT_EMAIL_SECRET=YOUR_SHARED_SECRET
 ```
 
-**Terminal 2 (Frontend):**
+The secret must match the `ROOMSYNC_MAIL_SECRET` Script Property in the deployed Apps Script project.
+
+Never commit `.env` files or expose email credentials.
+
+### 6. Run the application
+
+**Backend**
+
+```bash
+cd backend
+npm start
+```
+
+**Frontend** — in another terminal:
+
 ```bash
 cd frontend
 npm run dev
 ```
 
-Visit the local URL provided by Vite (usually `http://localhost:5173`) in your browser to start matching!
+Open the local URL provided by Vite, usually:
 
-## 🤝 Current Status
-This project is currently actively tailored for local testing (simulated password resets, mocked email flows) and operates specifically under VIT Vellore campus logic, but is highly extensible for production deployment.
-
-
-## RoomSync platform features and local setup
-
-> **PostgreSQL branch notice:** This branch uses Neon/PostgreSQL. The older `backend/schema.sql` and `backend/migrations/*.sql` instructions below are MySQL-only historical references. Do not run those MySQL commands against Neon. Use `backend/schema.postgres.sql` only when creating a brand-new empty PostgreSQL database; the already-migrated Neon database must not be initialized again.
-
-The current Harbor Blue feature branch includes weighted compatibility matching, optional owner-defined room criteria, one room listing per owner, one active application or membership per student, room-specific chat access, room detail views, owner analytics and administrator overview metrics.
-
-### Updating an existing database
-
-Back up the database first. The migration adds account contact fields, custom compatibility preferences, room status and photo/view tables, and unique constraints. Review and resolve any duplicate room owners or users with multiple active requests (status applied or accepted) first; the migration contains example queries in its comments.
-
-```bash
-mysql -u YOUR_DB_USER -p roomsync < backend/migrations/2026-11-06-platform-features.sql
+```text
+http://localhost:5173
 ```
 
-For a new local database, create the latest schema instead:
+## Available Scripts
 
-```bash
-mysql -u YOUR_DB_USER -p < backend/schema.sql
-```
+**Backend**
 
-Do not run the migration after importing the updated schema; choose the path that matches your database.
+| Command | Description |
+|---|---|
+| `npm start` | Start the API and Socket.IO server |
+| `npm test` | Run backend tests |
+| `npm run db:check` | Verify PostgreSQL configuration |
+| `npm run test:postgres` | Run PostgreSQL-specific tests |
+| `npm run seed:admin` | Bootstrap an administrator account |
 
-### Full-room closure and roommate removal
+**Frontend**
 
-For an existing database, back up the database and run this migration once after the platform-features migration:
+| Command | Description |
+|---|---|
+| `npm run dev` | Start the development server |
+| `npm run build` | Create the production build |
+| `npm run preview` | Preview the production build |
+| `npm run lint` | Run ESLint |
 
-```bash
-mysql -u YOUR_DB_USER -p roomsync < backend/migrations/2026-11-09-room-capacity-membership.sql
-```
+## Deployment
 
-For a new database, the latest `backend/schema.sql` already includes the `removed` application status. A room automatically closes when its final bed is occupied. Owners can remove accepted roommates from the owner dashboard; the membership record is retained as `removed`, the freed bed becomes available again, and the former member's room-chat access is revoked. A manually closed, non-full listing stays closed.
+| Component | Platform |
+|---|---|
+| Web Application | Vercel |
+| Backend API and Socket.IO | Render |
+| Database | Neon PostgreSQL |
+| Email Relay | Google Apps Script |
 
-For an existing database, back up the database and run this migration once after the room-capacity migration:
-`mysql -u YOUR_DB_USER -p roomsync < backend/migrations/2026-11-09-room-number-and-owner-delete.sql`
-New room listings require a room number. Existing listings can be updated from the owner dashboard; duplicate room numbers within the same block are rejected. Owners can permanently delete their own listing, which cancels pending applications, ends current memberships, revokes room chat access and removes room-linked photos, views and messages. Student accounts themselves are not deleted.
+Production configuration is managed through the respective hosting environment variables.
 
-### Bootstrap the administrator account
+The backend requires the correct PostgreSQL connection, schema, JWT secret, OTP secret, allowed frontend origins and email relay credentials.
 
-The admin role is granted only by the database-backed seed script. Configure these values in the backend's private .env file or the hosting provider's secret settings. Use a unique password of at least 14 characters; do not commit .env files or share the value.
+## Security
 
-```env
-ADMIN_EMAIL=admin.v@gmail.com
-ADMIN_PASSWORD=use-a-unique-long-password
-ADMIN_NAME=RoomSync Administrator
-ADMIN_USERNAME=admin.v
-```
+- JWT-protected API routes.
+- Password hashing using bcrypt.
+- Server-side role and room membership authorization.
+- OTPs stored as keyed hashes, with expiration and attempt limits.
+- Authenticated Socket.IO connections and room-level access checks.
+- Secrets managed through environment variables.
+- Administrator endpoints protected by server-side role validation.
 
-Then run:
+## Roadmap
 
-```bash
-cd backend
-npm install
-npm run seed:admin
-```
+- [x] Room discovery and compatibility matching
+- [x] Room owner management and applications
+- [x] Real-time room chat and notifications
+- [x] PostgreSQL and Neon integration
+- [x] Administrator analytics and reporting
+- [x] Email OTP verification workflows
+- [ ] Complete local and production regression testing
+- [ ] Expand automated test coverage
+- [ ] Introduce dedicated object storage for room images
+- [ ] Further improve matching and analytics capabilities
 
-The administrator analytics screen is served at /admin. Both the frontend route and the /api/admin/analytics endpoint check the account role; changing browser local storage is not sufficient to grant access.
+## Contributing
 
+Contributions and suggestions are welcome.
 
+1. Fork the repository.
+2. Create a feature branch.
+3. Make and test your changes.
+4. Submit a pull request with a clear description.
 
-### Admin analytics and activity event tracking
+Keep credentials, private environment files, and production data out of commits.
 
-The administrator API and report downloads require both a valid session and a database-backed `admin` role. The admin dashboard supports 3-month, 12-month (default), and all-available-history views. Excel exports contain Overview, Users, Rooms, Applications, Monthly Trends, Top Rooms, Hostel Blocks and Activity sheets. CSV exports are available per dataset.
+---
 
-For an existing database, take a backup and run this migration once:
+<div align="center">
 
-```bash
-mysql -u YOUR_DB_USER -p roomsync < backend/migrations/2026-11-08-activity-events.sql
-```
+### RoomSync
 
-For a new database, the latest `backend/schema.sql` already includes `activity_events`.
+**Better matches. Better roommates. Better living.**
 
-Activity logging intentionally excludes passwords, OTPs, message contents, email contents and phone numbers. The event log begins only after this migration and application version are deployed. Older registration, room, application, view and message totals are still derived from their existing tables; historic login/event detail cannot be reconstructed.
+Made with care.
 
-The reporting endpoints are under `/api/admin` and are protected by the server-side admin middleware:
-- `GET /api/admin/analytics?range=12m`
-- `GET /api/admin/reports/export?format=xlsx&range=12m`
-- `GET /api/admin/reports/export?format=csv&dataset=users&range=12m`
-
-CSV datasets: `overview`, `users`, `rooms`, `applications`, `monthly`, `top_rooms`, `blocks`, `activity`. Export rows are capped at 20,000 per dataset. Reports contain limited account identifiers needed for administration and must be handled as confidential data.
-
-### Verified email OTP password reset
-
-RoomSync sends six-digit password-reset codes through a selectable email provider. Codes are stored only as keyed hashes, expire after 10 minutes, are single-use, and are locked after five incorrect attempts. Requests are throttled per account and by source IP.
-
-For an existing database, take a backup and run this migration once:
-
-```bash
-mysql -u YOUR_DB_USER -p roomsync < backend/migrations/2026-11-08-password-reset-otp.sql
-```
-
-For a new database, the latest `backend/schema.sql` already includes the OTP table.
-
-#### Local development with Gmail SMTP
-
-Use a dedicated development Gmail account where practical. This is a development/testing option, not a production mail service. Enable Google 2-Step Verification, then create an App Password:
-
-1. Sign in to the Google account that will send RoomSync emails.
-2. Open [Google Account Security](https://myaccount.google.com/security).
-3. Under **How you sign in to Google**, select **2-Step Verification** and complete setup.
-4. Open [Google App Passwords](https://myaccount.google.com/apppasswords).
-5. Enter an app name such as `RoomSync Local Development`, create the password, and copy the 16-character value immediately.
-6. If the App Password page is unavailable, the account may be using a security-key-only 2-Step Verification setup, Advanced Protection, or a managed work/school account whose administrator restricts App Passwords. Use an eligible personal Google Account for local development instead.
-
-Configure these values in your private `backend/.env` file. Keep your existing PostgreSQL DATABASE_URL and DB_SCHEMA, `JWT_SECRET`, and `PASSWORD_RESET_OTP_SECRET`. Do not commit or share this file:
-
-```env
-EMAIL_PROVIDER=gmail
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_SECURE=false
-SMTP_USER=your-development-account@gmail.com
-SMTP_APP_PASSWORD=your-16-character-google-app-password
-SMTP_FROM_EMAIL=
-PASSWORD_RESET_OTP_SECRET=your-existing-separate-random-secret
-```
-
-Leave `SMTP_FROM_EMAIL` blank to send from the authenticated Gmail account. The App Password is not your normal Google account password. RoomSync strips spaces from the copied App Password before SMTP authentication. Gmail SMTP uses `smtp.gmail.com:587` with STARTTLS; port 465 with implicit TLS is also supported by setting `SMTP_PORT=465` and `SMTP_SECURE=true`.
-
-After editing `.env`, restart the backend. On the Forgot Password page, click **Check email setup**. The local check verifies PostgreSQL and the OTP table, then checks Gmail SMTP authentication if the credentials are present. It does not send a test email. Once the SMTP check passes, request an OTP for a RoomSync account whose registered email is a real inbox you can access.
-
-Google's App Password guidance: [Create and use App Passwords](https://support.google.com/mail/answer/185833). SMTP settings: `smtp.gmail.com`, port 587 with TLS/STARTTLS. Gmail can impose account-level sending limits or block suspicious automated sign-ins, so use this only for local, low-volume testing.
-
-#### Optional Resend provider
-
-Resend remains supported for later production use. Verify a domain you own in Resend, then configure:
-
-```env
-EMAIL_PROVIDER=resend
-RESEND_API_KEY=re_your_private_api_key
-RESEND_FROM_EMAIL=RoomSync <auth@your-verified-domain.com>
-PASSWORD_RESET_OTP_SECRET=your-separate-random-32-byte-secret
-```
-
-Resend's `onboarding@resend.dev` sender is for restricted testing to the email address associated with the Resend account. A verified sender domain is required to deliver to other recipients. See the provider's current sending-domain documentation before production.
-
-The same OTP routes and database table are used by both providers. Existing sample/test accounts are unchanged; password reset delivers only to the email address stored on the account. Never log or export OTP values, app passwords, API keys, or message contents.
-
-### Email OTP verification for new account registration
-
-New student accounts are created only after the email address is verified with a six-digit OTP. The code expires after 10 minutes, is stored as a keyed hash, is single-use, and is invalidated after five incorrect attempts. Registration requests are throttled per email and source IP. The old direct `POST /api/auth/register` endpoint is deliberately disabled; the frontend uses `POST /api/auth/register/request-otp` followed by `POST /api/auth/register/verify-otp`.
-
-For an existing database, back up the database and run this migration once:
-
-```bash
-mysql -u YOUR_DB_USER -p roomsync < backend/migrations/2026-11-09-registration-otp.sql
-```
-
-For a new database, the current `backend/schema.sql` already creates the `registration_otps` table.
-
-Registration reuses the email provider and `PASSWORD_RESET_OTP_SECRET` already configured for password-reset OTP. Keep the SMTP/Resend credentials and OTP secret in the private `backend/.env`; never commit them. Restart the backend after applying the migration or changing environment values. Existing accounts are unaffected and can continue signing in.
-
-### Photo storage note
-
-Room photos are currently stored in PostgreSQL with a five-photo limit and a 4 MB per-image limit. This keeps local setup simple. Before a high-traffic production launch, move image binaries to S3 or another object store and keep only their metadata and storage keys in MySQL.
+</div>
