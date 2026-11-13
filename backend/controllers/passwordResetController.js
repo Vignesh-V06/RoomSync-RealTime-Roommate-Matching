@@ -2,7 +2,7 @@ const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const pool = require('../db/config');
 const recordActivity = require('../utils/activityLogger');
-const { getEmailProvider, getEmailProviderStatus, sendEmail } = require('../utils/emailDelivery');
+const { getEmailProvider, getEmailProviderStatus, sendEmail, verifyGmailConnection } = require('../utils/emailDelivery');
 
 const GENERIC_REQUEST_MESSAGE = 'If an account exists for that email, a verification code will be sent shortly.';
 const INVALID_CODE_MESSAGE = 'The verification code is invalid or has expired. Request a new code and try again.';
@@ -336,15 +336,12 @@ exports.getLocalDiagnostics = async (req, res) => {
   }
 
   if (emailStatus.provider === 'gmail' && emailStatus.configured) {
-    const transporter = createGmailTransporter();
     try {
-      await transporter.verify();
+      await verifyGmailConnection();
       diagnostics.smtpConnectionVerified = true;
     } catch (error) {
       diagnostics.smtpConnectionVerified = false;
       diagnostics.smtpErrorCode = error.code || error.responseCode || 'SMTP_VERIFY_FAILED';
-    } finally {
-      transporter.close();
     }
   }
 
