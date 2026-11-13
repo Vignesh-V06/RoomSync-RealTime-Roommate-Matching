@@ -1,8 +1,8 @@
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
-const nodemailer = require('nodemailer');
 const pool = require('../db/config');
 const recordActivity = require('../utils/activityLogger');
+const { getEmailProvider, getEmailProviderStatus, sendEmail } = require('../utils/emailDelivery');
 
 const GENERIC_REQUEST_MESSAGE = 'If an account exists for that email, a verification code will be sent shortly.';
 const INVALID_CODE_MESSAGE = 'The verification code is invalid or has expired. Request a new code and try again.';
@@ -22,114 +22,11 @@ const createOtpHash = (userId, otp) => crypto
   .update(String(userId) + ':' + String(otp))
   .digest('hex');
 
-const getEmailProvider = () => {
-  const configured = String(process.env.EMAIL_PROVIDER || '').trim().toLowerCase();
-  if (configured) return configured;
-  return process.env.NODE_ENV === 'production' ? 'resend' : 'gmail';
-};
-
-const getEmailProviderStatus = () => {
-  const provider = getEmailProvider();
-  const gmailUserConfigured = Boolean(process.env.SMTP_USER);
-  const gmailAppPasswordConfigured = Boolean(process.env.SMTP_APP_PASSWORD);
-  const resendApiKeyConfigured = Boolean(process.env.RESEND_API_KEY);
-  const resendSenderConfigured = Boolean(process.env.RESEND_FROM_EMAIL);
-  const gmailReady = gmailUserConfigured && gmailAppPasswordConfigured;
-  const resendReady = resendApiKeyConfigured && resendSenderConfigured;
-
-  return {
-    provider,
-    configured: provider === 'gmail'
-      ? gmailReady
-      : provider === 'resend'
-        ? resendReady
-        : false,
-    gmailUserConfigured,
-    gmailAppPasswordConfigured,
-    resendApiKeyConfigured,
-    resendSenderConfigured,
-    senderAddressConfigured: provider === 'gmail'
-      ? gmailUserConfigured
-      : provider === 'resend'
-        ? resendSenderConfigured
-        : false
-  };
-};
-
-const createGmailTransporter = () => {
-  const port = Number(process.env.SMTP_PORT || 587);
-  const secure = String(process.env.SMTP_SECURE || '').toLowerCase() === 'true' || port === 465;
-
-  return nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port,
-    secure,
-    requireTLS: !secure,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: String(process.env.SMTP_APP_PASSWORD || '').replace(/\s+/g, '')
-    },
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 15000,
-    tls: { minVersion: 'TLSv1.2' }
-  });
-};
-
-const buildOtpEmail = ({ to, name, otp, from }) => ({
-  from,
-  to,
+const buildOtpEmail = ({ name, otp }) => ({
   subject: 'Your RoomSync password reset code',
   text: 'Hi ' + name + ', your RoomSync verification code is ' + otp + '. It expires in 10 minutes and can only be used once. If you did not request this, ignore this email.',
   html: '<div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:28px;color:#172b3b"><p style="color:#3976d7;font-weight:700;letter-spacing:.08em">ROOMSYNC SECURITY</p><h2>Password reset code</h2><p>Hi ' + escapeHtml(name) + ',</p><p>Use this code to reset your RoomSync password:</p><div style="margin:24px 0;padding:18px;background:#edf4fb;border-radius:12px;text-align:center;font-size:32px;font-weight:800;letter-spacing:10px;color:#205cc9">' + otp + '</div><p>This code expires in 10 minutes and can only be used once.</p><p>If you did not request this change, you can safely ignore this email.</p></div>'
 });
-
-const sendOtpEmail = async ({ to, name, otp, recordId }) => {
-  const provider = getEmailProvider();
-
-  if (provider === 'gmail') {
-    const transporter = createGmailTransporter();
-    try {
-      const from = process.env.SMTP_FROM_EMAIL || 'RoomSync <' + process.env.SMTP_USER + '>';
-      await transporter.sendMail(buildOtpEmail({ to, name, otp, from }));
-    } finally {
-      transporter.close();
-    }
-    return;
-  }
-
-  if (provider === 'resend') {
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: 'Bearer ' + process.env.RESEND_API_KEY,
-        'Content-Type': 'application/json',
-        'Idempotency-Key': 'roomsync-password-reset-' + recordId,
-        'User-Agent': 'RoomSync/1.0'
-      },
-      body: JSON.stringify({
-        from: process.env.RESEND_FROM_EMAIL,
-        to: [to],
-        ...buildOtpEmail({ to, name, otp, from: process.env.RESEND_FROM_EMAIL })
-      }),
-      signal: AbortSignal.timeout(10000)
-    });
-
-    const responseText = await response.text();
-    let result = {};
-    try {
-      result = responseText ? JSON.parse(responseText) : {};
-    } catch {
-      result = {};
-    }
-    if (!response.ok) {
-      throw new Error(result.message || 'The Resend email provider rejected the password reset message.');
-    }
-    return;
-  }
-
-  throw new Error('Unsupported EMAIL_PROVIDER. Choose gmail or resend.');
-};
 
 exports.requestOtp = async (req, res) => {
   const email = normalizeEmail(req.body.email);
@@ -140,13 +37,15 @@ exports.requestOtp = async (req, res) => {
   }
 
   const emailStatus = getEmailProviderStatus();
-  const emailProvider = emailStatus.provider;
+  const emailProvider = getEmailProvider();
   if (!emailStatus.configured || !process.env.PASSWORD_RESET_OTP_SECRET) {
-    const providerHint = emailProvider === 'gmail'
-      ? 'Set SMTP_USER and SMTP_APP_PASSWORD (a Google App Password) in backend/.env.'
-      : emailProvider === 'resend'
-        ? 'Set RESEND_API_KEY and RESEND_FROM_EMAIL in backend/.env.'
-        : 'Set EMAIL_PROVIDER to gmail or resend.';
+    const providerHint = emailProvider === 'apps_script'
+      ? 'Set APPS_SCRIPT_EMAIL_URL and APPS_SCRIPT_EMAIL_SECRET in backend/.env.'
+      : emailProvider === 'gmail'
+        ? 'Set SMTP_USER and SMTP_APP_PASSWORD (a Google App Password) in backend/.env.'
+        : emailProvider === 'resend'
+          ? 'Set RESEND_API_KEY and RESEND_FROM_EMAIL in backend/.env.'
+          : 'Set EMAIL_PROVIDER to apps_script, gmail or resend.';
     return res.status(503).json({
       message: 'Password reset email is not configured. ' + providerHint + ' Also set PASSWORD_RESET_OTP_SECRET and restart the backend.'
     });
@@ -252,11 +151,10 @@ exports.requestOtp = async (req, res) => {
   }
 
   try {
-    await sendOtpEmail({
+    await sendEmail({
       to: user.email,
-      name: user.name || 'RoomSync member',
-      otp,
-      recordId: otpRecordId
+      ...buildOtpEmail({ name: user.name || 'RoomSync member', otp }),
+      idempotencyKey: 'roomsync-password-reset-' + otpRecordId
     });
   } catch (error) {
     try {
@@ -274,12 +172,16 @@ exports.requestOtp = async (req, res) => {
     });
 
     if (isDevelopment) {
-      const providerMessage = emailProvider === 'gmail'
-        ? 'Gmail SMTP could not deliver the OTP email: '
-        : 'Resend could not deliver the OTP email: ';
-      const providerHint = emailProvider === 'gmail'
-        ? 'Check SMTP_USER, the 16-character Google App Password in SMTP_APP_PASSWORD, and that 2-Step Verification is enabled.'
-        : 'Check RESEND_API_KEY, RESEND_FROM_EMAIL and the verified-domain restriction.';
+      const providerMessage = emailProvider === 'apps_script'
+        ? 'Google Apps Script could not deliver the OTP email: '
+        : emailProvider === 'gmail'
+          ? 'Gmail SMTP could not deliver the OTP email: '
+          : 'Resend could not deliver the OTP email: ';
+      const providerHint = emailProvider === 'apps_script'
+        ? 'Check APPS_SCRIPT_EMAIL_URL, APPS_SCRIPT_EMAIL_SECRET, the active Web App deployment and the Apps Script Executions log.'
+        : emailProvider === 'gmail'
+          ? 'Check SMTP_USER, the 16-character Google App Password in SMTP_APP_PASSWORD, and that 2-Step Verification is enabled.'
+          : 'Check RESEND_API_KEY, RESEND_FROM_EMAIL and the verified-domain restriction.';
       return res.status(503).json({
         message: providerMessage + error.message + '. ' + providerHint
       });
@@ -397,6 +299,8 @@ exports.getLocalDiagnostics = async (req, res) => {
     gmailAppPasswordConfigured: emailStatus.gmailAppPasswordConfigured,
     resendApiKeyConfigured: emailStatus.resendApiKeyConfigured,
     resendSenderConfigured: emailStatus.resendSenderConfigured,
+    appsScriptUrlConfigured: emailStatus.appsScriptUrlConfigured,
+    appsScriptSecretConfigured: emailStatus.appsScriptSecretConfigured,
     senderAddressConfigured: emailStatus.senderAddressConfigured,
     smtpConnectionVerified: null,
     otpSecretConfigured: Boolean(process.env.PASSWORD_RESET_OTP_SECRET),
@@ -445,7 +349,13 @@ exports.getLocalDiagnostics = async (req, res) => {
   }
 
   const notes = [];
-  if (emailStatus.provider === 'gmail') {
+  if (emailStatus.provider === 'apps_script') {
+    if (!emailStatus.appsScriptUrlConfigured || !emailStatus.appsScriptSecretConfigured) {
+      notes.push('Set APPS_SCRIPT_EMAIL_URL to the active Google Apps Script Web App URL ending in /exec and APPS_SCRIPT_EMAIL_SECRET to the same value stored in Script Properties as ROOMSYNC_MAIL_SECRET.');
+    } else {
+      notes.push('Google Apps Script is selected and its URL and shared secret are configured. A real OTP request will verify delivery; this check does not send an email.');
+    }
+  } else if (emailStatus.provider === 'gmail') {
     notes.push('Gmail SMTP sends from SMTP_USER. SMTP uses smtp.gmail.com on port 587 with STARTTLS by default.');
     if (!emailStatus.gmailUserConfigured || !emailStatus.gmailAppPasswordConfigured) {
       notes.push('Enable 2-Step Verification in the Google Account, create an App Password, and store it as SMTP_APP_PASSWORD. The regular Google password will not work.');
@@ -461,7 +371,7 @@ exports.getLocalDiagnostics = async (req, res) => {
       notes.push('Resend is selected. Confirm that the sender domain is verified in your Resend account.');
     }
   } else {
-    notes.push('Unsupported EMAIL_PROVIDER. Set it to gmail or resend.');
+    notes.push('Unsupported EMAIL_PROVIDER. Set it to apps_script, gmail or resend.');
   }
 
   res.set('Cache-Control', 'no-store');
